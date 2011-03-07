@@ -22,6 +22,7 @@ xx/xx/2016 autofs-5.1.3
 - fix _strncmp() usage.
 - fix create_client() RPC client handling.
 - update and add README for old autofs schema.
+- wait for master map available at start.
 
 15/06/2016 autofs-5.1.2
 =======================

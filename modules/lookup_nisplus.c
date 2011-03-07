@@ -149,19 +149,25 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 		logerr(MODPREFIX "malloc: %s", estr);
 		pthread_setcancelstate(cur_state, NULL);
-		return NSS_STATUS_UNAVAIL;
+		return NSS_STATUS_UNKNOWN;
 	}
 	sprintf(tablename, "%s.org_dir.%s", ctxt->mapname, ctxt->domainname);
 
 	/* check that the table exists */
 	result = nis_lookup(tablename, FOLLOW_PATH | FOLLOW_LINKS);
 	if (result->status != NIS_SUCCESS && result->status != NIS_S_SUCCESS) {
+		int status = result->status;
 		nis_freeresult(result);
-		crit(logopt,
-		     MODPREFIX "couldn't locate nis+ table %s", ctxt->mapname);
 		free(tablename);
 		pthread_setcancelstate(cur_state, NULL);
-		return NSS_STATUS_NOTFOUND;
+		if (status == NIS_UNAVAIL || status == NIS_FAIL)
+			return NSS_STATUS_UNAVAIL;
+		else {
+			crit(logopt,
+			     MODPREFIX "couldn't locate nis+ table %s",
+			     ctxt->mapname);
+			return NSS_STATUS_NOTFOUND;
+		}
 	}
 
 	sprintf(tablename, "[],%s.org_dir.%s", ctxt->mapname, ctxt->domainname);
