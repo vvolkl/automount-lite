@@ -427,6 +427,7 @@ struct pending_args {
 	unsigned int len;		/* Name field len */
 	uid_t uid;			/* uid of requester */
 	gid_t gid;			/* gid of requester */
+	pid_t pid;			/* pid of requestor */
 	unsigned long wait_queue_token;	/* Associated kernel wait token */
 };
 

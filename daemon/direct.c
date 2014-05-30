@@ -1462,6 +1462,7 @@ int handle_packet_missing_direct(struct autofs_point *ap, autofs_packet_missing_
 	mt->type = NFY_MOUNT;
 	mt->uid = pkt->uid;
 	mt->gid = pkt->gid;
+	mt->pid = pkt->pid;
 	mt->wait_queue_token = pkt->wait_queue_token;
 
 	status = pthread_create(&thid, &th_attr_detached, do_mount_direct, mt);
