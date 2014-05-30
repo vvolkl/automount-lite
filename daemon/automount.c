@@ -89,6 +89,7 @@ struct startup_cond suc = {
 	PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, 0, 0};
 
 pthread_key_t key_thread_stdenv_vars;
+pthread_key_t key_thread_attempt_id = (pthread_key_t) 0L;
 
 #define MAX_OPEN_FILES		10240
 
@@ -97,6 +98,17 @@ void release_flag_file(void);
 static int umount_all(struct autofs_point *ap, int force);
 
 extern struct master *master_list;
+
+/* simple string hash based on public domain sdbm library */
+unsigned long sdbm_hash(const char *str, unsigned long seed)
+{
+	unsigned long hash = seed;
+	char c;
+
+	while ((c = *str++))
+		hash = c + (hash << 6) + (hash << 16) - hash;
+	return hash;
+}
 
 static int is_remote_fstype(unsigned int fs_type)
 {
@@ -2459,6 +2471,18 @@ int main(int argc, char *argv[])
 				key_thread_stdenv_vars_destroy);
 	if (status) {
 		logerr("%s: failed to create thread data key for std env vars!",
+		       program);
+		master_kill(master_list);
+		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+		close(start_pipefd[1]);
+		release_flag_file();
+		macro_free_global_table();
+		exit(1);
+	}
+
+	status = pthread_key_create(&key_thread_attempt_id, free);
+	if (status) {
+		logerr("%s: failed to create thread data key for attempt ID!",
 		       program);
 		master_kill(master_list);
 		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));

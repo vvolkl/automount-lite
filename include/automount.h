@@ -78,6 +78,8 @@ int load_autofs4_module(void);
 #define NCP_SUPER_MAGIC    0x0000564CL
 #define NFS_SUPER_MAGIC    0x00006969L
 
+#define ATTEMPT_ID_SIZE 24
+
 /* This sould be enough for at least 20 host aliases */
 #define HOST_ENT_BUF_SIZE	2048
 
@@ -242,6 +244,8 @@ char **append_argv(int argc1, char **argv1, int argc2, char **argv2);
 const char **copy_argv(int argc, const char **argv);
 int compare_argv(int argc1, const char **argv1, int argc2, const char **argv2);
 int free_argv(int argc, const char **argv);
+
+unsigned long sdbm_hash(const char *str, unsigned long seed);
 
 void dump_core(void);
 int aquire_lock(void);
@@ -502,6 +506,8 @@ struct thread_stdenv_vars {
 };
 
 extern pthread_key_t key_thread_stdenv_vars;
+
+extern pthread_key_t key_thread_attempt_id;
 
 struct kernel_mod_version {
 	unsigned int major;

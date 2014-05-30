@@ -726,6 +726,8 @@ static void *do_mount_indirect(void *arg)
 	char buf[PATH_MAX + 1];
 	struct stat st;
 	int len, status, state;
+	char attempt_id_comp[20];
+	unsigned long *attempt_id;
 
 	args = (struct pending_args *) arg;
 
@@ -734,6 +736,21 @@ static void *do_mount_indirect(void *arg)
 	memcpy(&mt, args, sizeof(struct pending_args));
 
 	ap = mt.ap;
+
+	attempt_id = pthread_getspecific(key_thread_attempt_id);
+	if (attempt_id == NULL) {
+		attempt_id = (unsigned long *) calloc(1, sizeof(unsigned long));
+		if (attempt_id  == NULL)
+			fatal(ENOMEM);
+		snprintf(attempt_id_comp, 20, "%ld", mt.wait_queue_token);
+		*attempt_id = sdbm_hash(attempt_id_comp, 0);
+		snprintf(attempt_id_comp, 20, "%u", mt.pid);
+		*attempt_id = sdbm_hash(attempt_id_comp, *attempt_id);
+		*attempt_id = sdbm_hash(mt.name, *attempt_id);
+		status = pthread_setspecific(key_thread_attempt_id, attempt_id);
+		if (status != 0)
+			fatal(status);
+	}
 
 	args->signaled = 1;
 	status = pthread_cond_signal(&args->cond);

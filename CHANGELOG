@@ -50,6 +50,7 @@ xx/xx/2016 autofs-5.1.3
 - fix bogus check in expire_cleanup().
 - delay submount exit for amd submounts.
 - add the mount requestor's pid to pending_args.
+- create thread-local ID for mount attempts.
 
 15/06/2016 autofs-5.1.2
 =======================
