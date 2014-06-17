@@ -25,6 +25,7 @@
 #define DEFAULT_MASTER_MAP_NAME	"auto.master"
 
 #define DEFAULT_TIMEOUT			"600"
+#define DEFAULT_MASTER_WAIT		"-1"
 #define DEFAULT_NEGATIVE_TIMEOUT	"60"
 #define DEFAULT_MOUNT_WAIT		"-1"
 #define DEFAULT_UMOUNT_WAIT		"12"
@@ -152,6 +153,7 @@ void defaults_conf_release(void);
 const char *defaults_get_master_map(void);
 int defaults_master_set(void);
 unsigned int defaults_get_timeout(void);
+int defaults_get_master_wait(void);
 unsigned int defaults_get_negative_timeout(void);
 unsigned int defaults_get_browse_mode(void);
 unsigned int defaults_get_logging(void);

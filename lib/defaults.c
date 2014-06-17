@@ -48,6 +48,7 @@
 #define NAME_MASTER_MAP			"master_map_name"
 
 #define NAME_TIMEOUT			"timeout"
+#define NAME_MASTER_WAIT		"master_wait"
 #define NAME_NEGATIVE_TIMEOUT		"negative_timeout"
 #define NAME_BROWSE_MODE		"browse_mode"
 #define NAME_LOGGING			"logging"
@@ -285,6 +286,11 @@ static int conf_load_autofs_defaults(void)
 
 	ret = conf_update(sec, NAME_TIMEOUT,
 			  DEFAULT_TIMEOUT, CONF_ENV);
+	if (ret == CFG_FAIL)
+		goto error;
+
+	ret = conf_update(sec, NAME_MASTER_WAIT,
+			  DEFAULT_MASTER_WAIT, CONF_ENV);
 	if (ret == CFG_FAIL)
 		goto error;
 
@@ -1567,6 +1573,17 @@ unsigned int defaults_get_timeout(void)
 		timeout = atol(DEFAULT_TIMEOUT);
 
 	return (unsigned int) timeout;
+}
+
+int defaults_get_master_wait(void)
+{
+	long wait;
+
+	wait = conf_get_number(autofs_gbl_sec, NAME_MASTER_WAIT);
+	if (wait < 0)
+		wait = atol(DEFAULT_MASTER_WAIT);
+
+	return (int) wait;
 }
 
 unsigned int defaults_get_negative_timeout(void)
