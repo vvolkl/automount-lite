@@ -978,7 +978,7 @@ static int add_host_addrs(struct host **list, const char *host,
 	}
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_flags = AI_NUMERICHOST;
+	hints.ai_flags = AI_NUMERICHOST | AI_CANONNAME;
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 
@@ -998,7 +998,7 @@ static int add_host_addrs(struct host **list, const char *host,
 
 try_name:
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_flags = AI_ADDRCONFIG;
+	hints.ai_flags = AI_ADDRCONFIG | AI_CANONNAME;
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 

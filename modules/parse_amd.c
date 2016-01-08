@@ -264,7 +264,7 @@ static int match_my_name(unsigned int logopt, const char *name, struct substvar 
 		goto out;
 	}
 
-	hints.ai_flags = 0;
+	hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG | AI_CANONNAME;
 
 	/* Resolve comparison name to its names and compare */
 	ret = getaddrinfo(name, NULL, &hints, &ni);

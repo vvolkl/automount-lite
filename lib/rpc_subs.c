@@ -683,7 +683,7 @@ static int create_client(struct conn_info *info, CLIENT **client)
 	}
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_flags = AI_ADDRCONFIG;
+	hints.ai_flags = AI_ADDRCONFIG | AI_CANONNAME;
 	hints.ai_family = AF_UNSPEC;
 	if (info->proto == IPPROTO_UDP)
 		hints.ai_socktype = SOCK_DGRAM;

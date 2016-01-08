@@ -472,6 +472,7 @@ unsigned int get_network_proximity(const char *name)
 	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG | AI_CANONNAME;
 
 	ret = getaddrinfo(name_or_num, NULL, &hints, &ni);
 	if (ret) {
