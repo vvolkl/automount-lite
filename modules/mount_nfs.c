@@ -172,9 +172,17 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 				} else if (_strncmp("proto=udp", cp, o_len) == 0 ||
 					   _strncmp("udp", cp, o_len) == 0) {
 					vers &= ~TCP_SUPPORTED;
+				} else if (_strncmp("proto=udp6", cp, o_len) == 0 ||
+					   _strncmp("udp6", cp, o_len) == 0) {
+					vers &= ~TCP_SUPPORTED;
+					vers |= UDP6_REQUESTED;
 				} else if (_strncmp("proto=tcp", cp, o_len) == 0 ||
 					   _strncmp("tcp", cp, o_len) == 0) {
 					vers &= ~UDP_SUPPORTED;
+				} else if (_strncmp("proto=tcp6", cp, o_len) == 0 ||
+					   _strncmp("tcp6", cp, o_len) == 0) {
+					vers &= ~UDP_SUPPORTED;
+					vers |= TCP6_REQUESTED;
 				}
 				/* Check for options that also make sense
 				   with bind mounts */
@@ -214,11 +222,16 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	 * configuration only probe NFSv4 and let mount.nfs(8) do fallback
 	 * to NFSv3 (if it can). If the NFSv4 probe fails then probe as
 	 * normal.
+	 *
+	 * Note: some NFS servers consider it a protocol violation to use
+	 * NFSv4 over UDP so if it has been requested in the mount options
+	 * we can't use this at all.
 	 */
 	if ((hosts && !hosts->next) &&
 	    mount_default_proto == 4 &&
 	    (vers & NFS_VERS_MASK) != 0 &&
-	    (vers & NFS4_VERS_MASK) != 0) {
+	    (vers & NFS4_VERS_MASK) != 0 &&
+	    !(vers & UDP6_REQUESTED)) {
 		unsigned int v4_probe_ok = 0;
 		struct host *tmp = new_host(hosts->name,
 					    hosts->addr, hosts->addr_len,

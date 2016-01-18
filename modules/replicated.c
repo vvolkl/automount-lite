@@ -484,6 +484,29 @@ done_ver:
 	return supported;
 }
 
+static int check_address_proto(unsigned logopt,
+			       struct host *host, unsigned int version)
+{
+	int ipv6_requested = version & (TCP6_REQUESTED | UDP6_REQUESTED);
+	int ret = 1;
+
+	/* If a protocol has been explicitly requested then don't
+	 * consider addresses that don't match the requested protocol.
+	 */
+	if (ipv6_requested) {
+		if (host->addr_len == INET_ADDRSTRLEN)
+			ret = 0;
+	} else {
+		if (host->addr_len == INET6_ADDRSTRLEN)
+			ret = 0;
+	}
+
+	if (!ret)
+		debug(logopt, "requested protocol does not match address");
+
+	return ret;
+}
+
 static int get_vers_and_cost(unsigned logopt, struct host *host,
 			     unsigned int version, int port)
 {
@@ -491,6 +514,9 @@ static int get_vers_and_cost(unsigned logopt, struct host *host,
 	time_t timeout = RPC_TIMEOUT;
 	unsigned int supported, vers = (NFS_VERS_MASK | NFS4_VERS_MASK);
 	int ret = 0;
+
+	if (!check_address_proto(logopt, host, version))
+		return 0;
 
 	memset(&pm_info, 0, sizeof(struct conn_info));
 	memset(&rpc_info, 0, sizeof(struct conn_info));
@@ -560,6 +586,9 @@ static int get_supported_ver_and_cost(unsigned logopt, struct host *host,
 	else
 		debug(logopt, "called with host %s version 0x%x",
 			host->name, version);
+
+	if (!check_address_proto(logopt, host, version))
+		return 0;
 
 	memset(&pm_info, 0, sizeof(struct conn_info));
 	memset(&rpc_info, 0, sizeof(struct conn_info));
