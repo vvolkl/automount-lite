@@ -94,6 +94,9 @@ unsigned int linux_version_code(void);
 int check_nfs_mount_version(struct nfs_mount_vers *, struct nfs_mount_vers *);
 extern unsigned int nfs_mount_uses_string_options;
 
+int mount_fullpath(char *fullpath, size_t max_len,
+		   const char *root, const char *name);
+
 struct amd_entry;
 
 struct substvar *addstdenv(struct substvar *sv, const char *prefix);

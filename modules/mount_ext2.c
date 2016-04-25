@@ -55,21 +55,12 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	if (defaults_get_mount_verbose())
 		mountlog = &log_info;
 
-	/* Root offset of multi-mount */
-	len = strlen(root);
-	if (root[len - 1] == '/') {
-		len = snprintf(fullpath, len, "%s", root);
-	} else if (*name == '/') {
-		/*
-		 * Direct or offset mount, name is absolute path so
-		 * don't use root (but with move mount changes root
-		 * is now the same as name).
-		 */
-		len = sprintf(fullpath, "%s", root);
-	} else {
-		len = sprintf(fullpath, "%s/%s", root, name);
+	len = mount_fullpath(fullpath, PATH_MAX, root, name);
+	if (!len) {
+		error(ap->logopt,
+		      MODPREFIX "mount point path too long");
+		return 1;
 	}
-	fullpath[len] = '\0';
 
 	debug(ap->logopt, MODPREFIX "calling mkdir_path %s", fullpath);
 

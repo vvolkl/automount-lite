@@ -339,6 +339,29 @@ int check_nfs_mount_version(struct nfs_mount_vers *vers,
 }
 #endif
 
+int mount_fullpath(char *fullpath, size_t max_len,
+		   const char *root, const char *name)
+{
+	int last, len;
+
+	last = strlen(root) - 1;
+
+	/* Root offset of multi-mount or direct or offset mount.
+	 * Direct or offset mount, name (or root) is absolute path.
+	 */
+	if (root[last] == '/' || *name == '/')
+		len = snprintf(fullpath, max_len, "%s", root);
+	else
+		len = snprintf(fullpath, max_len, "%s/%s", root, name);
+
+	if (len >= max_len)
+		return 0;
+
+	fullpath[len] = '\0';
+
+	return len;
+}
+
 static char *set_env_name(const char *prefix, const char *name, char *buf)
 {
 	size_t len;

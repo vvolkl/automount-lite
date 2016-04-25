@@ -212,6 +212,14 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 			 nfsoptions, nobind, nosymlink, ro);
 	}
 
+	/* Construct mount point directory */
+	len = mount_fullpath(fullpath, PATH_MAX, root, name);
+	if (!len) {
+		error(ap->logopt,
+		      MODPREFIX "mount point path too long");
+		return 1;
+	}
+
 	if (!parse_location(ap->logopt, &hosts, what, flags)) {
 		info(ap->logopt, MODPREFIX "no hosts available");
 		return 1;
@@ -265,19 +273,6 @@ dont_probe:
 		info(ap->logopt, MODPREFIX "no hosts available");
 		return 1;
 	}
-
-	/* Construct and perhaps create mount point directory */
-
-	/* Root offset of multi-mount */
-	len = strlen(root);
-	if (root[len - 1] == '/') {
-		len = snprintf(fullpath, len, "%s", root);
-	} else if (*name == '/') {
-		len = sprintf(fullpath, "%s", root);
-	} else {
-		len = sprintf(fullpath, "%s/%s", root, name);
-	}
-	fullpath[len] = '\0';
 
 	debug(ap->logopt, MODPREFIX "calling mkdir_path %s", fullpath);
 
