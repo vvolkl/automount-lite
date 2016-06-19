@@ -177,6 +177,10 @@ if test "$ac_cv_search_versionsort" = "no"; then
 		[Define if your C library does not provide versionsort])
 fi
 
+# glibc < 2.17 needs librt for clock_gettime()
+AC_CHECK_LIB(rt, clock_gettime, LIBCLOCK_GETTIME="-lrt")
+AC_SUBST(LIBCLOCK_GETTIME)
+
 #
 # glibc/libc 6 new libraries
 #
