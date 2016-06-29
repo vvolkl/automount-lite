@@ -1,4 +1,8 @@
-15/06/2015 autofs-5.1.2
+xx/xx/2016 autofs-5.1.3
+=======================
+- fix release date in CHANGELOG.
+
+15/06/2016 autofs-5.1.2
 =======================
 - update libtirpc workaround for new soname.
 - revert fix libtirpc name clash.
