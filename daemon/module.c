@@ -34,7 +34,7 @@ int load_autofs4_module(void)
 	 */
 	fp = open_fopen_r("/proc/filesystems");
 	if (!fp) {
-		logerr("cannot open /proc/filesystems\n");
+		logerr("cannot open /proc/filesystems");
 		return 0;
 	}
 

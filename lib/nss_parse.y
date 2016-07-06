@@ -169,7 +169,7 @@ int nsswitch_parse(struct list_head *list)
 
 	nsswitch = open_fopen_r(NSSWITCH_FILE);
 	if (!nsswitch) {
-		logerr("couldn't open %s\n", NSSWITCH_FILE);
+		logerr("couldn't open %s", NSSWITCH_FILE);
 		return 1;
 	}
 
