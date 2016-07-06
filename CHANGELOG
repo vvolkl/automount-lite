@@ -2,6 +2,7 @@ xx/xx/2016 autofs-5.1.3
 =======================
 - fix release date in CHANGELOG.
 - build: check for clock_gettime in librt.
+- fix compiler warning in try_remount().
 
 15/06/2016 autofs-5.1.2
 =======================

@@ -1776,16 +1776,15 @@ static int remount_active_mount(struct autofs_point *ap,
 			*ioctlfd = -1;
 		}
 	} else {
-		int ret;
 		/*
 		 * What can I do if we can't remount the existing
 		 * mount(s) (possibly a partial failure), everything
 		 * following will be broken?
 		 */
 		if (type == t_indirect)
-			ret = do_remount_indirect(ap, fd, path);
+			do_remount_indirect(ap, fd, path);
 		else
-			ret = do_remount_direct(ap, fd, path);
+			do_remount_direct(ap, fd, path);
 	}
 
 	debug(ap->logopt, "re-connected to mount %s", path);
