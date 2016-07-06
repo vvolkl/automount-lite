@@ -879,7 +879,7 @@ static int read_config(unsigned int to_syslog, FILE *f, const char *name)
 	char *res;
 
 	new_sec = NULL;
-	while ((res = fgets(buf, MAX_LINE_LEN, f))) {
+	while ((res = fgets(buf, MAX_LINE_LEN + 1, f))) {
 		char *sec, *key, *value;
 
 		if (strlen(res) > MAX_LINE_LEN) {
