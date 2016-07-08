@@ -5,6 +5,7 @@ xx/xx/2016 autofs-5.1.3
 - fix compiler warning in try_remount().
 - drop redundant \n in logerr().
 - Fix size arg of fgets(3).
+- fix libtirpc detection with -Wl,--as-needed.
 
 15/06/2016 autofs-5.1.2
 =======================

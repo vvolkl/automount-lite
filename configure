@@ -3195,9 +3195,9 @@ if test "${with_libtirpc+set}" = set; then :
 
 # save current flags
 af_check_libtirpc_save_cflags="$CFLAGS"
-af_check_libtirpc_save_ldflags="$LDFLAGS"
+af_check_libtirpc_save_libs="$LIBS"
 CFLAGS="$CFLAGS -I/usr/include/tirpc"
-LDFLAGS="$LDFLAGS -ltirpc"
+LIBS="$LIBS -ltirpc"
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -3250,7 +3250,7 @@ done
 
 # restore flags
 CFLAGS="$af_check_libtirpc_save_cflags"
-LDFLAGS="$af_check_libtirpc_save_ldflags"
+LIBS="$af_check_libtirpc_save_libs"
 
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5

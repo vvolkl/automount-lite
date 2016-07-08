@@ -413,9 +413,9 @@ AC_DEFUN([AF_CHECK_LIBTIRPC],
 [
 # save current flags
 af_check_libtirpc_save_cflags="$CFLAGS"
-af_check_libtirpc_save_ldflags="$LDFLAGS"
+af_check_libtirpc_save_libs="$LIBS"
 CFLAGS="$CFLAGS -I/usr/include/tirpc"
-LDFLAGS="$LDFLAGS -ltirpc"
+LIBS="$LIBS -ltirpc"
 
 AC_TRY_LINK(
     [ #include <rpc/rpc.h> ],
@@ -438,7 +438,7 @@ AC_CHECK_FUNCS([getrpcbyname getservbyname])
 
 # restore flags
 CFLAGS="$af_check_libtirpc_save_cflags"
-LDFLAGS="$af_check_libtirpc_save_ldflags"
+LIBS="$af_check_libtirpc_save_libs"
 ])
 
 AC_DEFUN([AF_WITH_LIBTIRPC],
