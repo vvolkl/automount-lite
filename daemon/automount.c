@@ -238,7 +238,7 @@ int rmdir_path(struct autofs_point *ap, const char *path, dev_t dev)
 			crit(ap->logopt, "attempt to remove directory from a "
 			     "non-autofs filesystem!");
 			crit(ap->logopt,
-			     "requestor dev == %llu, \"%s\" owner dev == %llu",
+			     "requester dev == %llu, \"%s\" owner dev == %llu",
 			     dev, buf, st.st_dev);
 			return -1;
 		}

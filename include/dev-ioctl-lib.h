@@ -46,7 +46,7 @@ struct ioctl_ops {
 	int (*setpipefd)(unsigned int, int, int);
 	int (*catatonic)(unsigned int, int);
 	int (*timeout)(unsigned int, int, time_t);
-	int (*requestor)(unsigned int, int, const char *, uid_t *, gid_t *);
+	int (*requester)(unsigned int, int, const char *, uid_t *, gid_t *);
 	int (*expire)(unsigned int, int, const char *, unsigned int);
 	int (*askumount)(unsigned int, int, unsigned int *);
 	int (*ismountpoint)(unsigned int, int, const char *, unsigned int *);

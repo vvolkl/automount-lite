@@ -56,7 +56,7 @@ static int dev_ioctl_send_fail(unsigned int, int, unsigned int, int);
 static int dev_ioctl_setpipefd(unsigned int, int, int);
 static int dev_ioctl_catatonic(unsigned int, int);
 static int dev_ioctl_timeout(unsigned int, int, time_t);
-static int dev_ioctl_requestor(unsigned int, int, const char *, uid_t *, gid_t *);
+static int dev_ioctl_requester(unsigned int, int, const char *, uid_t *, gid_t *);
 static int dev_ioctl_expire(unsigned int, int, const char *, unsigned int);
 static int dev_ioctl_askumount(unsigned int, int, unsigned int *);
 static int dev_ioctl_ismountpoint(unsigned int, int, const char *, unsigned int *);
@@ -85,7 +85,7 @@ static struct ioctl_ops dev_ioctl_ops = {
 	.setpipefd	= dev_ioctl_setpipefd,
 	.catatonic	= dev_ioctl_catatonic,
 	.timeout	= dev_ioctl_timeout,
-	.requestor	= dev_ioctl_requestor,
+	.requester	= dev_ioctl_requester,
 	.expire		= dev_ioctl_expire,
 	.askumount	= dev_ioctl_askumount,
 	.ismountpoint	= dev_ioctl_ismountpoint
@@ -103,7 +103,7 @@ static struct ioctl_ops ioctl_ops = {
 	.setpipefd	= NULL,
 	.catatonic	= ioctl_catatonic,
 	.timeout	= ioctl_timeout,
-	.requestor	= NULL,
+	.requester	= NULL,
 	.expire		= ioctl_expire,
 	.askumount	= ioctl_askumount,
 	.ismountpoint	= NULL
@@ -261,7 +261,7 @@ static void free_dev_ioctl_open(struct autofs_dev_ioctl *ioctl)
 
 /*
  * Allocate a parameter struct for misc device ioctl which includes
- * a path. This is used when getting the last mount requestor uid
+ * a path. This is used when getting the last mount requester uid
  * and gid and when checking if a path within the autofs filesystem
  * is a mount point. We add the path to the end of the struct.
  */
@@ -607,7 +607,7 @@ static int ioctl_timeout(unsigned int logopt, int ioctlfd, time_t timeout)
  * process uid and gid (or string variations of them) for mount
  * lookups within the map entry.
  */
-static int dev_ioctl_requestor(unsigned int logopt,
+static int dev_ioctl_requester(unsigned int logopt,
 			       int ioctlfd, const char *path,
 			       uid_t *uid, gid_t *gid)
 {

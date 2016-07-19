@@ -425,8 +425,8 @@ struct pending_args {
 	char name[PATH_MAX];		/* Name field of the request */
 	dev_t dev;			/* device number of mount */
 	unsigned int len;		/* Name field len */
-	uid_t uid;			/* uid of requestor */
-	gid_t gid;			/* gid of requestor */
+	uid_t uid;			/* uid of requester */
+	gid_t gid;			/* gid of requester */
 	unsigned long wait_queue_token;	/* Associated kernel wait token */
 };
 

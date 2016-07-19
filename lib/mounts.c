@@ -1602,7 +1602,7 @@ static int do_remount_direct(struct autofs_point *ap, int fd, const char *path)
 	gid_t gid;
 	int ret;
 
-	ops->requestor(ap->logopt, fd, path, &uid, &gid);
+	ops->requester(ap->logopt, fd, path, &uid, &gid);
 	if (uid != -1 && gid != -1)
 		set_tsd_user_vars(ap->logopt, uid, gid);
 
@@ -1671,7 +1671,7 @@ static int do_remount_indirect(struct autofs_point *ap, int fd, const char *path
 			}
 		}
 
-		ops->requestor(ap->logopt, fd, buf, &uid, &gid);
+		ops->requester(ap->logopt, fd, buf, &uid, &gid);
 		if (uid != -1 && gid != -1)
 			set_tsd_user_vars(ap->logopt, uid, gid);
 
