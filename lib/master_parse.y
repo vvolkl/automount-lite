@@ -811,14 +811,22 @@ int master_parse_entry(const char *buffer, unsigned int default_timeout, unsigne
 
 	if (format && !strcmp(format, "amd")) {
 		unsigned int loglevel = conf_amd_get_log_options();
+		unsigned int flags = conf_amd_get_flags(path);
+
 		if (loglevel <= LOG_DEBUG && loglevel > LOG_INFO)
 			logopt = LOGOPT_DEBUG;
 		else if (loglevel <= LOG_INFO && loglevel > LOG_ERR)
 			logopt = LOGOPT_VERBOSE;
-		/* amd mounts don't support browse mode */
-		ghost = 0;
-	}
 
+		/* It isn't possible to provide the fullybrowsable amd
+		 * browsing functionality within the autofs framework.
+		 * This flag will not be set if browsable_dirs = full
+		 * in the configuration or fullybrowsable is present as
+		 * an option.
+		 */
+		if (flags & CONF_BROWSABLE_DIRS)
+			ghost = 1;
+	}
 
 	if (timeout < 0) {
 		/*

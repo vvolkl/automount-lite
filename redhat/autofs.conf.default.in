@@ -274,8 +274,6 @@ mount_nfs_default_protocol = 4
 #	is a sensible option to implement and that will be
 #	done.
 #
-# browsable_dirs - not yet implemented.
-#
 # exec_map_timeout - a timeout is not currently used for
 #	for program maps, might be implemented.
 #
@@ -317,6 +315,11 @@ mount_nfs_default_protocol = 4
 #	to the way the autofs kernel module performs expiry. It
 #	takes its default value from the autofs internal default
 #	of 600 seconds.
+#
+# browsable_dirs - make map keys visible in directory listings.
+#	Note that support for the "fullybrowsable" option cannot
+#	be added using the existing kernel to user space autofs
+#	implementation.
 #
 # autofs_use_lofs - if set to "yes" autofs will attempt to use bind
 #	mounts for type "auto" when possible.

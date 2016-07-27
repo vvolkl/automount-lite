@@ -121,11 +121,13 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 			while (*comma != '\0' && *comma != ',')
 				comma++;
 
-			if (_strncmp("nobrowse", cp, 8) == 0)
+			if (_strncmp("nobrowse", cp, 8) == 0 ||
+			    _strncmp("nobrowsable", cp, 11) == 0)
 				ghost = 0;
 			else if (_strncmp("nobind", cp, 6) == 0)
 				nobind = 1;
-			else if (_strncmp("browse", cp, 6) == 0)
+			else if (_strncmp("browse", cp, 6) == 0 ||
+				 _strncmp("browsable", cp, 9) == 0)
 				ghost = 1;
 			else if (_strncmp("symlink", cp, 7) == 0)
 				symlnk = 1;
@@ -287,8 +289,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 			nap->pref = am_entry->pref;
 			am_entry->pref = NULL;
 		}
-		/* amd mounts don't support browse mode */
-		nap->flags &= ~MOUNT_FLAG_GHOST;
 	}
 
 	if (handle_mounts_startup_cond_init(&suc)) {

@@ -355,7 +355,12 @@ and that will be done.
 .TP
 .B browsable_dirs
 .br
-Not yet implemented.
+Allow map keys to be shown in directory listings. This option
+can have values of "yes" or "no". The default is "no". A variation
+of this option, "browsable", can be used as a pseudo mount option
+in type "auto" map entries to provide provide browsing funtionality
+in sub-mounts. The amd "browsable_dirs = full" option cannot be
+implemented within the current autofs framework and is not supported.
 .TP
 .B exec_map_timeout
 .br

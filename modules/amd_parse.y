@@ -433,8 +433,7 @@ option_assignment: MAP_OPTION OPTION_ASSIGN FS_TYPE
 
 options: OPTION
 	{
-		if (!strcmp($1, "browsable") ||
-		    !strcmp($1, "fullybrowsable") ||
+		if (!strcmp($1, "fullybrowsable") ||
 		    !strcmp($1, "nounmount") ||
 		    !strcmp($1, "unmount")) {
 			sprintf(msg_buf, "option %s is not currently "

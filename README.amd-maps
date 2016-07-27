@@ -101,7 +101,7 @@ What hasn't been implemented
 ----------------------------
 
 The configuration options fully_qualified_hosts, unmount_on_exit and
-browsable_dirs (and a couple of others) aren't implemented.
+browsable_dirs = full (and a couple of others) aren't implemented.
 
 Map types (sources) ndbm, passwd are not implemented.
 The map source "sss" can't be used for amd format maps.

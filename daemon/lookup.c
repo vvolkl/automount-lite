@@ -663,6 +663,56 @@ int lookup_nss_read_map(struct autofs_point *ap, struct map_source *source, time
 	return 0;
 }
 
+static char *make_browse_path(unsigned int logopt,
+			      const char *root, const char *key,
+			      const char *prefix)
+{
+	unsigned int l_prefix;
+	unsigned int k_len, r_len;
+	char *k_start;
+	char *path;
+
+	k_start = (char *) key;
+	k_len = strlen(key);
+	l_prefix = 0;
+
+	if (prefix) {
+		l_prefix = strlen(prefix);
+
+		if (l_prefix > k_len)
+			return NULL;
+
+		/* If the prefix doesn't match the beginning
+		 * of the key this entry isn't a sub directory
+		 * at this level.
+		 */
+		if (strncmp(key, prefix, l_prefix))
+			return NULL;
+
+		/* Directory entry starts following the prefix */
+		k_start += l_prefix;
+	}
+
+	/* No remaining "/" allowed here */
+	if (strchr(k_start, '/'))
+		return NULL;
+
+	r_len = strlen(root);
+
+	if ((r_len + strlen(k_start)) > KEY_MAX_LEN)
+		return NULL;
+
+	path = malloc(r_len + k_len + 2);
+	if (!path) {
+		warn(logopt, "failed to allocate full path");
+		return NULL;
+	}
+
+	sprintf(path, "%s/%s", root, k_start);
+
+	return path;
+}
+
 int lookup_ghost(struct autofs_point *ap, const char *root)
 {
 	struct master_mapent *entry = ap->entry;
@@ -706,10 +756,19 @@ int lookup_ghost(struct autofs_point *ap, const char *root)
 			if (!me->mapent)
 				goto next;
 
-			if (!strcmp(me->key, "*"))
+			/* Wildcard cannot be a browse directory and amd map
+			 * keys may end with the wildcard.
+			 */
+			if (strchr(me->key, '*'))
 				goto next;
 
+			/* This will also take care of amd "/defaults" entry as
+			 * amd map keys are not allowd to start with "/"
+			 */
 			if (*me->key == '/') {
+				if (map->flags & MAP_FLAG_FORMAT_AMD)
+					goto next;
+
 				/* It's a busy multi-mount - leave till next time */
 				if (list_empty(&me->multi_list))
 					error(ap->logopt,
@@ -717,17 +776,26 @@ int lookup_ghost(struct autofs_point *ap, const char *root)
 				goto next;
 			}
 
-			fullpath = malloc(strlen(me->key) + strlen(root) + 3);
-			if (!fullpath) {
-				warn(ap->logopt, "failed to allocate full path");
+			fullpath = make_browse_path(ap->logopt,
+						    root, me->key, ap->pref);
+			if (!fullpath)
 				goto next;
-			}
-			sprintf(fullpath, "%s/%s", root, me->key);
 
 			ret = stat(fullpath, &st);
 			if (ret == -1 && errno != ENOENT) {
 				char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 				warn(ap->logopt, "stat error %s", estr);
+				free(fullpath);
+				goto next;
+			}
+
+			/* Directory already exists? */
+			if (!ret) {
+				/* Shouldn't need this
+				me->dev = st.st_dev;
+				me->ino = st.st_ino;
+				*/
+				debug(ap->logopt, "me->dev %d me->ino %d", me->dev, me->ino);
 				free(fullpath);
 				goto next;
 			}
@@ -1241,28 +1309,23 @@ void lookup_close_lookup(struct autofs_point *ap)
 	return;
 }
 
-static char *make_fullpath(const char *root, const char *key)
+static char *make_fullpath(struct autofs_point *ap, const char *key)
 {
+	char *path = NULL;
 	int l;
-	char *path;
 
-	if (*key == '/') {
+	if (*key != '/')
+		path = make_browse_path(ap->logopt, ap->path, key, ap->pref);
+	else {
 		l = strlen(key) + 1;
 		if (l > KEY_MAX_LEN)
-			return NULL;
+			goto out;
 		path = malloc(l);
 		if (!path)
-			return NULL;
+			goto out;
 		strcpy(path, key);
-	} else {
-		l = strlen(key) + 1 + strlen(root) + 1;
-		if (l > KEY_MAX_LEN)
-			return NULL;
-		path = malloc(l);
-		if (!path)
-			return NULL;
-		sprintf(path, "%s/%s", root, key);
 	}
+out:
 	return path;
 }
 
@@ -1293,13 +1356,14 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 
 		key = strdup(me->key);
 		me = cache_enumerate(mc, me);
-		if (!key || !strcmp(key, "*")) {
+		/* Don't consider any entries with a wildcard */
+		if (!key || strchr(key, '*')) {
 			if (key)
 				free(key);
 			continue;
 		}
 
-		path = make_fullpath(ap->path, key);
+		path = make_fullpath(ap, key);
 		if (!path) {
 			warn(ap->logopt, "can't malloc storage for path");
 			free(key);

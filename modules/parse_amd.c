@@ -930,7 +930,7 @@ static int do_auto_mount(struct autofs_point *ap, const char *name,
 	}
 
 	return do_mount(ap, ap->path,
-			name, strlen(name), target, "autofs", NULL);
+			name, strlen(name), target, "autofs", entry->opts);
 }
 
 static int do_link_mount(struct autofs_point *ap, const char *name,
