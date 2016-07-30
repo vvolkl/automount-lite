@@ -420,7 +420,7 @@ int count_mounts(struct autofs_point *ap, const char *path, dev_t dev)
 	counter.count = 0;
 	counter.dev = dev;
 	
-	if (walk_tree(path, counter_fn, 0, ap, &counter) == -1)
+	if (walk_tree(path, counter_fn, 1, ap, &counter) == -1)
 		return -1;
 
 	return counter.count;
