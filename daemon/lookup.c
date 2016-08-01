@@ -786,7 +786,7 @@ static int lookup_amd_instance(struct autofs_point *ap,
 		return NSS_STATUS_UNKNOWN;
 	}
 
-	m_key = malloc(strlen(ap->path) + strlen(me->multi->key) + 1);
+	m_key = malloc(strlen(ap->path) + strlen(me->multi->key) + 2);
 	if (!m_key) {
 		error(ap->logopt,
 		     "failed to allocate storage for search key");
