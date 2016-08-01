@@ -638,6 +638,7 @@ static inline time_t monotonic_time(time_t *t)
 /* Expire alarm handling routines */
 int alarm_start_handler(void);
 int alarm_add(struct autofs_point *ap, time_t seconds);
+int conditional_alarm_add(struct autofs_point *ap, time_t seconds);
 void alarm_delete(struct autofs_point *ap);
 
 #endif

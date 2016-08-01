@@ -1208,6 +1208,19 @@ void mnts_set_mounted_mount(struct autofs_point *ap, const char *name)
 	}
 }
 
+unsigned int mnts_has_mounted_mounts(struct autofs_point *ap)
+{
+	unsigned int has_mounted_mounts = 0;
+
+	mnts_hash_mutex_lock();
+	if (list_empty(&ap->mounts))
+		goto done;
+	has_mounted_mounts = 1;
+done:
+	mnts_hash_mutex_unlock();
+	return has_mounted_mounts;
+}
+
 struct node {
 	struct mnt_list *mnt;
 	struct node *left;
@@ -1907,6 +1920,9 @@ static int do_remount_direct(struct autofs_point *ap,
 		mnts_set_mounted_mount(ap, path);
 
 		info(ap->logopt, "re-connected to %s", path);
+
+		if (!ap->submount)
+			conditional_alarm_add(ap, ap->exp_runfreq);
 	} else {
 		status = REMOUNT_FAIL;
 		info(ap->logopt, "failed to re-connect %s", path);
@@ -1980,6 +1996,9 @@ static int do_remount_indirect(struct autofs_point *ap, const unsigned int type,
 			mnts_set_mounted_mount(ap, buf);
 
 			info(ap->logopt, "re-connected to %s", buf);
+
+			if (!ap->submount)
+				conditional_alarm_add(ap, ap->exp_runfreq);
 		} else {
 			status = REMOUNT_FAIL;
 			info(ap->logopt, "failed to re-connect %s", buf);

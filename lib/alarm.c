@@ -41,7 +41,7 @@ do { \
 } while (0)
 
 /* Insert alarm entry on ordered list. */
-int alarm_add(struct autofs_point *ap, time_t seconds)
+int __alarm_add(struct autofs_point *ap, time_t seconds)
 {
 	struct list_head *head;
 	struct list_head *p;
@@ -61,8 +61,6 @@ int alarm_add(struct autofs_point *ap, time_t seconds)
 	new->ap = ap;
 	new->cancel = 0;
 	new->time = now + seconds;
-
-	alarm_lock();
 
 	head = &alarms;
 
@@ -97,9 +95,42 @@ int alarm_add(struct autofs_point *ap, time_t seconds)
 			fatal(status);
 	}
 
+	return 1;
+}
+
+int alarm_add(struct autofs_point *ap, time_t seconds)
+{
+	int status;
+
+	alarm_lock();
+	status = __alarm_add(ap, seconds);
 	alarm_unlock();
 
-	return 1;
+	return status;
+}
+
+static int __alarm_exists(struct autofs_point *ap)
+{
+	struct list_head *head;
+	struct list_head *p;
+
+	head = &alarms;
+
+	if (list_empty(head))
+		return 0;
+
+	p = head->next;
+	while (p != head) {
+		struct alarm *this;
+
+		this = list_entry(p, struct alarm, list);
+		p = p->next;
+
+		if (ap == this->ap)
+			return 1;
+	}
+
+	return 0;
 }
 
 void alarm_delete(struct autofs_point *ap)
@@ -150,6 +181,24 @@ void alarm_delete(struct autofs_point *ap)
 	alarm_unlock();
 
 	return;
+}
+
+int conditional_alarm_add(struct autofs_point *ap, time_t seconds)
+{
+	int status;
+
+	if (!mnts_has_mounted_mounts(ap))
+		return 1;
+
+	alarm_lock();
+	if (__alarm_exists(ap)) {
+		alarm_unlock();
+		return 1;
+	}
+	status = __alarm_add(ap, seconds);
+	alarm_unlock();
+
+	return status;
 }
 
 static void *alarm_handler(void *arg)
