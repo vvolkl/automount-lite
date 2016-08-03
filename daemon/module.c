@@ -38,7 +38,7 @@ int load_autofs4_module(void)
 		return 0;
 	}
 
-	while (fgets(buf, PATH_MAX - 1, fp)) {
+	while (fgets(buf, sizeof(buf), fp)) {
 		if (strstr(buf, "autofs")) {
 			fclose(fp);
 			return 1;
