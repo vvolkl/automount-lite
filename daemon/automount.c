@@ -1901,7 +1901,6 @@ static void usage(void)
 
 static void show_build_info(void)
 {
-	char buf[2048];
 	int count = 0;
 
 	printf("\nLinux automount version %s\n", version);
@@ -1912,8 +1911,6 @@ static void show_build_info(void)
 	printf("\tmodules dir:\t%s\n", libdir);
 
 	printf("\nCompile options:\n  ");
-
-	memset(buf, 0, 2048);
 
 #ifndef ENABLE_MOUNT_LOCKING
 	printf("DISABLE_MOUNT_LOCKING ");
