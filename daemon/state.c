@@ -575,7 +575,7 @@ static unsigned int st_readmap(struct autofs_point *ap)
 
 	ra = malloc(sizeof(struct readmap_args));
 	if (!ra) {
-		error(ap->logopt, "failed to malloc reamap cond struct");
+		error(ap->logopt, "failed to malloc readmap cond struct");
 		/* It didn't work: return to ready */
 		st_ready(ap);
 		if (!ap->submount)
@@ -600,7 +600,7 @@ static unsigned int st_readmap(struct autofs_point *ap)
 
 	status = pthread_create(&thid, &th_attr_detached, do_readmap, ra);
 	if (status) {
-		error(ap->logopt, "read map thread create failed");
+		error(ap->logopt, "readmap thread create failed");
 		st_readmap_cleanup(ra);
 		free(ra);
 		/* It didn't work: return to ready */

@@ -945,7 +945,7 @@ static int set_log_priority(const char *path, int priority)
 
 	if (priority > LOG_DEBUG || priority < LOG_EMERG) {
 		fprintf(stderr, "Log priority %d is invalid.\n", priority);
-		fprintf(stderr, "Please spcify a number in the range 0-7.\n");
+		fprintf(stderr, "Please specify a number in the range 0-7.\n");
 		return -1;
 	}
 
@@ -1078,7 +1078,7 @@ int do_expire(struct autofs_point *ap, const char *name, int namelen)
 	}
 
 	if (!len) {
-		crit(ap->logopt, "path to long for buffer");
+		crit(ap->logopt, "path too long for buffer");
 		return 1;
 	}
 
