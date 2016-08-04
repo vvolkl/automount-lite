@@ -2194,16 +2194,16 @@ $as_echo "$searchpath" >&6; }
 #
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Linux proc filesystem" >&5
 $as_echo_n "checking for Linux proc filesystem... " >&6; }
-if test "x`cat /proc/sys/kernel/ostype 2>&-`" = "xLinux"
-then
-	linux_procfs=yes
+if ${ac_cv_linux_procfs+:} false; then :
+  $as_echo_n "(cached) " >&6
 else
-	linux_procfs=no
+  ac_cv_linux_procfs=no
+	 test "x`cat /proc/sys/kernel/ostype 2>&-`" = "xLinux" && ac_cv_linux_procfs=yes
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $linux_procfs" >&5
-$as_echo "$linux_procfs" >&6; }
-if test $linux_procfs = yes
-then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_linux_procfs" >&5
+$as_echo "$ac_cv_linux_procfs" >&6; }
+ if test $ac_cv_linux_procfs = yes
+ then
 
 $as_echo "#define HAVE_LINUX_PROCFS 1" >>confdefs.h
 

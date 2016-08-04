@@ -80,16 +80,11 @@ dnl
 dnl Check for the Linux /proc filesystem
 dnl --------------------------------------------------------------------------
 AC_DEFUN(AF_LINUX_PROCFS,
-[AC_MSG_CHECKING(for Linux proc filesystem)
-if test "x`cat /proc/sys/kernel/ostype 2>&-`" = "xLinux"
-then
-	linux_procfs=yes
-else
-	linux_procfs=no
-fi
-AC_MSG_RESULT($linux_procfs)
-if test $linux_procfs = yes
-then
+[AC_CACHE_CHECK([for Linux proc filesystem], [ac_cv_linux_procfs],
+	[ac_cv_linux_procfs=no
+	 test "x`cat /proc/sys/kernel/ostype 2>&-`" = "xLinux" && ac_cv_linux_procfs=yes])
+ if test $ac_cv_linux_procfs = yes
+ then
 	AC_DEFINE(HAVE_LINUX_PROCFS, 1,
 		[Define if you have the Linux /proc filesystem.])
 fi])
