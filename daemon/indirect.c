@@ -97,7 +97,12 @@ static int do_mount_autofs_indirect(struct autofs_point *ap, const char *root)
 	int ret;
 	int err;
 
-	ap->exp_runfreq = (timeout + CHECK_RATIO - 1) / CHECK_RATIO;
+	/* If the map is being shared the exp_timeout can't be inherited
+	 * from the map source since it may be different so the autofs
+	 * point exp_runfreq must have already been set.
+	 */
+	if (ap->entry->maps->ref <= 1)
+		ap->exp_runfreq = (timeout + CHECK_RATIO - 1) / CHECK_RATIO;
 
 	if (ops->version && !do_force_unlink) {
 		ap->flags |= MOUNT_FLAG_REMOUNT;

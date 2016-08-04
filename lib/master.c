@@ -181,6 +181,7 @@ master_add_map_source(struct master_mapent *entry,
 	if (!source)
 		return NULL;
 	memset(source, 0, sizeof(struct map_source));
+	source->ref = 1;
 
 	if (type) {
 		ntype = strdup(type);
@@ -232,6 +233,8 @@ master_add_map_source(struct master_mapent *entry,
 
 		this = __master_find_map_source(entry, type, format, argc, tmpargv);
 		if (this) {
+			error(entry->ap->logopt,
+			      "map source used without taking reference");
 			this->age = age;
 			master_free_map_source(source, 0);
 			master_source_unlock(entry);
@@ -330,8 +333,27 @@ struct map_source *master_find_map_source(struct master_mapent *entry,
 	return source;
 }
 
+struct map_source *
+master_get_map_source(struct master_mapent *entry,
+		      const char *type, const char *format,
+		      int argc, const char **argv)
+{
+	struct map_source *source = NULL;
+
+	master_source_readlock(entry);
+	source = __master_find_map_source(entry, type, format, argc, argv);
+	if (source)
+		source->ref++;
+	master_source_unlock(entry);
+
+	return source;
+}
+
 static void __master_free_map_source(struct map_source *source, unsigned int free_cache)
 {
+	/* instance map sources are not ref counted */
+	if (source->ref && --source->ref)
+		return;
 	if (source->type)
 		free(source->type);
 	if (source->format)

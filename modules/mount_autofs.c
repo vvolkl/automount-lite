@@ -208,30 +208,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	}
 	if (info->map)
 		argv[0] = info->map;
-	/*
-	 * If the parent map format is amd and the format isn't
-	 * specified in the map entry set it from the parent map
-	 * source.
-	 */
-	if (!info->format && ap->entry->maps) {
-		struct map_source *s = ap->entry->maps;
-		/*
-		 * For amd maps, if the format and source type aren't
-		 * specified try and set them from the parent.
-		 */
-		if (s->flags & MAP_FLAG_FORMAT_AMD) {
-			info->format = strdup("amd");
-			if (!info->format)
-				warn(ap->logopt, MODPREFIX
-				     "failed to set amd map format");
-			if (!info->type && s->type) {
-				info->type = strdup(s->type);
-				if (!info->type)
-					warn(ap->logopt, MODPREFIX
-					     "failed to set amd map type");
-			}
-		}
-	}
 
 	if (options) {
 		p = options;
@@ -245,9 +221,48 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	}
 	argv[argc] = NULL;
 
-	source = master_add_map_source(entry,
-				       info->type, info->format,
-				       monotonic_time(NULL), argc, argv);
+	/*
+	 * For amd type "auto" the map is often re-used so check
+	 * if the the parent map can be used and use it if it
+	 * matches.
+	 *
+	 * Also if the parent map format is amd and the format
+	 * isn't specified in the map entry set it from the parent
+	 * map source.
+	 */
+	source = NULL;
+	if (ap->entry->maps && ap->entry->maps->flags & MAP_FLAG_FORMAT_AMD) {
+		struct map_source *s = ap->entry->maps;
+
+		/*
+		 * For amd maps, if the format and source type aren't
+		 * specified try and set them from the parent.
+		 */
+		if (!info->format) {
+			info->format = strdup("amd");
+			if (!info->format)
+				warn(ap->logopt, MODPREFIX
+				     "failed to set amd map format");
+			if (!info->type && s->type) {
+				info->type = strdup(s->type);
+				if (!info->type)
+					warn(ap->logopt, MODPREFIX
+					     "failed to set amd map type");
+			}
+		}
+
+		source = master_get_map_source(ap->entry,
+					       info->type, info->format,
+					       argc, argv);
+		if (source)
+			entry->maps = source;
+	}
+
+	if (!source)
+		source = master_add_map_source(entry,
+					       info->type, info->format,
+					       monotonic_time(NULL),
+					       argc, argv);
 	if (!source) {
 		error(ap->logopt,
 		      MODPREFIX "failed to add map source to entry");
@@ -256,7 +271,13 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 		return 1;
 	}
 	free_map_type_info(info);
-	source->exp_timeout = timeout;
+	/* The exp_timeout can't be inherited if the map is shared, so
+	 * the autofs point exp_runfreq must be set here.
+	 */
+	if (source->ref <= 1)
+		source->exp_timeout = timeout;
+	else
+		nap->exp_runfreq = (timeout + CHECK_RATIO - 1) / CHECK_RATIO;
 
 	mounts_mutex_lock(ap);
 

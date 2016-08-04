@@ -23,6 +23,7 @@
 #define MAP_FLAG_FORMAT_AMD	0x0001
 
 struct map_source {
+	unsigned int ref;
 	unsigned int flags;
 	char *type;
 	char *format;
@@ -89,6 +90,8 @@ struct map_source *
 master_add_map_source(struct master_mapent *, char *, char *, time_t, int, const char **);
 struct map_source *
 master_find_map_source(struct master_mapent *, const char *, const char *, int, const char **);
+struct map_source *
+master_get_map_source(struct master_mapent *, const char *, const char *, int, const char **);
 void master_free_map_source(struct map_source *, unsigned int);
 struct map_source *
 master_find_source_instance(struct map_source *, const char *, const char *, int, const char **);

@@ -37,6 +37,7 @@ xx/xx/2016 autofs-5.1.3
 - set autofs mounts catatonic at exit.
 - honor last rw in mount options when doing a bind mount.
 - fix typos in README.amd-maps.
+- add ref counting to struct map_source.
 
 15/06/2016 autofs-5.1.2
 =======================
