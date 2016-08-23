@@ -68,6 +68,7 @@ xx/xx/2020 autofs-5.1.7
 - only add expre alarm for active mounts.
 - move submount check into conditional_alarm_add().
 - move lib/master.c to daemon/master.c.
+- use master_list_empty() for list empty check.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

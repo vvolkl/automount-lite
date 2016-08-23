@@ -1110,7 +1110,7 @@ int master_read_master(struct master *master, time_t age)
 			master_mount_mounts(master, age);
 	}
 
-	if (list_empty(&master->mounts))
+	if (__master_list_empty(master))
 		warn(logopt, "no mounts in table");
 
 	master_mutex_unlock();
@@ -1625,7 +1625,7 @@ int dump_map(struct master *master, const char *type, const char *name)
 {
 	struct list_head *p, *head;
 
-	if (list_empty(&master->mounts)) {
+	if (__master_list_empty(master)) {
 		printf("no master map entries found\n");
 		return 1;
 	}
@@ -1743,7 +1743,7 @@ int master_show_mounts(struct master *master)
 		printf("global options %s be appended to map entries\n", append);
 	}
 
-	if (list_empty(&master->mounts)) {
+	if (__master_list_empty(master)) {
 		printf("no master map entries found\n\n");
 		return 1;
 	}
@@ -1831,13 +1831,22 @@ int master_show_mounts(struct master *master)
 	return 1;
 }
 
-int master_list_empty(struct master *master)
+int __master_list_empty(struct master *master)
 {
 	int res = 0;
 
-	master_mutex_lock();
 	if (list_empty(&master->mounts))
 		res = 1;
+
+	return res;
+}
+
+int master_list_empty(struct master *master)
+{
+	int res;
+
+	master_mutex_lock();
+	res = __master_list_empty(master);
 	master_mutex_unlock();
 
 	return res;
@@ -1859,7 +1868,8 @@ int master_done(struct master *master)
 		master_free_mapent_sources(entry, 1);
 		master_free_mapent(entry);
 	}
-	if (list_empty(&master->mounts))
+
+	if (__master_list_empty(master))
 		res = 1;
 
 	return res;
@@ -1872,7 +1882,7 @@ unsigned int master_get_logopt(void)
 
 int master_kill(struct master *master)
 {
-	if (!list_empty(&master->mounts))
+	if (!master_list_empty(master))
 		return 0;
 
 	if (master->name)

@@ -123,6 +123,7 @@ int master_mount_mounts(struct master *, time_t);
 int dump_map(struct master *, const char *, const char *);
 int master_show_mounts(struct master *);
 unsigned int master_get_logopt(void);
+int __master_list_empty(struct master *);
 int master_list_empty(struct master *);
 int master_done(struct master *);
 int master_kill(struct master *);
