@@ -49,6 +49,7 @@ xx/xx/2018 autofs-5.1.5
 - move close stdio descriptors to become_daemon().
 - add systemd service command line option.
 - refactor negative map entry check.
+- remove unused function dump_master().
 
 19/12/2017 autofs-5.1.4
 - fix spec file url.
