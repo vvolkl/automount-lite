@@ -108,6 +108,7 @@
 #define NAME_AMD_MAP_DEFAULTS			"map_defaults"
 #define NAME_AMD_MAP_OPTIONS			"map_options"
 #define NAME_AMD_MAP_RELOAD_INTERVAL		"map_reload_interval"
+#define NAME_AMD_MAP_NAME			"map_name"
 #define NAME_AMD_MAP_TYPE			"map_type"
 #define NAME_AMD_MOUNT_TYPE			"mount_type"
 #define NAME_AMD_PID_FILE			"pid_file"
@@ -1930,6 +1931,15 @@ char *conf_amd_get_map_defaults(const char *section)
 		tmp = conf_get_string(section, NAME_AMD_MAP_DEFAULTS);
 	if (!tmp)
 		tmp = conf_get_string(amd_gbl_sec, NAME_AMD_MAP_DEFAULTS);
+
+	return tmp;
+}
+
+char *conf_amd_get_map_name(const char *section)
+{
+	char *tmp = NULL;
+	if (section)
+		tmp = conf_get_string(section, NAME_AMD_MAP_NAME);
 
 	return tmp;
 }

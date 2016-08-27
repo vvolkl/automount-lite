@@ -194,6 +194,7 @@ char *conf_amd_get_nfs_proto(void);
 char *conf_amd_get_nis_domain(void);
 unsigned int conf_amd_set_nis_domain(const char *);
 char *conf_amd_get_map_defaults(const char *);
+char *conf_amd_get_map_name(const char *);
 char *conf_amd_get_map_type(const char *);
 char *conf_amd_get_search_path(const char *);
 unsigned int conf_amd_get_dismount_interval(const char *);
