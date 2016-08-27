@@ -771,6 +771,81 @@ static struct conf_option *conf_lookup(const char *section, const char *key)
 	return co;
 }
 
+static char **conf_enumerate_amd_mount_sections(void)
+{
+	struct conf_option *this;
+	unsigned int count;
+	char **paths;
+	char *last;
+	int i, j;
+
+	last = NULL;
+	count = 0;
+	for (i = 0; i < CFG_TABLE_SIZE; i++) {
+		if (!config->hash[i])
+			continue;
+
+		this = config->hash[i];
+		while (this) {
+			/* Only amd mount section names begin with '/' */
+			if (*this->section != '/') {
+				this = this->next;
+				continue;
+			}
+
+			if (!last ||
+			   strcmp(this->section, last))
+				count ++;
+			last = this->section;
+			this = this->next;
+		}
+	}
+
+	if (!count)
+		return NULL;
+
+	paths = (char **) malloc(((count + 1) * sizeof(char *)));
+	if (!paths)
+		return NULL;
+	memset(paths, 0, ((count + 1) * sizeof(char *)));
+
+	last = NULL;
+	j = 0;
+
+	for (i = 0; i < CFG_TABLE_SIZE; i++) {
+		if (!config->hash[i])
+			continue;
+
+		this = config->hash[i];
+		while (this) {
+			/* Only amd mount section names begin with '/' */
+			if (*this->section != '/') {
+				this = this->next;
+				continue;
+			}
+
+			if (!last ||
+			    strcmp(this->section, last)) {
+				char *path = strdup(this->section);
+				if (!path)
+					goto fail;
+				paths[j++] = path;
+			}
+			last = this->section;
+			this = this->next;
+		}
+	}
+
+	return paths;
+
+fail:
+	i = 0;
+	while (paths[i])
+		free(paths[i++]);
+	free(paths);
+	return NULL;
+}
+
 static unsigned int conf_section_exists(const char *section)
 {
 	struct conf_option *co;
@@ -1775,6 +1850,11 @@ unsigned int defaults_get_sss_master_map_wait(void)
 unsigned int conf_amd_mount_section_exists(const char *section)
 {
 	return conf_section_exists(section);
+}
+
+char **conf_amd_get_mount_paths(void)
+{
+	return conf_enumerate_amd_mount_sections();
 }
 
 char *conf_amd_get_arch(void)

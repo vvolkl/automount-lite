@@ -174,6 +174,7 @@ unsigned int defaults_disable_not_found_message(void);
 unsigned int defaults_get_sss_master_map_wait(void);
 
 unsigned int conf_amd_mount_section_exists(const char *);
+char **conf_amd_get_mount_paths(void);
 char *conf_amd_get_arch(void);
 char *conf_amd_get_karch(void);
 char *conf_amd_get_os(void);
