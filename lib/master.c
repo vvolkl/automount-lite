@@ -911,6 +911,114 @@ struct master *master_new(const char *name, unsigned int timeout, unsigned int g
 	return master;
 }
 
+static void master_add_amd_mount_section_mounts(struct master *master, time_t age)
+{
+	unsigned int m_logopt = master->logopt;
+	struct master_mapent *entry;
+	struct map_source *source;
+	unsigned int loglevel;
+	unsigned int logopt;
+	unsigned int flags;
+	char *argv[2];
+	char **paths;
+	int ret;
+	int i;
+
+	loglevel = conf_amd_get_log_options();
+
+	paths = conf_amd_get_mount_paths();
+	if (!paths)
+		return;
+
+	i = 0;
+	while (paths[i]) {
+		const char *path = paths[i];
+		unsigned int ghost = 0;
+		char *type = NULL;
+		char *map = NULL;
+
+		entry = master_find_mapent(master, path);
+		if (entry) {
+			info(m_logopt,
+			     "ignoring duplicate amd section mount %s",
+			     path);
+			goto next;
+		}
+
+		map = conf_amd_get_map_name(path);
+		if (!map) {
+			error(m_logopt,
+			      "failed to get map name for amd section mount %s",
+			      path);
+			goto next;
+		}
+
+		entry = master_new_mapent(master, path, age);
+		if (!entry) {
+			error(m_logopt,
+			      "failed to allocate new amd section mount %s",
+			      path);
+			goto next;
+		}
+
+		logopt = m_logopt;
+		if (loglevel <= LOG_DEBUG && loglevel > LOG_INFO)
+			logopt = LOGOPT_DEBUG;
+		else if (loglevel <= LOG_INFO && loglevel > LOG_ERR)
+			logopt = LOGOPT_VERBOSE;
+
+		/* It isn't possible to provide the fullybrowsable amd
+		 * browsing functionality within the autofs framework.
+		 * This flag will not be set if browsable_dirs = full
+		 * in the configuration or fullybrowsable is present as
+		 * an option.
+		 */
+		flags = conf_amd_get_flags(path);
+		if (flags & CONF_BROWSABLE_DIRS)
+			ghost = 1;
+
+		ret = master_add_autofs_point(entry, logopt, 0, ghost, 0);
+		if (!ret) {
+			error(m_logopt, "failed to add autofs_point");
+			master_free_mapent(entry);
+			goto next;
+		}
+
+		type = conf_amd_get_map_type(path);
+		argv[0] = map;
+		argv[1] = NULL;
+
+		source = master_add_map_source(entry, type, "amd",
+					       age, 1, (const char **) argv);
+		if (!source) {
+			error(m_logopt,
+			      "failed to add source for amd section mount %s",
+			      path);
+			master_free_mapent(entry);
+			goto next;
+		}
+
+		source->exp_timeout = conf_amd_get_dismount_interval(path);
+		source->master_line = 0;
+
+		entry->age = age;
+		entry->current = NULL;
+
+		master_add_mapent(master, entry);
+next:
+		if (type)
+			free(type);
+		if (map)
+			free(map);
+		i++;
+	}
+
+	i = 0;
+	while (paths[i])
+		free(paths[i++]);
+	free(paths);
+}
+
 int master_read_master(struct master *master, time_t age, int readall)
 {
 	unsigned int logopt = master->logopt;
@@ -939,6 +1047,7 @@ int master_read_master(struct master *master, time_t age, int readall)
 	master_init_scan();
 	lookup_nss_read_master(master, age);
 	cache_unlock(nc);
+	master_add_amd_mount_section_mounts(master, age);
 	master_mutex_unlock();
 
 	if (!master->read_fail)
