@@ -36,6 +36,7 @@ xx/xx/2016 autofs-5.1.3
 - make set_direct_mount_catatonic() more general.
 - set autofs mounts catatonic at exit.
 - honor last rw in mount options when doing a bind mount.
+- fix typos in README.amd-maps.
 
 15/06/2016 autofs-5.1.2
 =======================

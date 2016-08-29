@@ -7,7 +7,8 @@ The ability to parse amd format maps has been added to autofs.
 How to use amd maps in autofs
 -----------------------------
 
-To add amd map parsing to autofs new "format" module has been added.
+To add amd map parsing to autofs a new "format" module has been added.
+
 To use this new map format module the existing master map syntax is
 used as described below.
 
@@ -20,7 +21,7 @@ For amd format maps this becomes:
 /amd/mp   file,amd:amd.mp
 
 which will use file as the map source and the amd format parser for
-the map. But see the section below on configuration below for how to
+the map. But see the section below on configuration for how to
 eliminate the need to specify "map-type,format" in the master map.
 
 Configuration sub-system changes
@@ -42,18 +43,18 @@ All that's needed to add an existing amd configuration to autofs is to
 add it below the autofs configuration. Apart from changing the amd
 "[ global ]" section name to "[ amd ]" nothing else should need to be
 changed. However, quite a few amd configuration options don't have
-meaning within autofs. When these options are seen it should be logged.
+meaning within autofs. When these options are seen they are logged.
 
 Be aware that, if the an old configuration exists and the configuration
 hasn't been updated after the installation, changes to the the old
 configuration will override changes to the new configuration because
 backward compatibility takes priority over the new implementation.
 
-The amd per-map sections have two functions, to allow per-mount
+The amd per-mount sections have two functions, to allow per-mount
 configuration, as it does in amd, and to allow master map entries to
 avoid the need to specify the "type,format" part of the master map
-entry so they can use the nsswitch map source functionality in the
-same way autofs master map entries do.
+entry. This allows them to use the nsswitch map source functionality
+in the same way autofs master map entries do.
 
 If a section for an amd mount is added below the global amd section
 using the mount point path (as is done in amd.conf) then autofs will
@@ -63,7 +64,7 @@ be given in the master map entry the map_name option is not mandatory
 as it is in amd and will no be used.
 
 If a mount point is present in the master map and the source of the
-map is nis then it should be sufficient to use (for example):
+map is nis then it is sufficient to use (for example):
 
 /amd/mp           amd.mp
 
