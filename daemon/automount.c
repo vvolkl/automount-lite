@@ -310,17 +310,13 @@ static int walk_tree(const char *base, int (*fn) (struct autofs_point *ap,
 				return -1;
 
 			while (n--) {
-				int ret, size;
-
 				if (strcmp(de[n]->d_name, ".") == 0 ||
 				    strcmp(de[n]->d_name, "..") == 0) {
 					free(de[n]);
 					continue;
 				}
 
-				size = sizeof(buf);
-				ret = cat_path(buf, size, base, de[n]->d_name);
-				if (!ret) {
+				if (!cat_path(buf, sizeof(buf), base, de[n]->d_name)) {
 					do {
 						free(de[n]);
 					} while (n--);
