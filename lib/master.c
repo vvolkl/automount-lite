@@ -711,6 +711,53 @@ struct master_mapent *master_find_mapent(struct master *master, const char *path
 	return NULL;
 }
 
+unsigned int master_partial_match_mapent(struct master *master, const char *path)
+{
+	struct list_head *head, *p;
+	size_t path_len = strlen(path);
+	int ret = 0;
+
+	head = &master->mounts;
+	list_for_each(p, head) {
+		struct master_mapent *entry;
+		size_t entry_len;
+		size_t cmp_len;
+
+		entry = list_entry(p, struct master_mapent, list);
+
+		entry_len = strlen(entry->path);
+		cmp_len = min(entry_len, path_len);
+
+		if (!strncmp(entry->path, path, cmp_len)) {
+			/* paths are equal, matching master map entry ? */
+			if (entry_len == path_len) {
+				if (entry->maps &&
+				    entry->maps->flags & MAP_FLAG_FORMAT_AMD)
+					ret = 1;
+				else
+					ret = -1;
+				break;
+			}
+
+			/* amd mount conflicts with entry mount */
+			if (entry_len > path_len &&
+			    *(entry->path + path_len) == '/') {
+				ret = -1;
+				break;
+			}
+
+			/* entry mount conflicts with amd mount */
+			if (entry_len < path_len &&
+			    *(path + entry_len) == '/') {
+				ret = -1;
+				break;
+			}
+		}
+	}
+
+	return ret;
+}
+
 struct autofs_point *__master_find_submount(struct autofs_point *ap, const char *path)
 {
 	struct list_head *head, *p;
@@ -937,10 +984,16 @@ static void master_add_amd_mount_section_mounts(struct master *master, time_t ag
 		char *type = NULL;
 		char *map = NULL;
 
-		entry = master_find_mapent(master, path);
-		if (entry) {
+		ret = master_partial_match_mapent(master, path);
+		if (ret) {
+			/* If this amd entry is already present in the
+			 * master map it's not a duplicate, don't issue
+			 * an error message.
+			 */
+			if (ret == 1)
+				goto next;
 			info(m_logopt,
-			     "ignoring duplicate amd section mount %s",
+			     "amd section mount path conflict, %s ignored",
 			     path);
 			goto next;
 		}
