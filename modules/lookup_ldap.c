@@ -2797,11 +2797,13 @@ static int read_one_map(struct autofs_point *ap,
 	int rv, l;
 
 	/*
-	 * If we don't need to create directories then there's no use
-	 * reading the map. We always need to read the whole map for
-	 * direct mounts in order to mount the triggers.
+	 * If we don't need to create directories (or don't need
+	 * to read an amd cache:=all map) then there's no use
+	 * reading the map. We always need to read the whole map
+	 * for direct mounts in order to mount the triggers.
 	 */
-	if (!(ap->flags & MOUNT_FLAG_GHOST) && ap->type != LKP_DIRECT) {
+	if (ap->type != LKP_DIRECT &&
+	    !(ap->flags & (MOUNT_FLAG_GHOST|MOUNT_FLAG_AMD_CACHE_ALL))) {
 		debug(ap->logopt, "map read not needed, so not done");
 		return NSS_STATUS_SUCCESS;
 	}

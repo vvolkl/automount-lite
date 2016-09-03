@@ -46,6 +46,7 @@ xx/xx/2016 autofs-5.1.3
 - add function conf_get_map_options().
 - capture cache option and its settings during parsing.
 - handle map_option cache for top level mounts.
+- handle amd cache option all in amd type auto mounts.
 
 15/06/2016 autofs-5.1.2
 =======================

@@ -289,6 +289,9 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 			nap->pref = am_entry->pref;
 			am_entry->pref = NULL;
 		}
+
+		if (am_entry->cache_opts & AMD_CACHE_OPTION_ALL)
+			nap->flags |= MOUNT_FLAG_AMD_CACHE_ALL;
 	}
 
 	if (handle_mounts_startup_cond_init(&suc)) {
