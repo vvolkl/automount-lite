@@ -301,6 +301,7 @@ option_assignment: MAP_OPTION OPTION_ASSIGN FS_TYPE
 		} else if (!strcmp($3, "cachefs")) {
 			sprintf(msg_buf, "file syatem %s is not "
 					 "supported by autofs, ignored", $3);
+			amd_msg(msg_buf);
 		} else {
 			amd_notify($1);
 			YYABORT;

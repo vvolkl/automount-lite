@@ -17,6 +17,7 @@ xx/xx/2016 autofs-5.1.3
 - configure: add cache variable for Linux proc filesystem check.
 - Avoid local variable name shadowing another.
 - fix typo in MOUNT_FLAG_GHOST comment.
+- fix cachefs parse message not being logged.
 
 15/06/2016 autofs-5.1.2
 =======================
