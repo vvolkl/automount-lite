@@ -507,7 +507,7 @@ struct kernel_mod_version {
 	unsigned int minor;
 };
 
-/* Enable/disable gohsted directories */
+/* Enable/disable ghosted directories */
 #define MOUNT_FLAG_GHOST		0x0001
 
 /* Directory created for this mount? */

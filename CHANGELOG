@@ -16,6 +16,7 @@ xx/xx/2016 autofs-5.1.3
 - fix count_mounts() function.
 - configure: add cache variable for Linux proc filesystem check.
 - Avoid local variable name shadowing another.
+- fix typo in MOUNT_FLAG_GHOST comment.
 
 15/06/2016 autofs-5.1.2
 =======================
