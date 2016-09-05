@@ -43,6 +43,7 @@ xx/xx/2016 autofs-5.1.3
 - add function conf_amd_get_mount_paths().
 - include amd mount sections mounts in master mounts list.
 - check for conflicting amd section mounts.
+- add function conf_get_map_options().
 
 15/06/2016 autofs-5.1.2
 =======================

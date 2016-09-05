@@ -501,6 +501,11 @@ static int conf_load_amd_defaults(void)
 	if (ret == CFG_FAIL)
 		goto error;
 
+	ret = conf_update(sec, NAME_AMD_MAP_OPTIONS,
+			  DEFAULT_AMD_MAP_OPTIONS, CONF_NONE);
+	if (ret == CFG_FAIL)
+		goto error;
+
 	ret = conf_update(sec, NAME_AMD_MAP_TYPE,
 			  DEFAULT_AMD_MAP_TYPE, CONF_NONE);
 	if (ret == CFG_FAIL)
@@ -2020,6 +2025,15 @@ char *conf_amd_get_map_name(const char *section)
 	char *tmp = NULL;
 	if (section)
 		tmp = conf_get_string(section, NAME_AMD_MAP_NAME);
+
+	return tmp;
+}
+
+char *conf_amd_get_map_options(const char *section)
+{
+	char *tmp = NULL;
+	if (section)
+		tmp = conf_get_string(section, NAME_AMD_MAP_OPTIONS);
 
 	return tmp;
 }
