@@ -983,6 +983,7 @@ static void master_add_amd_mount_section_mounts(struct master *master, time_t ag
 		unsigned int ghost = 0;
 		char *type = NULL;
 		char *map = NULL;
+		char *opts;
 
 		ret = master_partial_match_mapent(master, path);
 		if (ret) {
@@ -1035,6 +1036,20 @@ static void master_add_amd_mount_section_mounts(struct master *master, time_t ag
 			error(m_logopt, "failed to add autofs_point");
 			master_free_mapent(entry);
 			goto next;
+		}
+
+		opts = conf_amd_get_map_options(path);
+		if (opts) {
+			/* autofs uses the equivalent of cache:=inc,sync
+			 * (except for file maps which use cache:=all,sync)
+			 * but if the map is large then it may be necessary
+			 * to read the whole map at startup even if browsing
+			 * is is not enabled, so look for cache:=all in the
+			 * map_options configuration entry.
+			 */
+			if (strstr(opts, "cache:=all"))
+				entry->ap->flags |= MOUNT_FLAG_AMD_CACHE_ALL;
+			free(opts);
 		}
 
 		type = conf_amd_get_map_type(path);

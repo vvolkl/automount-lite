@@ -863,6 +863,22 @@ int master_parse_entry(const char *buffer, unsigned int default_timeout, unsigne
 	if (mode && mode < LONG_MAX)
 		entry->ap->mode = mode;
 
+	if (format && !strcmp(format, "amd")) {
+		char *opts = conf_amd_get_map_options(path);
+		if (opts) {
+			/* autofs uses the equivalent of cache:=inc,sync
+			 * (except for file maps which use cache:=all,sync)
+			 * but if the map is large then it may be necessary
+			 * to read the whole map at startup even if browsing
+			 * is is not enabled, so look for cache:=all in the
+			 * map_options configuration entry.
+			 */
+			if (strstr(opts, "cache:=all"))
+				entry->ap->flags |= MOUNT_FLAG_AMD_CACHE_ALL;
+			free(opts);
+		}
+	}
+
 /*
 	source = master_find_map_source(entry, type, format,
 					local_argc, (const char **) local_argv); 

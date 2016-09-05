@@ -528,6 +528,9 @@ struct kernel_mod_version {
 /* Use symlinks instead of bind mounting local mounts */
 #define MOUNT_FLAG_SYMLINK		0x0040
 
+/* Read amd map even if it's not to be ghosted (browsable) */
+#define MOUNT_FLAG_AMD_CACHE_ALL	0x0080
+
 struct autofs_point {
 	pthread_t thid;
 	char *path;			/* Mount point name */

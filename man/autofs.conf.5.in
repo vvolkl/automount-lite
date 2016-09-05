@@ -291,8 +291,12 @@ protocol version.
 .BR cache_duration ", " map_reload_interval ", " map_options
 .br
 The map	entry cache is continually updated and stale entries
-cleaned on re-load, which is done when map changes aredetected
-so these configuration entries are not used by autofs.
+cleaned on re-load, which is done when map changes are detected
+so these configuration entries are not used by autofs. An
+exception to this is the case where the map is large. In this
+case it may be necessary to read the whole map at startup even if
+browsing is is not enabled. Adding the cache:=all option to
+map_options can be used to for this.
 .TP
 .B localhost_address
 This is not used within autofs. This configuration option was
