@@ -425,9 +425,14 @@ option_assignment: MAP_OPTION OPTION_ASSIGN FS_TYPE
 	}
 	| MAP_OPTION OPTION_ASSIGN CACHE_OPTION
 	{
-		sprintf(msg_buf, "option %s is not used, autofs "
-				 "default caching is always used", $1);
-		amd_info(msg_buf);
+		if (strncmp($3, "inc", 3))
+			entry.cache_opts = AMD_CACHE_OPTION_INC;
+		else if (strncmp($3, "all", 3))
+			entry.cache_opts = AMD_CACHE_OPTION_ALL;
+		else if (strncmp($3, "re", 2))
+			entry.cache_opts = AMD_CACHE_OPTION_REGEXP;
+		if (strstr($3, "sync"))
+			entry.cache_opts |= AMD_CACHE_OPTION_SYNC;
 	}
 	;
 
@@ -535,6 +540,7 @@ static int amd_msg(const char *s)
 static void local_init_vars(void)
 {
 	memset(&entry, 0, sizeof(entry));
+	entry.cache_opts = AMD_CACHE_OPTION_NONE;
 	memset(opts, 0, sizeof(opts));
 }
 

@@ -39,9 +39,16 @@
 #define AMD_DEFAULTS_RESET	0x02000000
 #define AMD_DEFAULTS_MASK	0xff000000
 
+#define AMD_CACHE_OPTION_NONE	0x0000
+#define AMD_CACHE_OPTION_INC	0x0001
+#define AMD_CACHE_OPTION_ALL	0x0002
+#define AMD_CACHE_OPTION_REGEXP	0x0004
+#define AMD_CACHE_OPTION_SYNC	0x8000
+
 struct amd_entry {
 	char *path;
 	unsigned long flags;
+	unsigned int cache_opts;
 	char *type;
 	char *map_type;
 	char *pref;
