@@ -19,6 +19,7 @@ xx/xx/2016 autofs-5.1.3
 - fix typo in MOUNT_FLAG_GHOST comment.
 - fix cachefs parse message not being logged.
 - fix argc off by one in mount_autofs.c.
+- fix _strncmp() usage.
 
 15/06/2016 autofs-5.1.2
 =======================
