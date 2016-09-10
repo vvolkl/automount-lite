@@ -312,7 +312,7 @@ static int unlink_active_mounts(struct autofs_point *ap, struct mnt_list *mnts, 
 
 	if (tree_get_mnt_list(mnts, &list, me->key, 1)) {
 		if (ap->state == ST_READMAP) {
-			time_t tout = me->source->exp_timeout;
+			time_t tout = get_exp_timeout(ap, me->source);
 			int save_ioctlfd, ioctlfd;
 
 			save_ioctlfd = ioctlfd = me->ioctlfd;
@@ -522,7 +522,7 @@ int mount_autofs_direct(struct autofs_point *ap)
 		}
 
 		mc = map->mc;
-		timeout = map->exp_timeout;
+		timeout = get_exp_timeout(ap, map);
 		cache_readlock(mc);
 		pthread_cleanup_push(cache_lock_cleanup, mc);
 		me = cache_enumerate(mc, NULL);
@@ -678,7 +678,7 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *
 	struct ioctl_ops *ops = get_ioctl_ops();
 	char buf[MAX_ERR_BUF];
 	struct mnt_params *mp;
-	time_t timeout = me->source->exp_timeout;
+	time_t timeout = get_exp_timeout(ap, me->source);
 	struct stat st;
 	int ioctlfd, status, ret;
 	const char *hosts_map_name = "-hosts";

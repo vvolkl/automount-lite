@@ -407,6 +407,7 @@ static void do_readmap_mount(struct autofs_point *ap, struct mnt_list *mnts,
 		if (valid) {
 			struct mapent_cache *vmc = valid->mc;
 			struct ioctl_ops *ops = get_ioctl_ops();
+			time_t timeout;
 			time_t runfreq;
 
 			cache_unlock(vmc);
@@ -428,9 +429,10 @@ static void do_readmap_mount(struct autofs_point *ap, struct mnt_list *mnts,
 			cache_set_ino_index(vmc, me->key, me->dev, me->ino);
 			cache_unlock(vmc);
 			/* Set timeout and calculate the expire run frequency */
-			ops->timeout(ap->logopt, valid->ioctlfd, map->exp_timeout);
-			if (map->exp_timeout) {
-				runfreq = (map->exp_timeout + CHECK_RATIO - 1) / CHECK_RATIO;
+			timeout = get_exp_timeout(ap, map);
+			ops->timeout(ap->logopt, valid->ioctlfd, timeout);
+			if (timeout) {
+				runfreq = (timeout + CHECK_RATIO - 1) / CHECK_RATIO;
 				if (ap->exp_runfreq)
 					ap->exp_runfreq = min(ap->exp_runfreq, runfreq);
 				else
@@ -442,7 +444,7 @@ static void do_readmap_mount(struct autofs_point *ap, struct mnt_list *mnts,
 			debug(ap->logopt,
 			      "%s is mounted", me->key);
 	} else
-		do_mount_autofs_direct(ap, mnts, me, map->exp_timeout);
+		do_mount_autofs_direct(ap, mnts, me, get_exp_timeout(ap, map));
 
 	return;
 }
@@ -491,7 +493,7 @@ static void *do_readmap(void *arg)
 
 	if (ap->type == LKP_INDIRECT) {
 		struct ioctl_ops *ops = get_ioctl_ops();
-		time_t timeout = ap->entry->maps->exp_timeout;
+		time_t timeout = get_exp_timeout(ap, ap->entry->maps);
 		ap->exp_runfreq = (timeout + CHECK_RATIO - 1) / CHECK_RATIO;
 		ops->timeout(ap->logopt, ap->ioctlfd, timeout);
 		lookup_prune_cache(ap, now);

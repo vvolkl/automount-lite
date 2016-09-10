@@ -111,6 +111,8 @@ int tree_find_mnt_ents(struct mnt_list *mnts, struct list_head *list, const char
 int tree_is_mounted(struct mnt_list *mnts, const char *path, unsigned int type);
 void set_tsd_user_vars(unsigned int, uid_t, gid_t);
 const char *mount_type_str(unsigned int);
+void set_exp_timeout(struct autofs_point *ap, struct map_source *source, time_t timeout);
+time_t get_exp_timeout(struct autofs_point *ap, struct map_source *source);
 void notify_mount_result(struct autofs_point *, const char *, time_t, const char *);
 int try_remount(struct autofs_point *, struct mapent *, unsigned int);
 void set_indirect_mount_tree_catatonic(struct autofs_point *);

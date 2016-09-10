@@ -87,7 +87,7 @@ static int do_mount_autofs_indirect(struct autofs_point *ap, const char *root)
 {
 	const char *str_indirect = mount_type_str(t_indirect);
 	struct ioctl_ops *ops = get_ioctl_ops();
-	time_t timeout = ap->entry->maps->exp_timeout;
+	time_t timeout = get_exp_timeout(ap, ap->entry->maps);
 	char *options = NULL;
 	const char *hosts_map_name = "-hosts";
 	const char *map_name = hosts_map_name;

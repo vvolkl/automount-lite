@@ -828,19 +828,6 @@ int master_parse_entry(const char *buffer, unsigned int default_timeout, unsigne
 			ghost = 1;
 	}
 
-	if (timeout < 0) {
-		/*
-		 * If no timeout is given get the timout from the
-		 * first map (if it exists) or the config for amd
-		 * maps.
-		 */
-		if (format && !strcmp(format, "amd"))
-			timeout = conf_amd_get_dismount_interval(path);
-		else if (entry->maps)
-			timeout = entry->maps->exp_timeout;
-		else
-			timeout = default_timeout;
-	}
 
 	if (!entry->ap) {
 		ret = master_add_autofs_point(entry, logopt, nobind, ghost, 0);
@@ -862,6 +849,18 @@ int master_parse_entry(const char *buffer, unsigned int default_timeout, unsigne
 		entry->ap->negative_timeout = negative_timeout;
 	if (mode && mode < LONG_MAX)
 		entry->ap->mode = mode;
+
+	if (timeout < 0) {
+		/*
+		 * If no timeout is given get the timout from the
+		 * autofs point, or the first map, or the config
+		 * for amd maps.
+		 */
+		if (format && !strcmp(format, "amd"))
+			timeout = conf_amd_get_dismount_interval(path);
+		else
+			timeout = get_exp_timeout(entry->ap, entry->maps);
+	}
 
 	if (format && !strcmp(format, "amd")) {
 		char *opts = conf_amd_get_map_options(path);
@@ -897,7 +896,7 @@ int master_parse_entry(const char *buffer, unsigned int default_timeout, unsigne
 		local_free_vars();
 		return 0;
 	}
-	source->exp_timeout = timeout;
+	set_exp_timeout(entry->ap, source, timeout);
 	source->master_line = lineno;
 
 	entry->age = age;

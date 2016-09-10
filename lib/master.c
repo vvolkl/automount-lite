@@ -99,6 +99,7 @@ int master_add_autofs_point(struct master_mapent *entry, unsigned logopt,
 		ap->negative_timeout = defaults_get_negative_timeout();
 	else
 		ap->negative_timeout = global_negative_timeout;
+	ap->exp_timeout = defaults_get_timeout();
 	ap->exp_runfreq = 0;
 	ap->flags = 0;
 	if (ghost)
@@ -981,6 +982,7 @@ static void master_add_amd_mount_section_mounts(struct master *master, time_t ag
 	while (paths[i]) {
 		const char *path = paths[i];
 		unsigned int ghost = 0;
+		time_t timeout;
 		char *type = NULL;
 		char *map = NULL;
 		char *opts;
@@ -1066,7 +1068,8 @@ static void master_add_amd_mount_section_mounts(struct master *master, time_t ag
 			goto next;
 		}
 
-		source->exp_timeout = conf_amd_get_dismount_interval(path);
+		timeout = conf_amd_get_dismount_interval(path);
+		set_exp_timeout(entry->ap, source, timeout);
 		source->master_line = 0;
 
 		entry->age = age;

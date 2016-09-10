@@ -57,7 +57,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	int nobind = ap->flags & MOUNT_FLAG_NOBIND;
 	int ghost = ap->flags & MOUNT_FLAG_GHOST;
 	int symlnk = ap->flags & MOUNT_FLAG_SYMLINK;
-	time_t timeout = ap->entry->maps->exp_timeout;
+	time_t timeout = get_exp_timeout(ap, ap->entry->maps);
 	unsigned logopt = ap->logopt;
 	struct map_type_info *info;
 	struct master *master;
@@ -273,13 +273,9 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 		return 1;
 	}
 	free_map_type_info(info);
-	/* The exp_timeout can't be inherited if the map is shared, so
-	 * the autofs point exp_runfreq must be set here.
-	 */
-	if (source->ref <= 1)
-		source->exp_timeout = timeout;
-	else
-		nap->exp_runfreq = (timeout + CHECK_RATIO - 1) / CHECK_RATIO;
+
+	set_exp_timeout(nap, NULL, timeout);
+	nap->exp_runfreq = (timeout + CHECK_RATIO - 1) / CHECK_RATIO;
 
 	mounts_mutex_lock(ap);
 

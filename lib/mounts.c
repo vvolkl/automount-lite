@@ -1578,6 +1578,24 @@ const char *mount_type_str(const unsigned int type)
 	return (pos == type_count ? NULL : str_type[pos]);
 }
 
+void set_exp_timeout(struct autofs_point *ap,
+		     struct map_source *source, time_t timeout)
+{
+	ap->exp_timeout = timeout;
+	if (source)
+		source->exp_timeout = timeout;
+}
+
+time_t get_exp_timeout(struct autofs_point *ap, struct map_source *source)
+{
+	time_t timeout = ap->exp_timeout;
+
+	if (source && ap->type == LKP_DIRECT)
+		timeout = source->exp_timeout;
+
+	return timeout;
+}
+
 void notify_mount_result(struct autofs_point *ap,
 			 const char *path, time_t timeout, const char *type)
 {
@@ -1709,12 +1727,9 @@ static int remount_active_mount(struct autofs_point *ap,
 	ops->open(ap->logopt, &fd, devid, path);
 	if (fd == -1)
 		return REMOUNT_OPEN_FAIL;
-	else {
-		if (type == t_indirect || type == t_offset)
-			timeout = ap->entry->maps->exp_timeout;
-		else
-			timeout = me->source->exp_timeout;
-	}
+
+	error(ap->logopt, "ap->type %d type %u", ap->type, type);
+	timeout = get_exp_timeout(ap, me->source);
 
 	/* Re-reading the map, set timeout and return */
 	if (ap->state == ST_READMAP) {

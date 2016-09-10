@@ -551,6 +551,7 @@ struct autofs_point {
 	dev_t dev;			/* "Device" number assigned by kernel */
 	struct master_mapent *entry;	/* Master map entry for this mount */
 	unsigned int type;		/* Type of map direct or indirect */
+	time_t exp_timeout;		/* Indirect mount expire timeout */
 	time_t exp_runfreq;		/* Frequency for polling for timeouts */
 	time_t negative_timeout;	/* timeout in secs for failed mounts */
 	unsigned int flags;		/* autofs mount flags */
