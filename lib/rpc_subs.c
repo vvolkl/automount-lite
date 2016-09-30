@@ -654,14 +654,12 @@ static int create_client(struct conn_info *info, CLIENT **client)
 	*client = NULL;
 
 	if (info->client) {
-		if (!clnt_control(info->client, CLGET_FD, (char *) &fd)) {
-			fd = RPC_ANYSOCK;
-			clnt_destroy(info->client);
-			info->client = NULL;
-		} else {
+		if (clnt_control(info->client, CLGET_FD, (char *) &fd))
 			clnt_control(info->client, CLSET_FD_NCLOSE, NULL);
-			clnt_destroy(info->client);
-		}
+		else
+			fd = RPC_ANYSOCK;
+		clnt_destroy(info->client);
+		info->client = NULL;
 	}
 
 	if (info->addr) {
@@ -677,7 +675,7 @@ static int create_client(struct conn_info *info, CLIENT **client)
 			goto out_close;
 		}
 
-		if (!info->client && fd != RPC_ANYSOCK) {
+		if (fd != RPC_ANYSOCK) {
 			close(fd);
 			fd = RPC_ANYSOCK;
 		}
@@ -695,7 +693,6 @@ static int create_client(struct conn_info *info, CLIENT **client)
 	if (ret) {
 		error(LOGOPT_ANY,
 		      "hostname lookup failed: %s", gai_strerror(ret));
-		info->client = NULL;
 		goto out_close;
 	}
 
@@ -714,7 +711,7 @@ static int create_client(struct conn_info *info, CLIENT **client)
 			goto out_close;
 		}
 
-		if (!info->client && fd != RPC_ANYSOCK) {
+		if (fd != RPC_ANYSOCK) {
 			close(fd);
 			fd = RPC_ANYSOCK;
 		}
@@ -726,7 +723,6 @@ static int create_client(struct conn_info *info, CLIENT **client)
 
 done:
 	if (!*client) {
-		info->client = NULL;
 		ret = -ENOTCONN;
 		goto out_close;
 	}
@@ -734,7 +730,6 @@ done:
 	/* Close socket fd on destroy, as is default for rpcowned fds */
 	if  (!clnt_control(*client, CLSET_FD_CLOSE, NULL)) {
 		clnt_destroy(*client);
-		info->client = NULL;
 		ret = -ENOTCONN;
 		goto out_close;
 	}
@@ -742,7 +737,7 @@ done:
 	return 0;
 
 out_close:
-	if (fd != -1)
+	if (fd != RPC_ANYSOCK)
 		close(fd);
 	return ret;
 }
