@@ -1,0 +1,18 @@
+autofs schema
+=============
+
+The distribution file samples/autofs.schema is very old and is
+incorrect.
+
+This schema was added to the discribution long ago when it was
+not clear what schema to use for Linux autofs information.
+
+The schema was corrected somewhere along the line but the autofs
+distribution copy was never updated. The schema has now been
+updated but it is not recommended for use as the schema for autofs
+map information.
+
+The rfc2307 or, preferably the, rfc2307bis schema is the recommened
+schema to use.
+
+Ian
