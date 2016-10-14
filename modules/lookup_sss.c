@@ -30,6 +30,11 @@
 
 #define MAPFMT_DEFAULT "sun"
 
+/* Half a second between retries */
+#define SETAUTOMOUNTENT_MASTER_INTERVAL	500000000
+/* Try for 10 seconds */
+#define SETAUTOMOUNTENT_MASTER_RETRIES	10 * 2
+
 #define MODPREFIX "lookup(sss): "
 
 #define SSS_SO_NAME "libsss_autofs"
@@ -219,6 +224,53 @@ static int setautomntent(unsigned int logopt,
 	return ret;
 }
 
+static int setautomntent_wait(unsigned int logopt,
+			      struct lookup_context *ctxt,
+			      const char *mapname,
+			      void **sss_ctxt, unsigned int retries)
+{
+	unsigned int retry = 0;
+	int ret = 0;
+
+	*sss_ctxt = NULL;
+
+	while (++retry < retries) {
+		struct timespec t = { 0, SETAUTOMOUNTENT_MASTER_INTERVAL };
+		struct timespec r;
+
+		ret = ctxt->setautomntent(mapname, sss_ctxt);
+		if (ret != ENOENT)
+			break;
+
+		if (*sss_ctxt) {
+			free(*sss_ctxt);
+			*sss_ctxt = NULL;
+		}
+
+		while (nanosleep(&t, &r) == -1 && errno == EINTR)
+			memcpy(&t, &r, sizeof(struct timespec));
+	}
+
+
+	if (ret) {
+		char buf[MAX_ERR_BUF];
+		char *estr;
+
+		if (*sss_ctxt) {
+			free(*sss_ctxt);
+			*sss_ctxt = NULL;
+		}
+
+		if (retry == retries)
+			ret = ETIMEDOUT;
+
+		estr = strerror_r(ret, buf, MAX_ERR_BUF);
+		error(logopt, MODPREFIX "setautomntent: %s", estr);
+	}
+
+	return ret;
+}
+
 static int endautomntent(unsigned int logopt,
 			 struct lookup_context *ctxt, void **sss_ctxt)
 {
@@ -247,6 +299,15 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 
 	ret = setautomntent(logopt, ctxt, ctxt->mapname, &sss_ctxt);
 	if (ret) {
+		unsigned int retries;
+
+		if (ret != ENOENT)
+			return NSS_STATUS_UNAVAIL;
+
+		retries = SETAUTOMOUNTENT_MASTER_RETRIES;
+		ret = setautomntent_wait(logopt,
+					 ctxt, ctxt->mapname, &sss_ctxt,
+					 retries);
 		if (ret == ENOENT)
 			return NSS_STATUS_NOTFOUND;
 		return NSS_STATUS_UNAVAIL;
