@@ -51,6 +51,8 @@
 #define DEFAULT_USE_HOSTNAME_FOR_MOUNTS  "0"
 #define DEFAULT_DISABLE_NOT_FOUND_MESSAGE "0"
 
+#define DEFAULT_SSS_MASTER_MAP_WAIT	"0"
+
 /* Config entry flags */
 #define CONF_NONE			0x00000000
 #define CONF_ENV			0x00000001
@@ -169,6 +171,7 @@ const char *defaults_get_auth_conf_file(void);
 unsigned int defaults_get_map_hash_table_size(void);
 unsigned int defaults_use_hostname_for_mounts(void);
 unsigned int defaults_disable_not_found_message(void);
+unsigned int defaults_get_sss_master_map_wait(void);
 
 unsigned int conf_amd_mount_section_exists(const char *);
 char *conf_amd_get_arch(void);

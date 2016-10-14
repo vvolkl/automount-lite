@@ -166,6 +166,16 @@ mount_nfs_default_protocol = 4
 #
 #disable_not_found_message = "no"
 #
+# sss_master_map_wait - When sssd is starting up it can sometimes return
+# 			"no such entry" for a short time until it has read
+# 			in the LDAP map information. Internal default is 0
+# 			seconds, don't wait but if there is a problem with
+# 			autofs not finding the master map at startup (when
+# 			it should) then try setting this to 10 to work
+# 			around it.
+#
+#sss_master_map_wait = 0
+#
 # Otions for the amd parser within autofs.
 #
 # amd configuration options that are aren't used, haven't been

@@ -32,8 +32,6 @@
 
 /* Half a second between retries */
 #define SETAUTOMOUNTENT_MASTER_INTERVAL	500000000
-/* Try for 10 seconds */
-#define SETAUTOMOUNTENT_MASTER_RETRIES	10 * 2
 
 #define MODPREFIX "lookup(sss): "
 
@@ -304,7 +302,10 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 		if (ret != ENOENT)
 			return NSS_STATUS_UNAVAIL;
 
-		retries = SETAUTOMOUNTENT_MASTER_RETRIES;
+		retries = defaults_get_sss_master_map_wait() * 2;
+		if (retries <= 0)
+			return NSS_STATUS_NOTFOUND;
+
 		ret = setautomntent_wait(logopt,
 					 ctxt, ctxt->mapname, &sss_ctxt,
 					 retries);

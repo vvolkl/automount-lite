@@ -25,6 +25,7 @@ xx/xx/2016 autofs-5.1.3
 - wait for master map available at start.
 - add master read wait option.
 - work around sss startup delay.
+- add sss master map wait config option.
 
 15/06/2016 autofs-5.1.2
 =======================
