@@ -795,11 +795,15 @@ char *sanitize_path(const char *path, int origlen, unsigned int type, unsigned i
 	unsigned int seen_slash = 0, quote = 0, dquote = 0;
 
 	if (type & (LKP_INDIRECT | LKP_DIRECT)) {
-		slash = strchr(path, '/');
+		char *tmp = path;
+
+		if (*tmp == '"')
+			tmp++;
+		slash = strchr(tmp, '/');
 		if (slash) {
 			if (type == LKP_INDIRECT)
 				return NULL;
-			if (*path != '/')
+			if (*tmp != '/')
 				return NULL;
 		} else {
 			if (type == LKP_DIRECT)
