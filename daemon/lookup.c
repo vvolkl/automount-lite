@@ -241,7 +241,7 @@ int lookup_nss_read_master(struct master *master, time_t age)
 	}
 
 	/* First one gets it */
-	result = NSS_STATUS_UNKNOWN;
+	result = NSS_STATUS_SUCCESS;
 	head = &nsslist;
 	list_for_each(p, head) {
 		struct nss_source *this;
@@ -282,8 +282,10 @@ int lookup_nss_read_master(struct master *master, time_t age)
 			}
 		}
 
-		if (result == NSS_STATUS_UNKNOWN) {
+		if (result == NSS_STATUS_UNKNOWN ||
+		    result == NSS_STATUS_NOTFOUND) {
 			debug(logopt, "no map - continuing to next source");
+			result = NSS_STATUS_SUCCESS;
 			continue;
 		}
 

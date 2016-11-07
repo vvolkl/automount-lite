@@ -27,6 +27,7 @@ xx/xx/2016 autofs-5.1.3
 - work around sss startup delay.
 - add sss master map wait config option.
 - fix quoted key handling in sanitize_path().
+- fix included master map not found return.
 
 15/06/2016 autofs-5.1.2
 =======================

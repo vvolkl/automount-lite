@@ -464,6 +464,8 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 
 	f = open_fopen_r(ctxt->mapname);
 	if (!f) {
+		if (errno == ENOENT)
+			return NSS_STATUS_NOTFOUND;
 		error(logopt,
 		      MODPREFIX "could not open master map file %s",
 		      ctxt->mapname);
@@ -507,12 +509,14 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 				     MODPREFIX
 				     "failed to read included master map %s",
 				     master->name);
-				/*
-				 * If we're starting up wee need the whole
-				 * master map initially, so tell the upper
-				 * layer to retry.
-				 */
-				master->read_fail = 1;
+				if (status != NSS_STATUS_NOTFOUND) {
+					/*
+					 * If we're starting up we need the whole
+					 * master map initially, so tell the upper
+					 * layer to retry.
+					 */
+					master->read_fail = 1;
+				}
 			}
 			master->depth--;
 			master->recurse = 0;
@@ -713,6 +717,8 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 
 	f = open_fopen_r(ctxt->mapname);
 	if (!f) {
+		if (errno == ENOENT)
+			return NSS_STATUS_NOTFOUND;
 		error(ap->logopt,
 		      MODPREFIX "could not open map file %s", ctxt->mapname);
 		return NSS_STATUS_UNAVAIL;
