@@ -32,8 +32,8 @@ with earlier autofs releases.
 .TP
 .B master_wait
 sets the default maximum time to wait for the master map to become
-available if it cannot be read at program start (program default -1,
-wait forever).
+available if it cannot be read at program start (program default 10,
+wait for 10 seconds then continue).
 .TP
 .B negative_timeout
 .br

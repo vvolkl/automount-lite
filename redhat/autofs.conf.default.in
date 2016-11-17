@@ -16,10 +16,10 @@ timeout = 300
 #
 # master_wait - set the default maximum time to wait for the
 # 		master map to become available if it cannot
-# 		be read at program start (default -1, wait
-# 		forever).
+# 		be read at program start (default 10, wait
+# 		for 10 seconds then continue).
 #
-#master_wait = -1
+#master_wait = 10
 #
 # negative_timeout - set the default negative timeout for
 # 		     failed mount attempts (default 60).
