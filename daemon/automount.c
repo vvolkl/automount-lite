@@ -2533,10 +2533,14 @@ int main(int argc, char *argv[])
 		 * error.
 		 */
 		if (!do_master_read_master(master_list, master_wait)) {
-			logerr("%s: failed to read master map!", program);
-			master_kill(master_list);
-			release_flag_file();
-			exit(3);
+			logmsg("%s: warning: could not read at least one "
+				"map source after waiting, continuing ...",
+				 program);
+			/*
+			 * Failed to read master map, continue with what
+			 * we have anyway.
+			 */
+			master_read_master(master_list, age, 1);
 		}
 	}
 
