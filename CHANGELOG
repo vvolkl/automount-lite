@@ -31,6 +31,7 @@ xx/xx/2016 autofs-5.1.3
 - dont exit on master map read fail timeout.
 - set sane default master read wait timeout.
 - don't return until after master map retry read.
+- make lookup_nss_read_master() return nss status.
 
 15/06/2016 autofs-5.1.2
 =======================

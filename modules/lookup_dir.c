@@ -174,7 +174,7 @@ static int include_file(struct master *master, time_t age, struct lookup_context
 	master->depth++;
 	debug(logopt, MODPREFIX "include: %s", master->name);
 	status = lookup_nss_read_master(master, age);
-	if (!status) {
+	if (status != NSS_STATUS_SUCCESS) {
 		warn(logopt,
 		     MODPREFIX
 		     "failed to read included master map %s",

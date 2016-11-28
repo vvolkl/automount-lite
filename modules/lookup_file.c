@@ -504,7 +504,7 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 				master->recurse = 1;
 			master->depth++;
 			status = lookup_nss_read_master(master, age);
-			if (!status) {
+			if (status != NSS_STATUS_SUCCESS) {
 				warn(logopt,
 				     MODPREFIX
 				     "failed to read included master map %s",

@@ -175,7 +175,7 @@ int lookup_nss_read_master(struct master *master, time_t age)
 		if (result == NSS_STATUS_UNAVAIL)
 			master->read_fail = 1;
 
-		return !result;
+		return result;
 	} else {
 		char *name = master->name;
 		char *tmp;
@@ -225,7 +225,7 @@ int lookup_nss_read_master(struct master *master, time_t age)
 				if (result == NSS_STATUS_UNAVAIL)
 					master->read_fail = 1;
 
-				return !result;
+				return result;
 			}
 		}
 	}
@@ -237,7 +237,7 @@ int lookup_nss_read_master(struct master *master, time_t age)
 		if (!list_empty(&nsslist))
 			free_sources(&nsslist);
 		error(logopt, "can't to read name service switch config.");
-		return 0;
+		return NSS_STATUS_UNAVAIL;
 	}
 
 	/* First one gets it */
@@ -282,6 +282,12 @@ int lookup_nss_read_master(struct master *master, time_t age)
 			}
 		}
 
+		/* We've been instructed to move onto the next source */
+		if (result == NSS_STATUS_TRYAGAIN) {
+			result = NSS_STATUS_SUCCESS;
+			continue;
+		}
+
 		if (result == NSS_STATUS_UNKNOWN ||
 		    result == NSS_STATUS_NOTFOUND) {
 			debug(logopt, "no map - continuing to next source");
@@ -302,7 +308,7 @@ int lookup_nss_read_master(struct master *master, time_t age)
 	if (!list_empty(&nsslist))
 		free_sources(&nsslist);
 
-	return !result;
+	return result;
 }
 
 static int do_read_map(struct autofs_point *ap, struct map_source *map, time_t age)
