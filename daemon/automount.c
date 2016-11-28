@@ -2506,27 +2506,6 @@ int main(int argc, char *argv[])
 
 	master_read = master_read_master(master_list, age, 0);
 	if (!master_read) {
-		if (foreground)
-			logerr("%s: failed to read master map, "
-			       "will retry!",
-			       program);
-		else
-			logerr("%s: failed to read master map, "
-			       "will retry in background!",
-			       program);
-	}
-
-	/*
-	 * Mmm ... reset force unlink umount so we don't also do this
-	 * in future when we receive a HUP signal.
-	 */
-	do_force_unlink = 0;
-
-	st_stat = 0;
-	res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
-	close(start_pipefd[1]);
-
-	if (!master_read) {
 		/*
 		 * Read master map, waiting until it is available, unless
 		 * a signal is received, in which case exit returning an
@@ -2543,6 +2522,16 @@ int main(int argc, char *argv[])
 			master_read_master(master_list, age, 1);
 		}
 	}
+
+	/*
+	 * Mmm ... reset force unlink umount so we don't also do this
+	 * in future when we receive a HUP signal.
+	 */
+	do_force_unlink = 0;
+
+	st_stat = 0;
+	res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+	close(start_pipefd[1]);
 
 	state_mach_thid = pthread_self();
 	statemachine(NULL);

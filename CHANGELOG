@@ -30,6 +30,7 @@ xx/xx/2016 autofs-5.1.3
 - fix included master map not found return.
 - dont exit on master map read fail timeout.
 - set sane default master read wait timeout.
+- don't return until after master map retry read.
 
 15/06/2016 autofs-5.1.2
 =======================
