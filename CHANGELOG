@@ -32,6 +32,7 @@ xx/xx/2016 autofs-5.1.3
 - set sane default master read wait timeout.
 - don't return until after master map retry read.
 - make lookup_nss_read_master() return nss status.
+- check NFS server availability on local mount fallback.
 
 15/06/2016 autofs-5.1.2
 =======================

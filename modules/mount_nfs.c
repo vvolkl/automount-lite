@@ -348,6 +348,19 @@ dont_probe:
 		strcat(loc, ":");
 		strcat(loc, this->path);
 
+		/* If this is a fallback from a bind mount failure
+		 * check if the local NFS server is available to try
+		 * and prevent lengthy mount failure waits.
+		 */
+		if (this->proximity == PROXIMITY_LOCAL) {
+			char *host = this->name ? this->name : "localhost";
+			int ret;
+
+			ret = rpc_ping(host, 2, 0, RPC_CLOSE_DEFAULT);
+			if (ret <= 0)
+				goto next;
+		}
+
 		if (nfsoptions && *nfsoptions) {
 			debug(ap->logopt,
 			      MODPREFIX "calling mount -t %s " SLOPPY 
@@ -370,7 +383,7 @@ dont_probe:
 			free_host_list(&hosts);
 			return 0;
 		}
-
+next:
 		free(loc);
 		this = this->next;
 	}

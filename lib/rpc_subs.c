@@ -1039,6 +1039,7 @@ static int __rpc_ping(const char *host,
 
 int rpc_ping(const char *host, long seconds, long micros, unsigned int option)
 {
+	unsigned long vers4 = NFS4_VERSION;
 	unsigned long vers3 = NFS3_VERSION;
 	unsigned long vers2 = NFS2_VERSION;
 	int status;
@@ -1051,6 +1052,12 @@ int rpc_ping(const char *host, long seconds, long micros, unsigned int option)
 	if (status > 0)
 		return RPC_PING_V3 | RPC_PING_UDP;
 
+	/* UDP isn't recommended for NFSv4, don't bother checking it.
+	status = __rpc_ping(host, vers4, IPPROTO_UDP, seconds, micros, option);
+	if (status > 0)
+		return RPC_PING_V4 | RPC_PING_UDP;
+	*/
+
 	status = __rpc_ping(host, vers2, IPPROTO_TCP, seconds, micros, option);
 	if (status > 0)
 		return RPC_PING_V2 | RPC_PING_TCP;
@@ -1058,6 +1065,10 @@ int rpc_ping(const char *host, long seconds, long micros, unsigned int option)
 	status = __rpc_ping(host, vers3, IPPROTO_TCP, seconds, micros, option);
 	if (status > 0)
 		return RPC_PING_V3 | RPC_PING_TCP;
+
+	status = __rpc_ping(host, vers4, IPPROTO_TCP, seconds, micros, option);
+	if (status > 0)
+		return RPC_PING_V4 | RPC_PING_TCP;
 
 	return status;
 }
