@@ -1855,6 +1855,70 @@ int try_remount(struct autofs_point *ap, struct mapent *me, unsigned int type)
 	return 0;
 }
 
+/*
+ * When exiting mounts need be set catatonic, regardless of whether they
+ * are busy on not, to avoid a hang on access once the daemon has gone
+ * away.
+ */
+int set_mount_catatonic(struct autofs_point *ap, struct mapent *me, int ioctlfd)
+{
+	struct ioctl_ops *ops = get_ioctl_ops();
+	unsigned int opened = 0;
+	char buf[MAX_ERR_BUF];
+	char *path;
+	int fd = -1;
+	int error;
+	dev_t dev;
+
+	path = ap->path;
+	dev = ap->dev;
+	if (me && (ap->type == LKP_DIRECT || *me->key == '/')) {
+		path = me->key;
+		dev = me->dev;
+	}
+
+	if (ioctlfd >= 0)
+		fd = ioctlfd;
+	else if (me && me->ioctlfd >= 0)
+		fd = me->ioctlfd;
+	else {
+		error = ops->open(ap->logopt, &fd, dev, path);
+		if (error == -1) {
+			int err = errno;
+			char *estr;
+
+			estr = strerror_r(errno, buf, MAX_ERR_BUF);
+			error(ap->logopt,
+			      "failed to open ioctlfd for %s, error: %s",
+			      path, estr);
+			return err;
+		}
+		opened = 1;
+	}
+
+	if (fd >= 0) {
+		error = ops->catatonic(ap->logopt, fd);
+		if (error == -1) {
+			int err = errno;
+			char *estr;
+
+			estr = strerror_r(errno, buf, MAX_ERR_BUF);
+			error(ap->logopt,
+			      "failed to set %s catatonic, error: %s",
+			      path, estr);
+			if (opened)
+				ops->close(ap->logopt, fd);
+			return err;
+		}
+		if (opened)
+			ops->close(ap->logopt, fd);
+	}
+
+	debug(ap->logopt, "set %s catatonic", path);
+
+	return 0;
+}
+
 int umount_ent(struct autofs_point *ap, const char *path)
 {
 	int rv;

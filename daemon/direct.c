@@ -82,65 +82,6 @@ static void mnts_cleanup(void *arg)
 	return;
 }
 
-/* When exiting direct mount triggers must be set catatonic, regardless
- * of whether they are busy on not, to avoid a hang on access once the
- * daemon has gone away.
- */
-static int set_direct_mount_catatonic(struct autofs_point *ap, struct mapent *me, int ioctlfd)
-{
-	struct ioctl_ops *ops = get_ioctl_ops();
-	unsigned int opened = 0;
-	char buf[MAX_ERR_BUF];
-	int fd = -1;
-	int error;
-
-	/* In case the miscellaneous device isn't being used try
-	 * and use an existing ioctl control fd. In this case if
-	 * we don't already have an ioctl fd the mount can't be
-	 * set catatonic if it's covered.
-	 */
-	if (ioctlfd >= 0)
-		fd = ioctlfd;
-	else if (me->ioctlfd >= 0)
-		fd = me->ioctlfd;
-	else {
-		error = ops->open(ap->logopt, &fd, me->dev, me->key);
-		if (error == -1) {
-			int err = errno;
-			char *estr;
-
-			estr = strerror_r(errno, buf, MAX_ERR_BUF);
-			error(ap->logopt,
-			      "failed to open ioctlfd for %s, error: %s",
-			      me->key, estr);
-			return err;
-		}
-		opened = 1;
-	}
-
-	if (fd >= 0) {
-		error = ops->catatonic(ap->logopt, fd);
-		if (error == -1) {
-			int err = errno;
-			char *estr;
-
-			estr = strerror_r(errno, buf, MAX_ERR_BUF);
-			error(ap->logopt,
-			      "failed to set %s catatonic, error: %s",
-			      me->key, estr);
-			if (opened)
-				ops->close(ap->logopt, fd);
-			return err;
-		}
-		if (opened)
-			ops->close(ap->logopt, fd);
-	}
-
-	debug(ap->logopt, "set %s catatonic", me->key);
-
-	return 0;
-}
-
 int do_umount_autofs_direct(struct autofs_point *ap, struct mnt_list *mnts, struct mapent *me)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
@@ -190,19 +131,19 @@ int do_umount_autofs_direct(struct autofs_point *ap, struct mnt_list *mnts, stru
 				      "ask umount returned busy for %s",
 				      me->key);
 				if (ap->state != ST_READMAP)
-					set_direct_mount_catatonic(ap, me, ioctlfd);
+					set_mount_catatonic(ap, me, ioctlfd);
 				if (opened)
 					ops->close(ap->logopt, ioctlfd);
 				return 1;
 			} else {
 				me->ioctlfd = -1;
-				set_direct_mount_catatonic(ap, me, ioctlfd);
+				set_mount_catatonic(ap, me, ioctlfd);
 				ops->close(ap->logopt, ioctlfd);
 				goto force_umount;
 			}
 		}
 		me->ioctlfd = -1;
-		set_direct_mount_catatonic(ap, me, ioctlfd);
+		set_mount_catatonic(ap, me, ioctlfd);
 		ops->close(ap->logopt, ioctlfd);
 	} else {
 		error(ap->logopt,
@@ -297,12 +238,12 @@ int umount_autofs_direct(struct autofs_point *ap)
 			if (!error)
 				goto done;
 
-			error = set_direct_mount_catatonic(ap, me, me->ioctlfd);
+			error = set_mount_catatonic(ap, me, me->ioctlfd);
 			if (!error)
 				goto done;
 
 			/* We really need to set this, last ditch attempt */
-			set_direct_mount_catatonic(ap, me, -1);
+			set_mount_catatonic(ap, me, -1);
 done:
 			me = cache_enumerate(mc, me);
 		}

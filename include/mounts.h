@@ -113,6 +113,7 @@ void set_tsd_user_vars(unsigned int, uid_t, gid_t);
 const char *mount_type_str(unsigned int);
 void notify_mount_result(struct autofs_point *, const char *, time_t, const char *);
 int try_remount(struct autofs_point *, struct mapent *, unsigned int);
+int set_mount_catatonic(struct autofs_point *, struct mapent *, int);
 int umount_ent(struct autofs_point *, const char *);
 int mount_multi_triggers(struct autofs_point *, struct mapent *, const char *, unsigned int, const char *);
 int umount_multi_triggers(struct autofs_point *, struct mapent *, char *, const char *);
