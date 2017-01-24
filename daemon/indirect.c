@@ -290,9 +290,6 @@ int umount_autofs_indirect(struct autofs_point *ap, const char *root)
 #endif
 	}
 
-	if (ap->shutdown)
-		ops->catatonic(ap->logopt, ap->ioctlfd);
-
 	ops->close(ap->logopt, ap->ioctlfd);
 	ap->ioctlfd = -1;
 	sched_yield();

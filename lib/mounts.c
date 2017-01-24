@@ -1860,7 +1860,7 @@ int try_remount(struct autofs_point *ap, struct mapent *me, unsigned int type)
  * are busy on not, to avoid a hang on access once the daemon has gone
  * away.
  */
-int set_mount_catatonic(struct autofs_point *ap, struct mapent *me, int ioctlfd)
+static int set_mount_catatonic(struct autofs_point *ap, struct mapent *me, int ioctlfd)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
 	unsigned int opened = 0;
@@ -1886,6 +1886,9 @@ int set_mount_catatonic(struct autofs_point *ap, struct mapent *me, int ioctlfd)
 		if (error == -1) {
 			int err = errno;
 			char *estr;
+
+			if (errno == ENOENT)
+				return 0;
 
 			estr = strerror_r(errno, buf, MAX_ERR_BUF);
 			error(ap->logopt,
@@ -1917,6 +1920,70 @@ int set_mount_catatonic(struct autofs_point *ap, struct mapent *me, int ioctlfd)
 	debug(ap->logopt, "set %s catatonic", path);
 
 	return 0;
+}
+
+static void set_multi_mount_tree_catatonic(struct autofs_point *ap, struct mapent *me)
+{
+	if (!list_empty(&me->multi_list)) {
+		struct list_head *head = &me->multi_list;
+		struct list_head *p;
+
+		list_for_each(p, head) {
+			struct mapent *this;
+
+			this = list_entry(p, struct mapent, multi_list);
+			set_mount_catatonic(ap, this, this->ioctlfd);
+		}
+	}
+}
+
+void set_indirect_mount_tree_catatonic(struct autofs_point *ap)
+{
+	struct master_mapent *entry = ap->entry;
+	struct map_source *map;
+	struct mapent_cache *mc;
+	struct mapent *me;
+
+	if (!is_mounted(_PROC_MOUNTS, ap->path, MNTS_AUTOFS))
+		return;
+
+	map = entry->maps;
+	while (map) {
+		mc = map->mc;
+		cache_readlock(mc);
+		me = cache_enumerate(mc, NULL);
+		while (me) {
+			/* Skip negative map entries and wildcard entries */
+			if (!me->mapent)
+				goto next;
+
+			if (!strcmp(me->key, "*"))
+				goto next;
+
+			/* Only need to set offset mounts catatonic */
+			if (me->multi && me->multi == me)
+				set_multi_mount_tree_catatonic(ap, me);
+next:
+			me = cache_enumerate(mc, me);
+		}
+		cache_unlock(mc);
+		map = map->next;
+	}
+
+	/* By the time this function is called ap->ioctlfd will have
+	 * been closed so don't try and use it.
+	 */
+	set_mount_catatonic(ap, NULL, -1);
+
+	return;
+}
+
+void set_direct_mount_tree_catatonic(struct autofs_point *ap, struct mapent *me)
+{
+	/* Set offset mounts catatonic for this mapent */
+	if (me->multi && me->multi == me)
+		set_multi_mount_tree_catatonic(ap, me);
+	set_mount_catatonic(ap, me, me->ioctlfd);
 }
 
 int umount_ent(struct autofs_point *ap, const char *path)

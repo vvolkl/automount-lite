@@ -130,20 +130,16 @@ int do_umount_autofs_direct(struct autofs_point *ap, struct mnt_list *mnts, stru
 				error(ap->logopt,
 				      "ask umount returned busy for %s",
 				      me->key);
-				if (ap->state != ST_READMAP)
-					set_mount_catatonic(ap, me, ioctlfd);
 				if (opened)
 					ops->close(ap->logopt, ioctlfd);
 				return 1;
 			} else {
 				me->ioctlfd = -1;
-				set_mount_catatonic(ap, me, ioctlfd);
 				ops->close(ap->logopt, ioctlfd);
 				goto force_umount;
 			}
 		}
 		me->ioctlfd = -1;
-		set_mount_catatonic(ap, me, ioctlfd);
 		ops->close(ap->logopt, ioctlfd);
 	} else {
 		error(ap->logopt,
@@ -173,8 +169,11 @@ int do_umount_autofs_direct(struct autofs_point *ap, struct mnt_list *mnts, stru
 			warn(ap->logopt, "mount point %s is in use", me->key);
 			if (ap->state == ST_SHUTDOWN_FORCE)
 				goto force_umount;
-			else
+			else {
+				if (ap->state != ST_READMAP)
+					set_direct_mount_tree_catatonic(ap, me);
 				return 0;
+			}
 			break;
 		case ENOTDIR:
 			error(ap->logopt, "mount point is not a directory");
@@ -238,12 +237,8 @@ int umount_autofs_direct(struct autofs_point *ap)
 			if (!error)
 				goto done;
 
-			error = set_mount_catatonic(ap, me, me->ioctlfd);
-			if (!error)
-				goto done;
-
-			/* We really need to set this, last ditch attempt */
-			set_mount_catatonic(ap, me, -1);
+			if (ap->state != ST_READMAP)
+				set_direct_mount_tree_catatonic(ap, me);
 done:
 			me = cache_enumerate(mc, me);
 		}

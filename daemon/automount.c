@@ -1756,6 +1756,7 @@ int handle_mounts_exit(struct autofs_point *ap)
 	 */
 	ret = umount_autofs(ap, NULL, 1);
 	if (!ret) {
+		set_indirect_mount_tree_catatonic(ap);
 		handle_mounts_cleanup(ap);
 		return 1;
 	}

@@ -34,6 +34,7 @@ xx/xx/2016 autofs-5.1.3
 - make lookup_nss_read_master() return nss status.
 - check NFS server availability on local mount fallback.
 - make set_direct_mount_catatonic() more general.
+- set autofs mounts catatonic at exit.
 
 15/06/2016 autofs-5.1.2
 =======================
