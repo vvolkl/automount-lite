@@ -180,6 +180,8 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 				   with bind mounts */
 				else if (_strncmp("ro", cp, o_len) == 0)
 					ro = 1;
+				else if (_strncmp("rw", cp, o_len) == 0)
+					ro = 0;
 				/* and jump over trailing white space */
 				memcpy(nfsp, cp, comma - cp + 1);
 				nfsp += comma - cp + 1;
