@@ -132,15 +132,27 @@ void expire_cleanup(void *arg)
 			 * mount expires in a reasonable time. Just skip
 			 * one expire check after it's no longer busy before
 			 * allowing it to shutdown.
+			 *
+			 * But if this mount point is an amd format map it
+			 * is better to keep the mount around longer. This
+			 * is because of the common heavy reuse of maps in
+			 * amd maps and we want to try and avoid constantly
+			 * re-reading large maps.
 			 */
 			if (ap->submount && !success) {
 				rv = ops->askumount(ap->logopt, ap->ioctlfd, &idle);
 				if (!rv && idle && ap->submount > 1) {
-					next = ST_SHUTDOWN_PENDING;
-					break;
+					struct map_source *map = ap->entry->maps;
+
+					if (ap->submount > 4 ||
+					   !(map->flags & MAP_FLAG_FORMAT_AMD)) {
+						next = ST_SHUTDOWN_PENDING;
+						break;
+					}
 				}
 				ap->submount++;
-			}
+			} else if (ap->submount > 1)
+				ap->submount = 1;
 
 			if (ap->state == ST_EXPIRE && !ap->submount)
 				alarm_add(ap, ap->exp_runfreq);
