@@ -116,6 +116,9 @@ void set_thread_mount_request_log_id(struct pending_args *mt)
 	unsigned long *attempt_id;
 	int status;
 
+	if (!defaults_get_use_mount_request_log_id())
+		return;
+
 	attempt_id = pthread_getspecific(key_thread_attempt_id);
 	if (attempt_id == NULL) {
 		attempt_id = (unsigned long *) calloc(1, sizeof(unsigned long));

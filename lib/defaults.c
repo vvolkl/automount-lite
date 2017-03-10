@@ -78,6 +78,7 @@
 #define NAME_DISABLE_NOT_FOUND_MESSAGE	"disable_not_found_message"
 
 #define NAME_SSS_MASTER_MAP_WAIT	"sss_master_map_wait"
+#define NAME_USE_MOUNT_REQUEST_LOG_ID	"use_mount_request_log_id"
 
 #define NAME_AMD_ARCH				"arch"
 #define NAME_AMD_AUTO_ATTRCACHE			"auto_attrcache"
@@ -359,6 +360,11 @@ static int conf_load_autofs_defaults(void)
 
 	ret = conf_update(sec, NAME_SSS_MASTER_MAP_WAIT,
 			  DEFAULT_SSS_MASTER_MAP_WAIT, CONF_ENV);
+	if (ret == CFG_FAIL)
+		goto error;
+
+	ret = conf_update(sec, NAME_USE_MOUNT_REQUEST_LOG_ID,
+			  DEFAULT_USE_MOUNT_REQUEST_LOG_ID, CONF_ENV);
 	if (ret == CFG_FAIL)
 		goto error;
 
@@ -1848,6 +1854,17 @@ unsigned int defaults_get_sss_master_map_wait(void)
 	res = conf_get_yesno(autofs_gbl_sec, NAME_SSS_MASTER_MAP_WAIT);
 	if (res < 0)
 		res = atoi(DEFAULT_SSS_MASTER_MAP_WAIT);
+
+	return res;
+}
+
+unsigned int defaults_get_use_mount_request_log_id(void)
+{
+	int res;
+
+	res = conf_get_yesno(autofs_gbl_sec, NAME_USE_MOUNT_REQUEST_LOG_ID);
+	if (res < 0)
+		res = atoi(DEFAULT_USE_MOUNT_REQUEST_LOG_ID);
 
 	return res;
 }

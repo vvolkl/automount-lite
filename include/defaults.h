@@ -52,6 +52,7 @@
 #define DEFAULT_DISABLE_NOT_FOUND_MESSAGE "0"
 
 #define DEFAULT_SSS_MASTER_MAP_WAIT	"0"
+#define DEFAULT_USE_MOUNT_REQUEST_LOG_ID "0"
 
 /* Config entry flags */
 #define CONF_NONE			0x00000000
@@ -172,6 +173,7 @@ unsigned int defaults_get_map_hash_table_size(void);
 unsigned int defaults_use_hostname_for_mounts(void);
 unsigned int defaults_disable_not_found_message(void);
 unsigned int defaults_get_sss_master_map_wait(void);
+unsigned int defaults_get_use_mount_request_log_id(void);
 
 unsigned int conf_amd_mount_section_exists(const char *);
 char **conf_amd_get_mount_paths(void);

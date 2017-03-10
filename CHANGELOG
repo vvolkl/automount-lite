@@ -53,6 +53,7 @@ xx/xx/2016 autofs-5.1.3
 - create thread-local ID for mount attempts.
 - log functions to prefix messages with attempt_id if available.
 - factor out set_thread_mount_request_log_id().
+- add config option to use mount request log id.
 
 15/06/2016 autofs-5.1.2
 =======================

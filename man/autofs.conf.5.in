@@ -148,6 +148,12 @@ Set the time to wait and retry if sssd returns "no such entry" when starting
 up. When sssd is starting up it can sometimes return "no such entry" for a
 short time until it has read in the LDAP map information. Default is 0 seconds,
 don't wait.
+.TP
+.B use_mount_request_log_id
+.br
+Set whether to use a mount request log id so that log entries for specific
+mount requests can be easily identified in logs that have multiple conncurrent
+requests. Default is don't use mount request log ids.
 .SS LDAP Configuration
 .P
 Configuration settings available are:

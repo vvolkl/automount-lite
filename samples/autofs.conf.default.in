@@ -70,6 +70,13 @@ browse_mode = no
 #
 # force_standard_program_map_env = no
 #
+# use_mount_request_log_id - Set whether to use a mount request log
+#			id so that log entries for specific mount
+#			requests can be easily identified in logs
+#			that have multiple conncurrent requests.
+#
+#use_mount_request_log_id = no
+#
 # Define base dn for map dn lookup.
 #
 # Define server URIs
