@@ -100,7 +100,7 @@ static int umount_all(struct autofs_point *ap, int force);
 extern struct master *master_list;
 
 /* simple string hash based on public domain sdbm library */
-unsigned long sdbm_hash(const char *str, unsigned long seed)
+static unsigned long sdbm_hash(const char *str, unsigned long seed)
 {
 	unsigned long hash = seed;
 	char c;
@@ -108,6 +108,28 @@ unsigned long sdbm_hash(const char *str, unsigned long seed)
 	while ((c = *str++))
 		hash = c + (hash << 6) + (hash << 16) - hash;
 	return hash;
+}
+
+void set_thread_mount_request_log_id(struct pending_args *mt)
+{
+	char attempt_id_comp[20];
+	unsigned long *attempt_id;
+	int status;
+
+	attempt_id = pthread_getspecific(key_thread_attempt_id);
+	if (attempt_id == NULL) {
+		attempt_id = (unsigned long *) calloc(1, sizeof(unsigned long));
+		if (attempt_id  == NULL)
+			fatal(ENOMEM);
+		snprintf(attempt_id_comp, 20, "%ld", mt->wait_queue_token);
+		*attempt_id = sdbm_hash(attempt_id_comp, 0);
+		snprintf(attempt_id_comp, 20, "%u", mt->pid);
+		*attempt_id = sdbm_hash(attempt_id_comp, *attempt_id);
+		*attempt_id = sdbm_hash(mt->name, *attempt_id);
+		status = pthread_setspecific(key_thread_attempt_id, attempt_id);
+		if (status != 0)
+			fatal(status);
+	}
 }
 
 static int is_remote_fstype(unsigned int fs_type)

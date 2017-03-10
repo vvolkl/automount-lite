@@ -245,7 +245,8 @@ const char **copy_argv(int argc, const char **argv);
 int compare_argv(int argc1, const char **argv1, int argc2, const char **argv2);
 int free_argv(int argc, const char **argv);
 
-unsigned long sdbm_hash(const char *str, unsigned long seed);
+struct pending_args;
+void set_thread_mount_request_log_id(struct pending_args *mt);
 
 void dump_core(void);
 int aquire_lock(void);
