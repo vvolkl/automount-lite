@@ -139,9 +139,7 @@ void expire_cleanup(void *arg)
 					next = ST_SHUTDOWN_PENDING;
 					break;
 				}
-
-				if (ap->submount++ == 0)
-					ap->submount = 2;
+				ap->submount++;
 			}
 
 			if (ap->state == ST_EXPIRE && !ap->submount)
