@@ -55,6 +55,7 @@ xx/xx/2016 autofs-5.1.3
 - factor out set_thread_mount_request_log_id().
 - add config option to use mount request log id.
 - use autofs_point to store expire timeout where possibe.
+- fix possible NULL derefernce.
 
 15/06/2016 autofs-5.1.2
 =======================
