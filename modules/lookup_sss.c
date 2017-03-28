@@ -309,9 +309,11 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 		ret = setautomntent_wait(logopt,
 					 ctxt, ctxt->mapname, &sss_ctxt,
 					 retries);
-		if (ret == ENOENT)
-			return NSS_STATUS_NOTFOUND;
-		return NSS_STATUS_UNAVAIL;
+		if (ret) {
+			if (ret == ENOENT)
+				return NSS_STATUS_NOTFOUND;
+			return NSS_STATUS_UNAVAIL;
+		}
 	}
 
 	count = 0;
