@@ -1297,6 +1297,30 @@ int parse_mount(struct autofs_point *ap, const char *name,
 
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
 
+	/* Offset map entries have been expanded already, avoid expanding
+	 * them again so that the quote handling is consistent between map
+	 * entry locations and (previously expanded) offset map entry
+	 * locations.
+	 */
+	if (*name == '/') {
+		cache_readlock(mc);
+		me = cache_lookup_distinct(mc, name);
+		if (me && me->multi && me->multi != me) {
+			cache_unlock(mc);
+			mapent_len = strlen(mapent) + 1;
+			pmapent = malloc(mapent_len + 1);
+			if (!pmapent) {
+				char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+				logerr(MODPREFIX "malloc: %s", estr);
+				return 1;
+			}
+			memset(pmapent, 0, mapent_len + 1);
+			strcpy(pmapent, mapent);
+			goto dont_expand;
+		}
+		cache_unlock(mc);
+	}
+
 	macro_lock();
 	ctxt->subst = addstdenv(ctxt->subst, NULL);
 
@@ -1313,6 +1337,7 @@ int parse_mount(struct autofs_point *ap, const char *name,
 	ctxt->subst = removestdenv(ctxt->subst, NULL);
 	macro_unlock();
 
+dont_expand:
 	pthread_setcancelstate(cur_state, NULL);
 
 	debug(ap->logopt, MODPREFIX "expanded entry: %s", pmapent);

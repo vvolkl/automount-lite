@@ -59,6 +59,7 @@ xx/xx/2016 autofs-5.1.3
 - fix work around sss startup delay.
 - fix invalid reference in remount_active_mount().
 - use malloc for expanded map location.
+- fix offset mount location multiple expansion.
 
 15/06/2016 autofs-5.1.2
 =======================
