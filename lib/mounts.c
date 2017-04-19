@@ -1728,8 +1728,10 @@ static int remount_active_mount(struct autofs_point *ap,
 	if (fd == -1)
 		return REMOUNT_OPEN_FAIL;
 
-	error(ap->logopt, "ap->type %d type %u", ap->type, type);
-	timeout = get_exp_timeout(ap, me->source);
+	if (!me)
+		timeout = get_exp_timeout(ap, NULL);
+	else
+		timeout = get_exp_timeout(ap, me->source);
 
 	/* Re-reading the map, set timeout and return */
 	if (ap->state == ST_READMAP) {
