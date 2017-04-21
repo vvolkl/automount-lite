@@ -60,6 +60,7 @@ xx/xx/2016 autofs-5.1.3
 - fix invalid reference in remount_active_mount().
 - use malloc for expanded map location.
 - fix offset mount location multiple expansion.
+- increase worker thread per-thread stack size.
 
 15/06/2016 autofs-5.1.2
 =======================

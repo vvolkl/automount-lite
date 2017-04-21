@@ -81,6 +81,7 @@ static int cloexec_works = 0;
 /* Attributes for creating detached and joinable threads */
 pthread_attr_t th_attr;
 pthread_attr_t th_attr_detached;
+size_t detached_thread_stack_size = PTHREAD_STACK_MIN * 144;
 
 struct master_readmap_cond mrc = {
 	PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, 0, NULL, 0, 0, 0, 0};
@@ -2476,7 +2477,7 @@ int main(int argc, char *argv[])
 
 #ifdef _POSIX_THREAD_ATTR_STACKSIZE
 	if (pthread_attr_setstacksize(
-			&th_attr_detached, PTHREAD_STACK_MIN*64)) {
+			&th_attr_detached, detached_thread_stack_size)) {
 		logerr("%s: failed to set stack size thread attribute!",
 		       program);
 		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
@@ -2486,6 +2487,17 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 #endif
+
+	if (pthread_attr_getstacksize(
+			&th_attr_detached, &detached_thread_stack_size)) {
+		logerr("%s: failed to get detached thread stack size!",
+		       program);
+		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+		close(start_pipefd[1]);
+		release_flag_file();
+		macro_free_global_table();
+		exit(1);
+	}
 
 	info(logging, "Starting automounter version %s, master map %s",
 		version, master_list->name);
