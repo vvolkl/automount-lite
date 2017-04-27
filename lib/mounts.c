@@ -48,6 +48,9 @@ static const char mnt_name_template[]      = "automount(pid%u)";
 static struct kernel_mod_version kver = {0, 0};
 static const char kver_options_template[]  = "fd=%d,pgrp=%u,minproto=3,maxproto=5";
 
+extern size_t detached_thread_stack_size;
+static size_t maxgrpbuf = 0;
+
 #define EXT_MOUNTS_HASH_SIZE    50
 
 struct ext_mount {
@@ -1510,14 +1513,22 @@ void set_tsd_user_vars(unsigned int logopt, uid_t uid, gid_t gid)
 	}
 
 	gr_tmp = NULL;
+	status = ERANGE;
+	if (!maxgrpbuf)
+		maxgrpbuf = detached_thread_stack_size * 0.9;
+
+	/* If getting the group name fails go on without it. It's
+	 * used to set an environment variable for program maps
+	 * which may or may not use it so it isn't critical to
+	 * operation.
+	 */
+
 	tmplen = grplen;
 	while (1) {
 		char *tmp = realloc(gr_tmp, tmplen + 1);
 		if (!tmp) {
 			error(logopt, "failed to malloc buffer for getgrgid_r");
-			if (gr_tmp)
-				free(gr_tmp);
-			goto free_tsv_home;
+			goto no_group;
 		}
 		gr_tmp = tmp;
 		pgr = &gr;
@@ -1526,22 +1537,29 @@ void set_tsd_user_vars(unsigned int logopt, uid_t uid, gid_t gid)
 		if (status != ERANGE)
 			break;
 		tmplen += grplen;
+
+		/* Don't tempt glibc to alloca() larger than is (likely)
+		 * available on the stack.
+		 */
+		if (tmplen < maxgrpbuf)
+			continue;
+
+		/* Add a message so we know this happened */
+		debug(logopt, "group buffer allocation would be too large");
+		break;
 	}
 
-	if (status || !pgr) {
+no_group:
+	if (status || !pgr)
 		error(logopt, "failed to get group info from getgrgid_r");
-		free(gr_tmp);
-		goto free_tsv_home;
+	else {
+		tsv->group = strdup(gr.gr_name);
+		if (!tsv->group)
+			error(logopt, "failed to malloc buffer for group");
 	}
 
-	tsv->group = strdup(gr.gr_name);
-	if (!tsv->group) {
-		error(logopt, "failed to malloc buffer for group");
+	if (gr_tmp)
 		free(gr_tmp);
-		goto free_tsv_home;
-	}
-
-	free(gr_tmp);
 
 	status = pthread_setspecific(key_thread_stdenv_vars, tsv);
 	if (status) {
@@ -1552,7 +1570,8 @@ void set_tsd_user_vars(unsigned int logopt, uid_t uid, gid_t gid)
 	return;
 
 free_tsv_group:
-	free(tsv->group);
+	if (tsv->group)
+		free(tsv->group);
 free_tsv_home:
 	free(tsv->home);
 free_tsv_user:
