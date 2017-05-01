@@ -1514,8 +1514,10 @@ void set_tsd_user_vars(unsigned int logopt, uid_t uid, gid_t gid)
 
 	gr_tmp = NULL;
 	status = ERANGE;
+#ifdef ENABLE_LIMIT_GETGRGID_SIZE
 	if (!maxgrpbuf)
 		maxgrpbuf = detached_thread_stack_size * 0.9;
+#endif
 
 	/* If getting the group name fails go on without it. It's
 	 * used to set an environment variable for program maps
@@ -1539,9 +1541,9 @@ void set_tsd_user_vars(unsigned int logopt, uid_t uid, gid_t gid)
 		tmplen += grplen;
 
 		/* Don't tempt glibc to alloca() larger than is (likely)
-		 * available on the stack.
+		 * available on the stack if limit-getgrgid-size is enabled.
 		 */
-		if (tmplen < maxgrpbuf)
+		if (!maxgrpbuf || (tmplen < maxgrpbuf))
 			continue;
 
 		/* Add a message so we know this happened */

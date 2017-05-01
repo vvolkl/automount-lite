@@ -158,7 +158,7 @@ AC_SUBST(sssldir)
 # good for portability
 #
 AC_ARG_ENABLE(sloppy-mount,
-[  --enable-sloppy-mount   enable the use of the -s option to mount],,
+[  --enable-sloppy-mount         enable the use of the -s option to mount],,
 	enable_sloppy_mount=auto)
 if test x$enable_sloppy_mount = xauto; then
 	AF_SLOPPY_MOUNT()
@@ -348,7 +348,7 @@ AC_SUBST(DAEMON_LDFLAGS)
 # Enable ability to access value in external env variable
 #
 AC_ARG_ENABLE(ext-env,
-[  --disable-ext-env	  disable search in environment for substitution variable],,
+[  --disable-ext-env	        disable search in environment for substitution variable],,
 	enableval=yes)
 if test x$enable_ext_env = xyes -o x$enableval = xyes; then
         AC_DEFINE(ENABLE_EXT_ENV, 1, [leave this alone])
@@ -358,7 +358,7 @@ fi
 # Disable use of locking when spawning mount command
 #
 AC_ARG_ENABLE(mount-locking,
-[  --disable-mount-locking disable use of locking when spawning mount command],,
+[  --disable-mount-locking       disable use of locking when spawning mount command],,
 	enableval=yes)
 if test x$enable_mount_locking = xyes -o x$enableval = xyes; then
 	AC_DEFINE(ENABLE_MOUNT_LOCKING, 1, [Disable use of locking when spawning mount command])
@@ -368,8 +368,8 @@ fi
 # Enable forced shutdown on USR1 signal (unlink umounts all mounts).
 #
 AC_ARG_ENABLE(force-shutdown,
-[  --enable-force-shutdown enable USR1 signal to force unlink umount of any
-			  busy mounts during shutdown],,
+[  --enable-force-shutdown       enable USR1 signal to force unlink umount of any
+			        busy mounts during shutdown],,
 	enableval=no)
 if test x$enable_forced_shutdown = xyes -o x$enableval = xyes; then
 	AC_DEFINE(ENABLE_FORCED_SHUTDOWN, 1, [Enable forced shutdown on USR1 signal])
@@ -379,11 +379,21 @@ fi
 # Enable exit, ignoring busy mounts.
 #
 AC_ARG_ENABLE(ignore-busy,
-[  --enable-ignore-busy	  enable exit without umounting busy mounts during
-			  shutdown],,
+[  --enable-ignore-busy	        enable exit without umounting busy mounts during
+			        shutdown],,
 	enableval=no)
 if test x$enable_ignore_busy_mounts = xyes -o x$enableval = xyes; then
 	AC_DEFINE(ENABLE_IGNORE_BUSY_MOUNTS, 1, [Enable exit, ignoring busy mounts])
+fi
+
+#
+# Enable exit, ignoring busy mounts.
+#
+AC_ARG_ENABLE(limit-getgrgid-size,
+[  --enable-limit-getgrgid-size	enable limit stack use of getgrgid_r()],,
+	enableval=no)
+if test x$enable_limit_getgrgid_size = xyes -o x$enableval = xyes; then
+	AC_DEFINE(ENABLE_LIMIT_GETGRGID_SIZE, 1, [Enable limit stack use of getgrgid_r()])
 fi
 
 #

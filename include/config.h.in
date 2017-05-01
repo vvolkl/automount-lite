@@ -9,6 +9,9 @@
 /* Enable exit, ignoring busy mounts */
 #undef ENABLE_IGNORE_BUSY_MOUNTS
 
+/* Enable limit stack use of getgrgid_r() */
+#undef ENABLE_LIMIT_GETGRGID_SIZE
+
 /* Disable use of locking when spawning mount command */
 #undef ENABLE_MOUNT_LOCKING
 

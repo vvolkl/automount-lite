@@ -744,6 +744,7 @@ enable_ext_env
 enable_mount_locking
 enable_force_shutdown
 enable_ignore_busy
+enable_limit_getgrgid_size
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1361,13 +1362,14 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-sloppy-mount   enable the use of the -s option to mount
-  --disable-ext-env	  disable search in environment for substitution variable
-  --disable-mount-locking disable use of locking when spawning mount command
-  --enable-force-shutdown enable USR1 signal to force unlink umount of any
-			  busy mounts during shutdown
-  --enable-ignore-busy	  enable exit without umounting busy mounts during
-			  shutdown
+  --enable-sloppy-mount         enable the use of the -s option to mount
+  --disable-ext-env	        disable search in environment for substitution variable
+  --disable-mount-locking       disable use of locking when spawning mount command
+  --enable-force-shutdown       enable USR1 signal to force unlink umount of any
+			        busy mounts during shutdown
+  --enable-ignore-busy	        enable exit without umounting busy mounts during
+			        shutdown
+  --enable-limit-getgrgid-size	enable limit stack use of getgrgid_r()
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -5726,6 +5728,22 @@ fi
 if test x$enable_ignore_busy_mounts = xyes -o x$enableval = xyes; then
 
 $as_echo "#define ENABLE_IGNORE_BUSY_MOUNTS 1" >>confdefs.h
+
+fi
+
+#
+# Enable exit, ignoring busy mounts.
+#
+# Check whether --enable-limit-getgrgid-size was given.
+if test "${enable_limit_getgrgid_size+set}" = set; then :
+  enableval=$enable_limit_getgrgid_size;
+else
+  enableval=no
+fi
+
+if test x$enable_limit_getgrgid_size = xyes -o x$enableval = xyes; then
+
+$as_echo "#define ENABLE_LIMIT_GETGRGID_SIZE 1" >>confdefs.h
 
 fi
 
