@@ -1,4 +1,7 @@
-24/05/2016 autofs-5.1.3
+xx/xx/2017 autofs-5.1.4
+- fix spec file url.
+
+24/05/2017 autofs-5.1.3
 =======================
 - fix release date in CHANGELOG.
 - build: check for clock_gettime in librt.

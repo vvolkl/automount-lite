@@ -24,7 +24,7 @@ Version: %{version}
 Release: %{release}
 License: GPL
 Group: System Environment/Daemons
-Source: ftp://ftp.kernel.org/pub/linux/daemons/autofs/v5/autofs-%{version}.tar.gz
+Source: https://www.kernel.org/pub/linux/daemons/autofs/v5/autofs-%{version}.tar.gz
 Buildroot: %{_tmppath}/%{name}-tmp
 %if %{with_systemd}
 BuildRequires: systemd-units
