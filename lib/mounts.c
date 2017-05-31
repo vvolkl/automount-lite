@@ -1463,6 +1463,7 @@ void set_tsd_user_vars(unsigned int logopt, uid_t uid, gid_t gid)
 		error(logopt, "failed alloc tsv storage");
 		return;
 	}
+	memset(tsv, 0, sizeof(struct thread_stdenv_vars));
 
 	tsv->uid = uid;
 	tsv->gid = gid;

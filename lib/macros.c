@@ -281,18 +281,20 @@ macro_addvar(struct substvar *table, const char *str, int len, const char *value
 	}
 
 	if (lv) {
-		char *this = malloc(strlen(value) + 1);
+		const char *val = value ? value : "";
+		char *this = malloc(strlen(val) + 1);
 		if (!this) {
 			lv = table;
 			goto done;
 		}
-		strcpy(this, value);
+		strcpy(this, val);
 		free(lv->val);
 		lv->val = this;
 		if (lv != table)
 			lv = table;
 	} else {
 		struct substvar *new;
+		const char *this = value ? value : "";
 		char *def, *val;
 
 		def = strdup(str);
@@ -302,7 +304,7 @@ macro_addvar(struct substvar *table, const char *str, int len, const char *value
 		}
 		def[len] = '\0';
 
-		val = strdup(value);
+		val = strdup(this);
 		if (!val) {
 			lv = table;
 			free(def);
