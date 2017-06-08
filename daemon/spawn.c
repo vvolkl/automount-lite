@@ -592,6 +592,11 @@ int spawn_umount(unsigned logopt, ...)
 	char **argv, **p;
 	char prog[] = PATH_UMOUNT;
 	char arg0[] = PATH_UMOUNT;
+#ifdef HAVE_NO_CANON_UMOUNT
+	char * const arg_c = "-c";
+#else
+	char * const arg_c = NULL;
+#endif
 	char argn[] = "-n";
 	unsigned int options;
 	unsigned int retries = MTAB_LOCK_RETRIES;
@@ -620,19 +625,21 @@ int spawn_umount(unsigned logopt, ...)
 			update_mtab = 0;
 		}
 	}
+	if (arg_c)
+		argc++;;
 
-	if (!(argv = alloca(sizeof(char *) * argc + 1)))
+	if (!(argv = alloca(sizeof(char *) * (argc + 1))))
 		return -1;
 
-	argv[0] = arg0;
+	p = argv;
+	*p++ = arg0;
+	if (arg_c)
+		*p++ = arg_c;
+
+	if (!update_mtab)
+		*p++ = argn;
 
 	va_start(arg, logopt);
-	if (update_mtab)
-		p = argv + 1;
-	else {
-		argv[1] = argn;
-		p = argv + 2;
-	}
 	while ((*p++ = va_arg(arg, char *)));
 	va_end(arg);
 

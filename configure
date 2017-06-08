@@ -737,6 +737,7 @@ with_flagdir
 with_libtirpc
 with_dmalloc
 enable_sloppy_mount
+enable_no_canon_umount
 with_hesiod
 with_openldap
 with_sasl
@@ -1363,6 +1364,7 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-sloppy-mount         enable the use of the -s option to mount
+  --enable-no-canon-umount         enable the use of the -c option to umount
   --disable-ext-env	        disable search in environment for substitution variable
   --disable-mount-locking       disable use of locking when spawning mount command
   --enable-force-shutdown       enable USR1 signal to force unlink umount of any
@@ -3990,6 +3992,37 @@ fi
 if test x$enable_sloppy_mount = xyes; then
 
 $as_echo "#define HAVE_SLOPPY_MOUNT 1" >>confdefs.h
+
+fi
+
+#
+# Newer umounts have the -c (--no-canonicalize) option to avoid
+# stating the path and possible blocking.  Good for NFS.
+#
+# Check whether --enable-no-canon-umount was given.
+if test "${enable_no_canon_umount+set}" = set; then :
+  enableval=$enable_no_canon_umount;
+else
+  enable_no_canon_umount=auto
+fi
+
+if test x$enable_no_canon_umount = xauto; then
+	if test -n "$UMOUNT" ; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if umount accepts the -c option" >&5
+$as_echo_n "checking if umount accepts the -c option... " >&6; }
+  if "$UMOUNT" -h 2>&1 | grep -e '-c.*--no-canonicalize' > /dev/null 2>&1 ; then
+    enable_no_canon_umount=yes
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  fi
+fi
+fi
+if test x$enable_no_canon_umount = xyes; then
+
+$as_echo "#define HAVE_NO_CANON_UMOUNT 1" >>confdefs.h
 
 fi
 

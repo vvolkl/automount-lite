@@ -73,6 +73,24 @@ AC_DEFUN(AF_SLOPPY_MOUNT,
   fi
 fi])
 
+dnl --------------------------------------------------------------------------
+dnl AF_NO_CANON_UMOUNT
+dnl
+dnl Check to see if umount(8) supports the no-canonicalize (-c) option, and define
+dnl the cpp variable HAVE_NO_CANON_UMOUNT if so.  This requires that UMOUNT is
+dnl already defined by a call to AF_PATH_INCLUDE or AC_PATH_PROGS.
+dnl --------------------------------------------------------------------------
+AC_DEFUN(AF_NO_CANON_UMOUNT,
+[if test -n "$UMOUNT" ; then
+  AC_MSG_CHECKING([if umount accepts the -c option])
+  if "$UMOUNT" -h 2>&1 | grep -e '-c.*--no-canonicalize' > /dev/null 2>&1 ; then
+    enable_no_canon_umount=yes
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+  fi
+fi])
+
 
 dnl --------------------------------------------------------------------------
 dnl AF_LINUX_PROCFS

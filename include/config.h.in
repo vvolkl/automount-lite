@@ -57,6 +57,9 @@
 /* define if you have MOUNT_NFS */
 #undef HAVE_MOUNT_NFS
 
+/* define if the umount command supports the -c option */
+#undef HAVE_NO_CANON_UMOUNT
+
 /* define if the mount command supports the -s option */
 #undef HAVE_SLOPPY_MOUNT
 
