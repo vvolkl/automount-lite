@@ -605,9 +605,10 @@ static int get_supported_ver_and_cost(unsigned logopt, struct host *host,
 		status = rpc_udp_getclient(&rpc_info, NFS_PROGRAM, vers);
 	else
 		status = rpc_tcp_getclient(&rpc_info, NFS_PROGRAM, vers);
-	if (status == -EHOSTUNREACH)
+	if (status == -EHOSTUNREACH) {
+		status = 0;
 		goto done;
-	else if (!status) {
+	} else if (!status) {
 		clock_gettime(CLOCK_MONOTONIC, &start);
 		status = rpc_ping_proto(&rpc_info);
 		clock_gettime(CLOCK_MONOTONIC, &end);

@@ -9,6 +9,7 @@ xx/xx/2017 autofs-5.1.4
 - fix typo in autofs config file comments.
 - fix typos in autofs man pages.
 - use pkg-config to search for libtirpc to fix cross-compilation.
+- fix incorrect status return in get_nfs_info().
 
 24/05/2017 autofs-5.1.3
 =======================
