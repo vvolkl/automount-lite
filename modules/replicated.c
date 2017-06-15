@@ -615,16 +615,20 @@ static int get_supported_ver_and_cost(unsigned logopt, struct host *host,
 		int ret = rpc_portmap_getclient(&pm_info,
 				host->name, host->addr, host->addr_len,
 				proto, RPC_CLOSE_DEFAULT);
-		if (ret)
+		if (ret) {
+			debug(logopt, "failed to get portmap client");
 			return 0;
+		}
 
 		memset(&parms, 0, sizeof(struct pmap));
 		parms.pm_prog = NFS_PROGRAM;
 		parms.pm_prot = rpc_info.proto;
 		parms.pm_vers = vers;
 		ret = rpc_portmap_getport(&pm_info, &parms, &rpc_info.port);
-		if (ret < 0)
+		if (ret < 0) {
+			debug(logopt, "failed to get service port");
 			goto done;
+		}
 	}
 
 	if (rpc_info.proto == IPPROTO_UDP)
@@ -633,6 +637,7 @@ static int get_supported_ver_and_cost(unsigned logopt, struct host *host,
 		status = rpc_tcp_getclient(&rpc_info, NFS_PROGRAM, vers);
 	if (status == -EHOSTUNREACH) {
 		status = 0;
+		debug(logopt, "host not reachable getting RPC client");
 		goto done;
 	} else if (!status) {
 		clock_gettime(CLOCK_MONOTONIC, &start);

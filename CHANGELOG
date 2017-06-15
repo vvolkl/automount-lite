@@ -15,6 +15,7 @@ xx/xx/2017 autofs-5.1.4
 - fix mount.nfs blocks on first mount.
 - fix some man page problems.
 - add some more debug logging to get_nfs_info().
+- add some more debug logging to get_supported_ver_and_cost().
 
 24/05/2017 autofs-5.1.3
 =======================
