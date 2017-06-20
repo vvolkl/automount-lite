@@ -1,5 +1,5 @@
 .\" t
-.TH AUTOFS.CONF "23 Jan 2014"
+.TH AUTOFS.CONF 5 "23 Jan 2014"
 .SH NAME
 autofs.conf \- autofs configuration
 .SH "DESCRIPTION"
