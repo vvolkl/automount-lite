@@ -182,7 +182,7 @@ browse_mode = no
 #
 #sss_master_map_wait = 0
 #
-# Otions for the amd parser within autofs.
+# Options for the amd parser within autofs.
 #
 # amd configuration options that are aren't used, haven't been
 # implemented or have different behaviour within autofs.
