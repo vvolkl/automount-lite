@@ -1001,12 +1001,11 @@ int rpc_ping_proto(struct conn_info *info)
 }
 
 static int __rpc_ping(const char *host,
-		      unsigned long version, int proto,
+		      unsigned long version, int proto, int port,
 		      long seconds, long micros, unsigned int option)
 {
 	int status;
 	struct conn_info info;
-	struct pmap parms;
 
 	info.proto = proto;
 	info.host = host;
@@ -1023,32 +1022,41 @@ static int __rpc_ping(const char *host,
 
 	status = RPC_PING_FAIL;
 
-	parms.pm_prog = NFS_PROGRAM;
-	parms.pm_vers = version;
-	parms.pm_prot = info.proto;
-	parms.pm_port = 0;
 
-	status = rpc_portmap_getport(&info, &parms, &info.port);
-	if (status < 0)
-		return status;
+	if (port > 0)
+		info.port = port;
+	else {
+		struct pmap parms;
+
+		parms.pm_prog = NFS_PROGRAM;
+		parms.pm_vers = version;
+		parms.pm_prot = info.proto;
+		parms.pm_port = 0;
+		status = rpc_portmap_getport(&info, &parms, &info.port);
+		if (status < 0)
+			return status;
+	}
 
 	status = rpc_ping_proto(&info);
 
 	return status;
 }
 
-int rpc_ping(const char *host, long seconds, long micros, unsigned int option)
+int rpc_ping(const char *host, int port,
+	     long seconds, long micros, unsigned int option)
 {
 	unsigned long vers4 = NFS4_VERSION;
 	unsigned long vers3 = NFS3_VERSION;
 	unsigned long vers2 = NFS2_VERSION;
 	int status;
 
-	status = __rpc_ping(host, vers2, IPPROTO_UDP, seconds, micros, option);
+	status = __rpc_ping(host, vers2,
+			    IPPROTO_UDP, port, seconds, micros, option);
 	if (status > 0)
 		return RPC_PING_V2 | RPC_PING_UDP;
 
-	status = __rpc_ping(host, vers3, IPPROTO_UDP, seconds, micros, option);
+	status = __rpc_ping(host, vers3,
+			    IPPROTO_UDP, port, seconds, micros, option);
 	if (status > 0)
 		return RPC_PING_V3 | RPC_PING_UDP;
 
@@ -1058,15 +1066,18 @@ int rpc_ping(const char *host, long seconds, long micros, unsigned int option)
 		return RPC_PING_V4 | RPC_PING_UDP;
 	*/
 
-	status = __rpc_ping(host, vers2, IPPROTO_TCP, seconds, micros, option);
+	status = __rpc_ping(host, vers2,
+			    IPPROTO_TCP, port, seconds, micros, option);
 	if (status > 0)
 		return RPC_PING_V2 | RPC_PING_TCP;
 
-	status = __rpc_ping(host, vers3, IPPROTO_TCP, seconds, micros, option);
+	status = __rpc_ping(host, vers3, port,
+			    IPPROTO_TCP, seconds, micros, option);
 	if (status > 0)
 		return RPC_PING_V3 | RPC_PING_TCP;
 
-	status = __rpc_ping(host, vers4, IPPROTO_TCP, seconds, micros, option);
+	status = __rpc_ping(host, vers4,
+			    IPPROTO_TCP, port, seconds, micros, option);
 	if (status > 0)
 		return RPC_PING_V4 | RPC_PING_TCP;
 

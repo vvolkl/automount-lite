@@ -69,7 +69,7 @@ void rpc_destroy_tcp_client(struct conn_info *);
 int rpc_portmap_getclient(struct conn_info *, const char *, struct sockaddr *, size_t, int, unsigned int);
 int rpc_portmap_getport(struct conn_info *, struct pmap *, unsigned short *);
 int rpc_ping_proto(struct conn_info *);
-int rpc_ping(const char *, long, long, unsigned int);
+int rpc_ping(const char *, int, long, long, unsigned int);
 double monotonic_elapsed(struct timespec, struct timespec);
 const char *get_addr_string(struct sockaddr *, char *, socklen_t);
 

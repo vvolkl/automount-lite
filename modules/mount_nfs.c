@@ -358,7 +358,7 @@ dont_probe:
 			char *host = this->name ? this->name : "localhost";
 			int ret;
 
-			ret = rpc_ping(host, 2, 0, RPC_CLOSE_DEFAULT);
+			ret = rpc_ping(host, port, 2, 0, RPC_CLOSE_DEFAULT);
 			if (ret <= 0)
 				goto next;
 		}
