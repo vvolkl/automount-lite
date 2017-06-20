@@ -71,7 +71,6 @@ int rpc_portmap_getport(struct conn_info *, struct pmap *, unsigned short *);
 int rpc_ping_proto(struct conn_info *);
 int rpc_ping(const char *, long, long, unsigned int);
 double monotonic_elapsed(struct timespec, struct timespec);
-int rpc_time(const char *, unsigned int, unsigned int, long, long, unsigned int, double *);
 const char *get_addr_string(struct sockaddr *, char *, socklen_t);
 
 #endif
