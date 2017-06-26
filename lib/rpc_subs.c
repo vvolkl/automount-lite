@@ -43,6 +43,7 @@ const rpcvers_t rpcb_version = PMAPVERS;
 
 #include "mount.h"
 #include "rpc_subs.h"
+#include "replicated.h"
 #include "automount.h"
 
 /* #define STANDALONE */
@@ -1043,43 +1044,46 @@ static int __rpc_ping(const char *host,
 }
 
 int rpc_ping(const char *host, int port,
-	     long seconds, long micros, unsigned int option)
+	     unsigned int version, long seconds, long micros,
+	     unsigned int option)
 {
-	unsigned long vers4 = NFS4_VERSION;
-	unsigned long vers3 = NFS3_VERSION;
-	unsigned long vers2 = NFS2_VERSION;
-	int status;
+	int status = 0;
 
-	status = __rpc_ping(host, vers2,
-			    IPPROTO_UDP, port, seconds, micros, option);
-	if (status > 0)
-		return RPC_PING_V2 | RPC_PING_UDP;
+	if ((version & NFS2_REQUESTED) && (version & TCP_REQUESTED)) {
+		status = __rpc_ping(host, NFS2_VERSION,
+				    IPPROTO_TCP, port, seconds, micros, option);
+		if (status > 0)
+			return RPC_PING_V2 | RPC_PING_TCP;
+	}
 
-	status = __rpc_ping(host, vers3,
-			    IPPROTO_UDP, port, seconds, micros, option);
-	if (status > 0)
-		return RPC_PING_V3 | RPC_PING_UDP;
+	if ((version & NFS2_REQUESTED) && (version & UDP_REQUESTED)) {
+		status = __rpc_ping(host, NFS2_VERSION,
+				    IPPROTO_UDP, port, seconds, micros, option);
+		if (status > 0)
+			return RPC_PING_V2 | RPC_PING_UDP;
+	}
 
-	/* UDP isn't recommended for NFSv4, don't bother checking it.
-	status = __rpc_ping(host, vers4, IPPROTO_UDP, seconds, micros, option);
-	if (status > 0)
-		return RPC_PING_V4 | RPC_PING_UDP;
-	*/
+	if ((version & NFS3_REQUESTED) && (version & TCP_REQUESTED)) {
+		status = __rpc_ping(host, NFS3_VERSION,
+				    IPPROTO_TCP, port, seconds, micros, option);
+		if (status > 0)
+			return RPC_PING_V3 | RPC_PING_TCP;
+	}
 
-	status = __rpc_ping(host, vers2,
-			    IPPROTO_TCP, port, seconds, micros, option);
-	if (status > 0)
-		return RPC_PING_V2 | RPC_PING_TCP;
+	if ((version & NFS3_REQUESTED) && (version & UDP_REQUESTED)) {
+		status = __rpc_ping(host, NFS3_VERSION,
+				    IPPROTO_UDP, port, seconds, micros, option);
+		if (status > 0)
+			return RPC_PING_V3 | RPC_PING_UDP;
+	}
 
-	status = __rpc_ping(host, vers3, port,
-			    IPPROTO_TCP, seconds, micros, option);
-	if (status > 0)
-		return RPC_PING_V3 | RPC_PING_TCP;
-
-	status = __rpc_ping(host, vers4,
-			    IPPROTO_TCP, port, seconds, micros, option);
-	if (status > 0)
-		return RPC_PING_V4 | RPC_PING_TCP;
+	if (version & NFS4_REQUESTED) {
+		/* UDP isn't recommended for NFSv4, don't check it. */
+		status = __rpc_ping(host, NFS4_VERSION,
+				    IPPROTO_TCP, port, seconds, micros, option);
+		if (status > 0)
+			return RPC_PING_V4 | RPC_PING_TCP;
+	}
 
 	return status;
 }
