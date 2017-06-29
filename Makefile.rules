@@ -46,7 +46,7 @@ CFLAGS += -D_REENTRANT -D_FILE_OFFSET_BITS=64
 LIBS += -lpthread
 
 ifdef TIRPCLIB
-CFLAGS += -I/usr/include/tirpc
+CFLAGS += $(TIRPCCFLAGS)
 LIBS += $(TIRPCLIB)
 endif
 

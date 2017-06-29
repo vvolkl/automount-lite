@@ -11,6 +11,9 @@ define([AC_CACHE_LOAD], )dnl
 define([AC_CACHE_SAVE], )dnl
 AC_INIT(.autofs-5.1.3)
 
+# for pkg-config macros
+m4_include([/usr/share/aclocal/pkg.m4])
+
 #
 # autofs installs by default in /usr
 #
@@ -124,8 +127,17 @@ AC_SUBST(flagdir)
 #
 # Use libtirpc
 #
-AF_WITH_LIBTIRPC()
-AC_SUBST(TIRPCLIB)
+PKG_PROG_PKG_CONFIG()
+AC_ARG_WITH([libtirpc], AS_HELP_STRING([--with-libtirpc], [use libtirpc if available]))
+if test "x$with_libtirpc" = "xyes"; then
+  PKG_CHECK_MODULES([TIRPC],[libtirpc],[
+		AC_DEFINE(WITH_LIBTIRPC,1,
+			[Define to 1 if you have the libtirpc library installed])
+		AC_DEFINE(TIRPC_WORKAROUND,1,
+			[Define to 1 to use the libtirpc tsd usage workaround])
+    ])
+  AC_CHECK_FUNCS([getrpcbyname getservbyname])
+fi
 
 #
 # Optional include dmalloc

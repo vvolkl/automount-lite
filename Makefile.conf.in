@@ -64,7 +64,8 @@ RPCGEN = @PATH_RPCGEN@
 RANLIB = @PATH_RANLIB@
 
 # Use libtirpc if requested and available
-TIRPCLIB = @TIRPCLIB@
+TIRPCLIB = @TIRPC_LIBS@
+TIRPCCFLAGS = @TIRPC_CFLAGS@
 
 # Use dmalloc for memory debuging
 DMALLOCLIB = @DMALLOCLIB@
