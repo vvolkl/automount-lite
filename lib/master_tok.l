@@ -475,7 +475,9 @@ void master_set_scan_buffer(const char *buffer)
 	line_lim = line + strlen(buffer) + 1;
 }
 
+#ifndef min
 #define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
 
 int my_yyinput(char *buffer, int max_size)
 {

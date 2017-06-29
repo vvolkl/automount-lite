@@ -195,8 +195,14 @@ static int do_spawn(unsigned logopt, unsigned int wait,
 			 * program group to trigger mount
 			 */
 			if (euid) {
-				seteuid(euid);
-				setegid(egid);
+				if (seteuid(euid) == -1)
+					fprintf(stderr,
+						"warning: seteuid: %s\n",
+						strerror(errno));
+				if (setegid(egid) == -1)
+					fprintf(stderr,
+						"warning: setegid: %s\n",
+						strerror(errno));
 			}
 			setpgrp();
 
@@ -212,8 +218,14 @@ static int do_spawn(unsigned logopt, unsigned int wait,
 			if (fd != -1)
 				close(fd);
 
-			seteuid(0);
-			setegid(0);
+			if (seteuid(0) == -1)
+				fprintf(stderr,
+					"warning: seteuid: %s\n",
+					strerror(errno));
+			if (setegid(0) == -1)
+				fprintf(stderr,
+					"warning: setegid: %s\n",
+					strerror(errno));
 			if (pgrp >= 0)
 				setpgid(0, pgrp);
 

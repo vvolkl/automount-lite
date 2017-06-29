@@ -363,7 +363,6 @@ done:
 int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
-	struct mapent_cache *mc;
 	char buf[MAX_ERR_BUF];
 	struct map_source *source;
 	struct mapent *me;
@@ -377,8 +376,6 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 	source = ap->entry->current;
 	ap->entry->current = NULL;
 	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	debug(ap->logopt,
 	      MODPREFIX "looking up root=\"%s\", name=\"%s\"",

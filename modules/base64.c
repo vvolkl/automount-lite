@@ -12,7 +12,7 @@ static const char *BASE64_CHARS =
  * @param triple three bytes that should be encoded
  * @param result buffer of four characters where the result is stored
  */
-static void _base64_encode_triple(char triple[3], char result[4])
+static void _base64_encode_triple(unsigned char triple[3], char result[4])
 {
 	int tripleValue, i;
 

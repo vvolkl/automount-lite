@@ -1092,12 +1092,8 @@ static int map_update_needed(struct autofs_point *ap,
 			     struct map_source *source,
 			     struct lookup_context *ctxt)
 {
-	struct mapent_cache *mc;
-	struct mapent *me;
 	struct stat st;
 	int ret = 1;
-
-	mc = source->mc;
 
 	/*
 	 * We can skip the map lookup and cache update altogether
