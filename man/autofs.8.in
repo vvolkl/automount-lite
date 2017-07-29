@@ -1,6 +1,6 @@
 .TH AUTOFS 8 "9 Sep 1997"
 .SH NAME
-Service control for the automounter
+autofs \- Service control for the automounter
 .SH SYNOPSIS
 If a SysV init script system is being used:
 .br
@@ -72,9 +72,9 @@ for more information.
 .BR automount (8),
 .BR autofs (5),
 .BR autofs.conf (5),
-.BR auto.master (5).
-.BR autofs_ldap_auth.conf (5)
-.BR systemctl(1)
+.BR auto.master (5),
+.BR autofs_ldap_auth.conf (5),
+.BR systemctl(1).
 .SH AUTHOR
 This manual page was written by Christoph Lameter <chris@waterf.org>,
 for the Debian GNU/Linux system.  Edited by H. Peter Anvin

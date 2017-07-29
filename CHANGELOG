@@ -13,6 +13,7 @@ xx/xx/2017 autofs-5.1.4
 - fix a couple of compiler warnings.
 - set systemd KillMode to process.
 - fix mount.nfs blocks on first mount.
+- fix some man page problems.
 
 24/05/2017 autofs-5.1.3
 =======================

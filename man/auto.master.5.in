@@ -1,7 +1,7 @@
 .\" t
 .TH AUTO.MASTER 5 "11 Apr 2006"
 .SH NAME
-auto.master \- Master Map for automounter
+auto.master \- Master Map for automounter consulted by autofs
 .SH "DESCRIPTION"
 The
 .B auto.master
@@ -367,7 +367,7 @@ configuration will be used to locate the source of the map
 .BR autofs (5),
 .BR autofs (8),
 .BR autofs.conf (5),
-.BR autofs_ldap_auth.conf (5)
+.BR autofs_ldap_auth.conf (5).
 .SH AUTHOR
 This manual page was written by Christoph Lameter <chris@waterf.org>,
 for the Debian GNU/Linux system.  Edited by <hpa@transmeta.com> and
