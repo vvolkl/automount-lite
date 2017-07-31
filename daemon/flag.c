@@ -33,11 +33,42 @@
 #define MAX_PIDSIZE	20
 #define FLAG_FILE	AUTOFS_FLAG_DIR "/autofs-running"
 
+#define EXE_SELF	"/proc/self/exe"
+#define EXE_PID		"/proc/%u/exe"
+
 /* Flag for already existing flag file. */
 static int we_created_flagfile = 0;
 
 /* file descriptor of flag file */
 static int fd = -1;
+
+static int check_pid_exe_name(pid_t pid)
+{
+	char self_name[PATH_MAX + 1];
+	char pid_name[PATH_MAX + 1];
+	char exe_pid[MAX_PIDSIZE + 1];
+	int len, ret = 0;
+
+	len = readlink(EXE_SELF, self_name, PATH_MAX);
+	if (len == -1 || len == PATH_MAX)
+		goto out;
+	else
+		self_name[len] = 0;
+
+	len = snprintf(exe_pid, MAX_PIDSIZE, EXE_PID, pid);
+	if (len >= MAX_PIDSIZE)
+		goto out;
+
+	len = readlink(exe_pid, pid_name, PATH_MAX);
+	if (len == -1 || len == PATH_MAX)
+		goto out;
+	else
+		pid_name[len] = 0;
+
+	ret = !strcmp(self_name, pid_name);
+out:
+	return ret;
+}
 
 static int flag_is_owned(int fd)
 {
@@ -82,6 +113,10 @@ static int flag_is_owned(int fd)
 		 * and continue.
 		 */
 		if (ret == -1 && errno == ESRCH)
+			return 0;
+
+		/* If there is a process check if it is automount */
+		if (!check_pid_exe_name(pid))
 			return 0;
 	} else {
 		/*
