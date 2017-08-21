@@ -536,7 +536,8 @@ static enum nsswitch_status read_map_source(struct nss_source *this,
 	result = read_file_source_instance(ap, &tmap, age);
 	pthread_cleanup_pop(1);
 
-	map->instance = tmap.instance;
+	if (!map->instance)
+		map->instance = tmap.instance;
 
 	return result;
 }
@@ -1089,7 +1090,8 @@ static enum nsswitch_status lookup_map_name(struct nss_source *this,
 
 	result = lookup_name_file_source_instance(ap, &tmap, name, name_len);
 
-	map->instance = tmap.instance;
+	if (!map->instance)
+		map->instance = tmap.instance;
 
 	/* path is freed in free_argv */
 	free_argv(tmap.argc, tmap.argv);
