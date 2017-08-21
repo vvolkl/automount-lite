@@ -633,7 +633,8 @@ int lookup_nss_read_map(struct autofs_point *ap, struct map_source *source, time
 			if (result == NSS_STATUS_UNKNOWN)
 				continue;
 
-			/* Don't try to update the map cache if it's unavailable */
+			/* Try to avoid updating the map cache if an instance
+			 * is unavailable */
 			if (result == NSS_STATUS_UNAVAIL)
 				map->stale = 0;
 
@@ -1453,7 +1454,7 @@ int lookup_prune_cache(struct autofs_point *ap, time_t age)
 	map = entry->maps;
 	while (map) {
 		/* Is the map stale */
-		if (!map->stale) {
+		if (!map->stale && !check_stale_instances(map)) {
 			map = map->next;
 			continue;
 		}

@@ -512,7 +512,7 @@ static void *do_readmap(void *arg)
 		map = ap->entry->maps;
 		while (map) {
 			/* Is map source up to date or no longer valid */
-			if (!map->stale) {
+			if (!map->stale && !check_stale_instances(map)) {
 				map = map->next;
 				continue;
 			}

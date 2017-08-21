@@ -521,7 +521,7 @@ master_add_source_instance(struct map_source *source, const char *type, const ch
 	return new;
 }
 
-static int check_stale_instances(struct map_source *source)
+int check_stale_instances(struct map_source *source)
 {
 	struct map_source *map;
 
