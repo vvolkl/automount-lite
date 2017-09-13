@@ -429,12 +429,12 @@ as a full path.
 Is equivalent to the autofs timeout option. It is only possible
 to use this with type "auto" mounts due to the way the autofs
 kernel module performs expiry. It takes its default value from
-the autofs internal defaulti of 600 seconds.
+the autofs internal default of 600 seconds.
 .TP
 .B autofs_use_lofs
 .br
 If set to "yes" autofs will attempt to use bind mounts for type
-"auto" when possible.
+"link" entries when possible (default is "yes").
 .TP
 .B nis_domain
 .br

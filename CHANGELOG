@@ -21,6 +21,7 @@ xx/xx/2017 autofs-5.1.4
 - fix possible map instance memory leak.
 - check map instances for staleness on map update.
 - allow dot in OPTIONSTR value lexer pattern.
+- fix autofs_use_lofs description.
 
 24/05/2017 autofs-5.1.3
 =======================

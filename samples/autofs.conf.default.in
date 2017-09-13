@@ -328,7 +328,7 @@ browse_mode = no
 #	implementation.
 #
 # autofs_use_lofs - if set to "yes" autofs will attempt to use bind
-#	mounts for type "auto" when possible.
+#	mounts for type "link" entries when possible.
 #
 # nis_domain - allows setting of a domain name other than the system
 #	default.
