@@ -23,6 +23,7 @@ xx/xx/2017 autofs-5.1.4
 - allow dot in OPTIONSTR value lexer pattern.
 - fix autofs_use_lofs description.
 - fix amd parser error buffer size.
+- make spawn_bind_mount() use mount_wait as well.
 
 24/05/2017 autofs-5.1.3
 =======================
