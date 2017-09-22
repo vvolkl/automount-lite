@@ -31,7 +31,7 @@
 #include "log.h"
 
 #define MAX_OPTS_LEN	1024
-#define MAX_ERR_LEN	512
+#define MAX_ERR_LEN	3096
 
 static pthread_mutex_t parse_mutex = PTHREAD_MUTEX_INITIALIZER;
 
