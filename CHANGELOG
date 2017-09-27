@@ -25,6 +25,7 @@ xx/xx/2017 autofs-5.1.4
 - fix amd parser error buffer size.
 - make spawn_bind_mount() use mount_wait as well.
 - document ghost option in auto.master man page.
+- only take master map mutex for master map update.
 
 24/05/2017 autofs-5.1.3
 =======================

@@ -1090,6 +1090,39 @@ next:
 	free(paths);
 }
 
+static void wait_for_lookups_and_lock(struct master *master)
+{
+	struct list_head *p, *head;
+	int status;
+
+again:
+	master_mutex_lock();
+
+	head = &master->mounts;
+	p = head->next;
+	while (p != head) {
+		struct master_mapent *this;
+
+		this = list_entry(p, struct master_mapent, list);
+
+		status = pthread_rwlock_trywrlock(&this->source_lock);
+		if (status) {
+			struct timespec t = { 0, 200000000 };
+			struct timespec r;
+
+			master_mutex_unlock();
+
+			while (nanosleep(&t, &r) == -1 && errno == EINTR)
+				memcpy(&t, &r, sizeof(struct timespec));
+
+			goto again;
+		}
+		master_source_unlock(this);
+
+		p = p->next;
+	}
+}
+
 int master_read_master(struct master *master, time_t age, int readall)
 {
 	unsigned int logopt = master->logopt;
@@ -1099,7 +1132,7 @@ int master_read_master(struct master *master, time_t age, int readall)
 	 * We need to clear and re-populate the null map entry cache
 	 * before alowing anyone else to use it.
 	 */
-	master_mutex_lock();
+	wait_for_lookups_and_lock(master);
 	if (master->nc) {
 		cache_writelock(master->nc);
 		nc = master->nc;
@@ -1119,20 +1152,18 @@ int master_read_master(struct master *master, time_t age, int readall)
 	lookup_nss_read_master(master, age);
 	cache_unlock(nc);
 	master_add_amd_mount_section_mounts(master, age);
-	master_mutex_unlock();
 
 	if (!master->read_fail)
 		master_mount_mounts(master, age, readall);
 	else {
 		master->read_fail = 0;
 		/* HUP signal sets readall == 1 only */
-		if (!readall)
+		if (!readall) {
+			master_mutex_unlock();
 			return 0;
-		else
+		} else
 			master_mount_mounts(master, age, readall);
 	}
-
-	master_mutex_lock();
 
 	if (list_empty(&master->mounts))
 		warn(logopt, "no mounts in table");
@@ -1423,7 +1454,6 @@ int master_mount_mounts(struct master *master, time_t age, int readall)
 	int cur_state;
 
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-	master_mutex_lock();
 
 	head = &master->mounts;
 	p = head->next;
@@ -1511,7 +1541,6 @@ cont:
 		}
 	}
 
-	master_mutex_unlock();
 	pthread_setcancelstate(cur_state, NULL);
 
 	return 1;

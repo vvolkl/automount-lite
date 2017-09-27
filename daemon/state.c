@@ -484,12 +484,9 @@ static void *do_readmap(void *arg)
 
 	info(ap->logopt, "re-reading map for %s", ap->path);
 
-	pthread_cleanup_push(master_mutex_lock_cleanup, NULL);
-	master_mutex_lock();
 	status = lookup_nss_read_map(ap, NULL, now);
 	if (!status)
 		pthread_exit(NULL);
-	pthread_cleanup_pop(1);
 
 	if (ap->type == LKP_INDIRECT) {
 		struct ioctl_ops *ops = get_ioctl_ops();
