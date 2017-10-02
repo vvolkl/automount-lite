@@ -168,7 +168,8 @@ can cause performance problem if the indirect map is large so it should
 be used with caution. The internal program default is to enable browse
 mode for indirect mounts but the default installed configuration overrides
 this by setting BROWSE_MODE to "no" because of the potential performance
-problem.
+problem. This option does the same as the deprecated --ghost option, the
+browse option is preferred because it is used by other autofs implementations.
 .TP
 .I "nobind"
 This is an autofs specific option that is a pseudo mount option and
