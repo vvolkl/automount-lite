@@ -181,11 +181,11 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 
 	if (options) {
 		char *t = options;
-		while ((t = strchr(t, ',')) != NULL) {
+		do {
 			argc++;
 			if (*t == ',')
 				t++;
-		}
+		} while ((t = strchr(t, ',')) != NULL);
 	}
 	argv = (const char **) alloca((argc + 1) * sizeof(char *));
 
@@ -213,13 +213,13 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 
 	if (options) {
 		p = options;
-		while ((p = strchr(p, ',')) != NULL) {
+		do {
 			if (*p == ',') {
 				*p = '\0';
 				p++;
 			}
 			argv[argc++] = p;
-		}
+		} while ((p = strchr(p, ',')) != NULL);
 	}
 	argv[argc] = NULL;
 
