@@ -29,6 +29,7 @@ xx/xx/2017 autofs-5.1.4
 - revert fix argc off by one in mount_autofs.c.
 - reset master map list on startup retry.
 - fix nisplus lookup init not configured check.
+- make open_lookup() error handling more consistent.
 
 24/05/2017 autofs-5.1.3
 =======================

@@ -73,7 +73,7 @@ int open_lookup(const char *name, const char *err_prefix, const char *mapfmt,
 			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 			logerr("%s%s", err_prefix, estr);
 		}
-		return NSS_STATUS_UNAVAIL;
+		return NSS_STATUS_UNKNOWN;
 	}
 
 	type = strdup(name);
@@ -83,7 +83,7 @@ int open_lookup(const char *name, const char *err_prefix, const char *mapfmt,
 			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 			logerr("%s%s", err_prefix, estr);
 		}
-		return NSS_STATUS_UNAVAIL;
+		return NSS_STATUS_UNKNOWN;
 	}
 
 	size = snprintf(fnbuf, sizeof(fnbuf),
@@ -95,7 +95,7 @@ int open_lookup(const char *name, const char *err_prefix, const char *mapfmt,
 			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 			logerr("%s%s", err_prefix, estr);
 		}
-		return NSS_STATUS_UNAVAIL;
+		return NSS_STATUS_UNKNOWN;
 	}
 
 	if (!(dh = dlopen(fnbuf, RTLD_NOW))) {
@@ -104,7 +104,7 @@ int open_lookup(const char *name, const char *err_prefix, const char *mapfmt,
 			       err_prefix, name, dlerror());
 		free(mod);
 		free(type);
-		return NSS_STATUS_UNAVAIL;
+		return NSS_STATUS_UNKNOWN;
 	}
 
 	if (!(ver = (int *) dlsym(dh, "lookup_version"))
@@ -115,7 +115,7 @@ int open_lookup(const char *name, const char *err_prefix, const char *mapfmt,
 		dlclose(dh);
 		free(mod);
 		free(type);
-		return NSS_STATUS_UNAVAIL;
+		return NSS_STATUS_UNKNOWN;
 	}
 
 	if (!(mod->lookup_init = (lookup_init_t) dlsym(dh, "lookup_init")) ||
@@ -129,14 +129,14 @@ int open_lookup(const char *name, const char *err_prefix, const char *mapfmt,
 		dlclose(dh);
 		free(mod);
 		free(type);
-		return NSS_STATUS_UNAVAIL;
+		return NSS_STATUS_UNKNOWN;
 	}
 
 	if (mod->lookup_init(mapfmt, argc, argv, &mod->context)) {
 		dlclose(dh);
 		free(mod);
 		free(type);
-		return NSS_STATUS_NOTFOUND;
+		return NSS_STATUS_UNKNOWN;
 	}
 
 	mod->type = type;
