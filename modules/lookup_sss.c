@@ -74,10 +74,8 @@ static int open_sss_lib(struct lookup_context *ctxt)
 	}
 
 	dh = dlopen(dlbuf, RTLD_LAZY);
-	if (!dh) {
-		logerr(MODPREFIX "failed to open %s: %s", dlbuf, dlerror());
+	if (!dh)
 		return 1;
-	}
 	ctxt->dlhandle = dh;
 
 	ctxt->setautomntent = (setautomntent_t) dlsym(dh, "_sss_setautomntent");
