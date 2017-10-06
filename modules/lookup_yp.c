@@ -127,8 +127,6 @@ static int do_init(const char *mapfmt,
 		/* This should, but doesn't, take a const char ** */
 		err = yp_get_default_domain(&domainname);
 		if (err) {
-			logerr(MODPREFIX
-			      "map %s: %s", ctxt->mapname, yperr_string(err));
 			ret = 1;
 			goto out;
 		}
