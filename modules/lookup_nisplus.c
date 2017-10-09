@@ -48,7 +48,7 @@ static int do_init(const char *mapfmt,
 	 * We don't need to copy or free it.
 	 */
 	ctxt->domainname = nis_local_directory();
-	if (!ctxt->domainname) {
+	if (!ctxt->domainname || !strcmp(ctxt->domainname, "(none).")) {
 		logmsg(MODPREFIX "NIS+ domain not set");
 		ret = 1;
 		goto out;
