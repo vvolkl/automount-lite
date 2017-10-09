@@ -234,7 +234,7 @@ master_add_map_source(struct master_mapent *entry,
 
 		this = __master_find_map_source(entry, type, format, argc, tmpargv);
 		if (this) {
-			error(entry->ap->logopt,
+			debug(entry->ap->logopt,
 			      "map source used without taking reference");
 			this->age = age;
 			master_free_map_source(source, 0);
