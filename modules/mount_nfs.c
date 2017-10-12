@@ -68,7 +68,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	struct host *this, *hosts = NULL;
 	unsigned int mount_default_proto, vers;
 	char *nfsoptions = NULL;
-	const char *port_opt = NULL;
 	unsigned int flags = ap->flags &
 			(MOUNT_FLAG_RANDOM_SELECT | MOUNT_FLAG_USE_WEIGHT_ONLY);
 	int nobind = ap->flags & MOUNT_FLAG_NOBIND;
@@ -168,7 +167,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 					port = atoi(optport);
 					if (port < 0)
 						port = 0;
-					port_opt = cp;
 				} else if (_strncmp("proto=udp", cp, o_len) == 0 ||
 					   _strncmp("udp", cp, o_len) == 0) {
 					vers &= ~TCP_SUPPORTED;
@@ -286,22 +284,13 @@ dont_probe:
 	if (!status)
 		existed = 0;
 
-	/*
-	 * If any *port= option is specified, then we don't want
-	 * a bind mount. Use the "port" option if you want to
-	 * avoid attempting a local bind mount, such as when
-	 * tunneling NFS via localhost.
-	 */
-	if (nfsoptions && *nfsoptions && !port_opt)
-		port_opt = strstr(nfsoptions, "port=");
-
 	this = hosts;
 	while (this) {
 		char *loc;
 
 		/* Port option specified, don't try to bind */
 		if (!(nosymlink || nobind) &&
-		    !port_opt && this->proximity == PROXIMITY_LOCAL) {
+		    this->proximity == PROXIMITY_LOCAL) {
 			/* Local host -- do a "bind" */
 			const char *bind_options = ro ? "ro" : "";
 

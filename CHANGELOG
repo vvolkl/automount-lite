@@ -34,6 +34,7 @@ xx/xx/2017 autofs-5.1.4
 - be silent about nis domain not set.
 - make map source reference message debug only.
 - improve description of mount_nfs_default_protocol.
+- the port option should not behave like nobind option.
 
 24/05/2017 autofs-5.1.3
 =======================
