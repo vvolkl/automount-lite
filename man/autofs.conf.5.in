@@ -62,10 +62,14 @@ Maps are browsable by default (program default "yes").
 .TP
 .B mount_nfs_default_protocol
 .br
-Specify the default protocol used by
+Set the default protocol that
 .BR mount.nfs (8)
-(program default 3). Since we can't identify this default automatically
-we need to set it in the autofs configuration.
+uses when performing a mount (program default 3). Autofs needs to know
+the default NFS protocol that
+.BR mount.nfs(8)
+uses so it can do special case handling for its availability probe for
+different NFS protocols. Since we can't identify this default
+automatically we need to set it in the autofs configuration.
 .TP
 .B append_options
 .br

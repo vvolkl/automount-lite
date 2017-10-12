@@ -44,10 +44,14 @@ timeout = 300
 #
 browse_mode = no
 #
-# mount_nfs_default_protocol - specify the default protocol used by
-# 			       mount.nfs(8). Since we can't identify
-# 			       the default automatically we need to
-# 			       set it in our configuration.
+# mount_nfs_default_protocol - set the default protocol that mount.nfs(8)
+# 			       uses when performing a mount. Autofs needs
+# 			       to know the default NFS protocol that
+# 			       mount.nfs(8) uses so it can do special case
+# 			       handling for its availability probe for
+# 			       different NFS protocols. Since we can't
+# 			       identify the default automatically we need
+# 			       to set it in our configuration.
 #
 #mount_nfs_default_protocol = 3
 mount_nfs_default_protocol = 4
