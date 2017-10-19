@@ -35,6 +35,7 @@ xx/xx/2017 autofs-5.1.4
 - make map source reference message debug only.
 - improve description of mount_nfs_default_protocol.
 - the port option should not behave like nobind option.
+- handle additional nfs versions in mount_nfs.c.
 
 24/05/2017 autofs-5.1.3
 =======================

@@ -147,8 +147,9 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 			} else if (_strncmp("use-weight-only", cp, o_len) == 0) {
 				flags |= MOUNT_FLAG_USE_WEIGHT_ONLY;
 			} else {
-				if (_strncmp("vers=4", cp, o_len) == 0 ||
-				    _strncmp("nfsvers=4", cp, o_len) == 0)
+				/* Is any version of NFSv4 in the options */
+				if (_strncmp("vers=4", cp, 6) == 0 ||
+				    _strncmp("nfsvers=4", cp, 9) == 0)
 					vers = NFS4_VERS_MASK | TCP_SUPPORTED;
 				else if (_strncmp("vers=3", cp, o_len) == 0 ||
 					 _strncmp("nfsvers=3", cp, o_len) == 0) {
