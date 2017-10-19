@@ -20,6 +20,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <grp.h>
 #include <time.h>
 #include <poll.h>
 #include <sys/wait.h>
@@ -195,13 +196,21 @@ static int do_spawn(unsigned logopt, unsigned int wait,
 			 * program group to trigger mount
 			 */
 			if (euid) {
-				if (seteuid(euid) == -1)
+				if (!tsv->user)
 					fprintf(stderr,
-						"warning: seteuid: %s\n",
+						"warning: can't init groups\n");
+				else if (initgroups(tsv->user, egid) == -1)
+					fprintf(stderr,
+						"warning: initgroups: %s\n",
 						strerror(errno));
+
 				if (setegid(egid) == -1)
 					fprintf(stderr,
 						"warning: setegid: %s\n",
+						strerror(errno));
+				if (seteuid(euid) == -1)
+					fprintf(stderr,
+						"warning: seteuid: %s\n",
 						strerror(errno));
 			}
 			setpgrp();
