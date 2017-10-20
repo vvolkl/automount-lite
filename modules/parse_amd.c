@@ -1844,7 +1844,6 @@ int parse_mount(struct autofs_point *ap, const char *name,
 	struct amd_entry *defaults_entry;
 	struct amd_entry *cur_defaults;
 	char *defaults;
-	char *pmapent;
 	int len, rv = 1;
 	int cur_state;
 	int ret;
@@ -1869,16 +1868,7 @@ int parse_mount(struct autofs_point *ap, const char *name,
 		return 1;
 	}
 
-	len = expand_selectors(ap, mapent, &pmapent, sv);
-	if (!len) {
-		macro_free_table(sv);
-		pthread_setcancelstate(cur_state, NULL);
-		return 1;
-	}
-
 	pthread_setcancelstate(cur_state, NULL);
-
-	debug(ap->logopt, MODPREFIX "expanded mapent: %s", pmapent);
 
 	defaults = conf_amd_get_map_defaults(ap->path);
 	if (defaults) {
@@ -1901,7 +1891,6 @@ int parse_mount(struct autofs_point *ap, const char *name,
 		error(ap->logopt, MODPREFIX "failed to get a defaults entry");
 		if (defaults)
 			free(defaults);
-		free(pmapent);
 		macro_free_table(sv);
 		return 1;
 	}
@@ -1910,15 +1899,12 @@ int parse_mount(struct autofs_point *ap, const char *name,
 
 	INIT_LIST_HEAD(&entries);
 
-	ret = amd_parse_list(ap, pmapent, &entries, &sv);
+	ret = amd_parse_list(ap, mapent, &entries, &sv);
 	if (ret) {
 		error(ap->logopt,
-		      MODPREFIX "failed to parse entry: %s", pmapent);
-		free(pmapent);
+		      MODPREFIX "failed to parse entry: %s", mapent);
 		goto done;
 	}
-
-	free(pmapent);
 
 	if (list_empty(&entries)) {
 		error(ap->logopt, MODPREFIX "no location found after parse");
@@ -1956,6 +1942,9 @@ int parse_mount(struct autofs_point *ap, const char *name,
 			continue;
 		}
 
+		debug(ap->logopt, "expand defaults entry");
+		sv = expand_entry(ap, cur_defaults, flags, sv);
+
 		if (this->flags & AMD_ENTRY_CUT && at_least_one) {
 			info(ap->logopt, MODPREFIX
 			     "at least one entry tried before cut selector, "
@@ -1968,6 +1957,7 @@ int parse_mount(struct autofs_point *ap, const char *name,
 
 		at_least_one = 1;
 
+		debug(ap->logopt, "expand mount entry");
 		update_with_defaults(cur_defaults, this, sv);
 		sv = expand_entry(ap, this, flags, sv);
 		sv = merge_entry_options(ap, this, sv);
