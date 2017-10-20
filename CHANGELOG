@@ -47,6 +47,7 @@ xx/xx/2017 autofs-5.1.4
 - add missing MODPREFIX to logging in amd parser.
 - fix symlink false negative in umount_multi().
 - remove expand_selectors() on amd parser entry.
+- fix amd defaults map entry handling.
 
 24/05/2017 autofs-5.1.3
 =======================

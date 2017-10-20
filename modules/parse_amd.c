@@ -1830,45 +1830,24 @@ out:
 	return make_default_entry(ap, sv);
 }
 
-int parse_mount(struct autofs_point *ap, const char *name,
-		int name_len, const char *mapent, void *context)
+static struct amd_entry *setup_defaults(struct autofs_point *ap,
+					const char *name, int name_len,
+					struct map_source *source,
+					struct substvar **sv)
 {
-	struct parse_context *ctxt = (struct parse_context *) context;
-	unsigned int flags = conf_amd_get_flags(ap->path);
-	struct substvar *sv = NULL;
-	struct map_source *source;
+	struct amd_entry *defaults_entry;
 	struct mapent_cache *mc;
 	struct mapent *me;
-	unsigned int at_least_one;
-	struct list_head entries, *p, *head;
-	struct amd_entry *defaults_entry;
-	struct amd_entry *cur_defaults;
+	struct substvar *nsv;
 	char *defaults;
-	int len, rv = 1;
-	int cur_state;
-	int ret;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
 
 	mc = source->mc;
+	defaults = NULL;
+	defaults_entry = NULL;
 
-	if (!mapent) {
-		warn(ap->logopt, MODPREFIX "error: empty map entry");
-		return 1;
-	}
-
-	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-
-	sv = add_lookup_vars(ap, name, name_len, source, sv);
-	if (!sv) {
-		macro_free_table(sv);
-		pthread_setcancelstate(cur_state, NULL);
-		return 1;
-	}
-
-	pthread_setcancelstate(cur_state, NULL);
+	nsv = add_lookup_vars(ap, name, name_len, source, NULL);
+	if (!nsv)
+		goto done;
 
 	defaults = conf_amd_get_map_defaults(ap->path);
 	if (defaults) {
@@ -1883,21 +1862,62 @@ int parse_mount(struct autofs_point *ap, const char *name,
 			char buf[MAX_ERR_BUF];
 			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 			error(ap->logopt, MODPREFIX "malloc: %s", estr);
+			macro_free_table(nsv);
+			nsv = NULL;
+			goto done;
 		}
 	}
 
-	defaults_entry = get_defaults_entry(ap, defaults, sv);
+	defaults_entry = get_defaults_entry(ap, defaults, nsv);
 	if (!defaults_entry) {
 		error(ap->logopt, MODPREFIX "failed to get a defaults entry");
-		if (defaults)
-			free(defaults);
-		macro_free_table(sv);
-		return 1;
+		macro_free_table(nsv);
+		nsv = NULL;
 	}
+done:
 	if (defaults)
 		free(defaults);
+	if (*sv)
+		macro_free_table(*sv);
+	*sv = nsv;
+
+	return defaults_entry;
+}
+
+int parse_mount(struct autofs_point *ap, const char *name,
+		int name_len, const char *mapent, void *context)
+{
+	struct parse_context *ctxt = (struct parse_context *) context;
+	unsigned int flags = conf_amd_get_flags(ap->path);
+	struct substvar *sv = NULL;
+	struct map_source *source;
+	unsigned int at_least_one;
+	struct list_head entries, *p, *head;
+	struct amd_entry *defaults_entry;
+	struct amd_entry *cur_defaults;
+	int rv = 1;
+	int cur_state;
+	int ret;
+
+	source = ap->entry->current;
+	ap->entry->current = NULL;
+	master_source_current_signal(ap->entry);
+
+	if (!mapent) {
+		warn(ap->logopt, MODPREFIX "error: empty map entry");
+		return 1;
+	}
 
 	INIT_LIST_HEAD(&entries);
+
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
+
+	defaults_entry = setup_defaults(ap, name, name_len, source, &sv);
+	if (!defaults_entry) {
+		error(ap->logopt, MODPREFIX
+		      "failed to setup defaults entry");
+		goto done;
+	}
 
 	ret = amd_parse_list(ap, mapent, &entries, &sv);
 	if (ret) {
@@ -1929,9 +1949,20 @@ int parse_mount(struct autofs_point *ap, const char *name,
 			free_amd_entry(cur_defaults);
 			list_del_init(&this->list);
 			cur_defaults = this;
+			update_with_defaults(defaults_entry, cur_defaults, sv);
 			continue;
 		} else if (this->flags & AMD_DEFAULTS_RESET) {
-			struct amd_entry *new;
+			struct amd_entry *nd, *new;
+			struct substvar *nsv = NULL;
+
+			nd = setup_defaults(ap, name, name_len, source, &nsv);
+			if (nd) {
+				free_amd_entry(defaults_entry);
+				defaults_entry = nd;
+				macro_free_table(sv);
+				sv = nsv;
+			}
+
 			new = dup_defaults_entry(defaults_entry);
 			if (new) {
 				free_amd_entry(cur_defaults);
@@ -1996,6 +2027,8 @@ done:
 	free_amd_entry_list(&entries);
 	free_amd_entry(defaults_entry);
 	macro_free_table(sv);
+
+	pthread_setcancelstate(cur_state, NULL);
 
 	return rv;
 }
