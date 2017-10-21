@@ -1033,12 +1033,12 @@ static char *expand_slash_or_dot(char *str, unsigned int type)
  * $-expand an amd-style map entry and return the length of the entry.
  * If "dst" is NULL, just count the length.
  */
-/* TODO: how should quoting be handled? */
 int expandamdent(const char *src, char *dst, const struct substvar *svc)
 {
 	unsigned int flags = conf_amd_get_flags(NULL);
 	const struct substvar *sv;
 	const char *o_src = src;
+	unsigned int squote = 0;
 	int len, l;
 	const char *p;
 	char ch;
@@ -1109,7 +1109,7 @@ int expandamdent(const char *src, char *dst, const struct substvar *svc)
 			break;
 
 		case '\\':
-			if (!(flags & CONF_NORMALIZE_SLASHES)) {
+			if (squote || !(flags & CONF_NORMALIZE_SLASHES)) {
 				len++;
 				if (dst)
 					*dst++ = ch;
@@ -1129,7 +1129,7 @@ int expandamdent(const char *src, char *dst, const struct substvar *svc)
 			if (dst)
 				*dst++ = ch;
 
-			if (!(flags & CONF_NORMALIZE_SLASHES))
+			if (squote || !(flags & CONF_NORMALIZE_SLASHES))
 				break;
 
 			/* Double slash at start is allowed */
@@ -1143,23 +1143,12 @@ int expandamdent(const char *src, char *dst, const struct substvar *svc)
 				src++;
 			break;
 
-		case '"':
+		/* 39 is single quote */
+		case 39:
 			len++;
 			if (dst)
 				*dst++ = ch;
-
-			while (*src && *src != '"') {
-				len++;
-				if (dst)
-					*dst++ = *src;
-				src++;
-			}
-			if (*src) {
-				len++;
-				if (dst)
-					*dst++ = *src;
-				src++;
-			}
+			squote = !squote;
 			break;
 
 		default:
