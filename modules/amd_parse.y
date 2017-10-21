@@ -99,6 +99,7 @@ static int amd_fprintf(FILE *, char *, ...);
 %token CUT
 %token NOT_EQUAL
 %token COMMA
+%token QUOTE
 %token OPTION_ASSIGN
 %token LBRACKET
 %token RBRACKET
@@ -268,68 +269,128 @@ option_assignment: MAP_OPTION OPTION_ASSIGN FS_TYPE
 	}
 	| MAP_OPTION OPTION_ASSIGN FS_OPT_VALUE
 	{
-		if (!strcmp($1, "fs"))
-			entry.fs = amd_strdup($3);
-		else if (!strcmp($1, "sublink"))
-			entry.sublink = amd_strdup($3);
-		else if (!strcmp($1, "pref")) {
-			if (!strcmp($3, "null"))
-				entry.pref = amd_strdup("");
-			else
-				entry.pref = amd_strdup($3);
+		/* Quoted value for type, maptype or cache assign */
+		if (!strcmp($1, "type")) {
+			if (!match_map_option_fs_type($1, $3))
+				YYABORT;
+		} else if (!strcmp($1, "maptype")) {
+			if (!match_map_option_map_type($1, $3))
+				YYABORT;
+		} else if (!strcmp($1, "cache")) {
+			if (!match_map_option_cache_option($3))
+				YYABORT;
 		} else {
-			amd_notify($1);
-			YYABORT;
+			char *fs_opt_val;
+
+			fs_opt_val = amd_strdup($3);
+			if (!fs_opt_val) {
+				amd_notify($3);
+				YYABORT;
+			}
+
+			if (!strcmp($1, "fs"))
+				entry.fs = fs_opt_val;
+			else if (!strcmp($1, "sublink")) {
+				entry.sublink = fs_opt_val;
+			} else if (!strcmp($1, "pref")) {
+				if (strcmp(fs_opt_val, "null"))
+					entry.pref = fs_opt_val;
+				else {
+					entry.pref = amd_strdup("");
+					if (!entry.pref) {
+						amd_notify($3);
+						free(fs_opt_val);
+						YYABORT;
+					}
+					free(fs_opt_val);
+				}
+			} else {
+				amd_notify($1);
+				free(fs_opt_val);
+				YYABORT;
+			}
 		}
 	}
 	| MAP_OPTION OPTION_ASSIGN
 	{
-		if (!strcmp($1, "fs"))
+		if (!strcmp($1, "fs")) {
 			entry.fs = amd_strdup("");
-		else {
+			if (!entry.fs) {
+				amd_notify($1);
+				YYABORT;
+			}
+		} else {
 			amd_notify($1);
 			YYABORT;
 		}
 	}
 	| FS_OPTION OPTION_ASSIGN FS_OPT_VALUE
 	{
+		char *fs_opt_val;
+
+		fs_opt_val = amd_strdup($3);
+		if (!fs_opt_val) {
+			amd_notify($1);
+			YYABORT;
+		}
+
 		if (!strcmp($1, "rhost"))
-			entry.rhost = amd_strdup($3);
+			entry.rhost = fs_opt_val;
 		else if (!strcmp($1, "rfs"))
-			entry.rfs = amd_strdup($3);
+			entry.rfs = fs_opt_val;
 		else if (!strcmp($1, "dev"))
-			entry.dev = amd_strdup($3);
+			entry.dev = fs_opt_val;
 		else if (!strcmp($1, "mount") ||
 			 !strcmp($1, "unmount") ||
 			 !strcmp($1, "umount")) {
 			amd_info("file system type program is not "
 				 "yet implemented, option ignored");
+			free(fs_opt_val);
 			YYABORT;
 		} else if (!strcmp($1, "delay") ||
 			   !strcmp($1, "cachedir")) {
 			sprintf(msg_buf, "option %s is not used by autofs", $1);
 			amd_info(msg_buf);
+			free(fs_opt_val);
 		} else {
 			amd_notify($1);
+			free(fs_opt_val);
 			YYABORT;
 		}
 	}
 	| FS_OPTION OPTION_ASSIGN
 	{
+		char *empty;
+
+		empty = amd_strdup("");
+		if (!empty) {
+			amd_notify($1);
+			YYABORT;
+		}
+
 		if (!strcmp($1, "rhost"))
-			entry.rhost = amd_strdup("");
+			entry.rhost = empty;
 		else if (!strcmp($1, "rfs"))
-			entry.rfs = amd_strdup("");
+			entry.rfs = empty;
 		else if (!strcmp($1, "dev"))
-			entry.dev = amd_strdup("");
+			entry.dev = empty;
 		else {
 			amd_notify($1);
+			free(empty);
 			YYABORT;
 		}
 	}
 	| MNT_OPTION OPTION_ASSIGN options
 	{
 		if (!match_mnt_option_options($1, $3)) {
+			amd_notify($1);
+			YYABORT;
+		}
+		memset(opts, 0, sizeof(opts));
+	}
+	| MNT_OPTION OPTION_ASSIGN QUOTE options QUOTE
+	{
+		if (!match_mnt_option_options($1, $4)) {
 			amd_notify($1);
 			YYABORT;
 		}
@@ -601,11 +662,56 @@ static int amd_fprintf(FILE *f, char *msg, ...)
 
 static char *amd_strdup(char *str)
 {
+	unsigned int quoted, len;
 	char *tmp;
 
-	tmp = strdup(str);
-	if (!tmp)
-		amd_error("memory allocation error");
+	len = strlen(str);
+	quoted = 0;
+
+	if (*str == '"') {
+		quoted = 1;
+		len -= 2;
+	}
+
+	tmp = strdup(str + quoted);
+	if (!tmp) {
+		amd_msg("memory allocation error");
+		return NULL;
+	} else {
+		unsigned int squote;
+		char *ptr;
+
+		if (quoted) {
+			if (tmp[len] != '"') {
+				sprintf(msg_buf,
+					"unmatched double quote near: %s", str);
+				amd_info(msg_buf);
+				free(tmp);
+				return NULL;
+			}
+			tmp[len] = 0;
+		}
+
+		/* Check for matching single quotes */
+		if (!strchr(tmp, 39))
+			goto done;
+
+		ptr = tmp;
+		squote = 0;
+		while (*ptr) {
+			if (*ptr == 39)
+				squote = !squote;
+			ptr++;
+		}
+		if (squote) {
+			sprintf(msg_buf,
+				"unmatched single quote near: %s", str);
+			amd_info(msg_buf);
+			free(tmp);
+			return NULL;
+		}
+	}
+done:
 	return tmp;
 }
 

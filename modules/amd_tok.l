@@ -94,7 +94,7 @@ IP6ADDR		((([A-Fa-f0-9]{1,4}\:\:?){1,7}[A-Fa-f0-9]{1,4})|(\:\:1))
 V6MASK		(12[0-8]|1[0-1][0-9]|[1-9][0-9]|[1-9])
 
 FOPT		(({QSTR}|{FSTR}|{MACRO})+)
-OPTS		({OSTR}(=({VSTR}|{QSTR}|{MACRO})+)?)
+OPTS		({OSTR}(=({VSTR}|{MACRO})+)?)
 SOPT		(({SSTR}|{QSTR}|{MACRO})+)
 NOPT		({SSTR}|(({IP4ADDR}(\/{V4MASK})?)|({IP6ADDR}(\/{V6MASK})?)))
 
@@ -287,6 +287,8 @@ CUTSEP		(\|\||\/)
 	(:=)(,+)? { return OPTION_ASSIGN; }
 
 	,+ { return COMMA; }
+
+	"\"" { return QUOTE; }
 
 	{OPTS} {
 		amd_copy_buffer();
