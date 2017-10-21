@@ -299,7 +299,7 @@ option_assignment: MAP_OPTION OPTION_ASSIGN FS_TYPE
 			amd_msg(msg_buf);
 			YYABORT;
 		} else if (!strcmp($3, "cachefs")) {
-			sprintf(msg_buf, "file syatem %s is not "
+			sprintf(msg_buf, "file system %s is not "
 					 "supported by autofs, ignored", $3);
 			amd_msg(msg_buf);
 		} else {

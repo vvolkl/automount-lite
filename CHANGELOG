@@ -43,6 +43,7 @@ xx/xx/2017 autofs-5.1.4
 - move open_xxxx() functions to spawn.c.
 - serialize calls to open_xxxx() functions.
 - improve debug logging of lookup key.
+- fix typo in amd_parse.c.
 
 24/05/2017 autofs-5.1.3
 =======================
