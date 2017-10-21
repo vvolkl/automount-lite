@@ -146,9 +146,9 @@ always used for available map sources.
 
 The regex map key matching feature is not implemented.
 
-Mount types lustre, nfsx, jfs, program and direct haven't been
-implemented and other mount types that aren't implemented in amd are
-also not available.
+Mount types lustre, nfsx, jfs and direct haven't been implemented
+and other mount types that aren't implemented in amd are also not
+available.
 
 How to find out more
 --------------------

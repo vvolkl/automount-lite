@@ -56,6 +56,7 @@ xx/xx/2017 autofs-5.1.4
 - add function umount_amd_ext_mount().
 - add function ext_mount_inuse().
 - add function construct_argv().
+- add amd mount type program mount support.
 
 24/05/2017 autofs-5.1.3
 =======================

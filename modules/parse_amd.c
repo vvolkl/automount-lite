@@ -788,6 +788,35 @@ next:
 		sv = macro_addvar(sv, "remopts", 7, entry->remopts);
 	}
 
+	if (entry->mount) {
+		if (!expand_selectors(ap, entry->mount, &expand, sv)) {
+			free(entry->mount);
+			if (entry->umount)
+				free(entry->umount);
+			entry->mount = NULL;
+			entry->umount = NULL;
+			goto done;
+		}
+		debug(logopt, MODPREFIX
+		      "mount expand(\"%s\") -> %s", entry->mount, expand);
+		free(entry->mount);
+		entry->mount = expand;
+		sv = macro_addvar(sv, "mount", 5, entry->mount);
+	}
+
+	if (entry->umount) {
+		if (!expand_selectors(ap, entry->umount, &expand, sv)) {
+			free(entry->umount);
+			entry->umount = NULL;
+			goto done;
+		}
+		debug(logopt, MODPREFIX
+		      "umount expand(\"%s\") -> %s", entry->umount, expand);
+		free(entry->umount);
+		entry->umount = expand;
+		sv = macro_addvar(sv, "umount", 5, entry->umount);
+	}
+done:
 	return sv;
 }
 
@@ -1222,6 +1251,91 @@ out:
 	return ret;
 }
 
+static int do_program_mount(struct autofs_point *ap,
+			    struct amd_entry *entry, const char *name)
+{
+	char *prog, *str;
+	char **argv;
+	int argc = -1;
+	int rv = 1;
+
+	str = strdup(entry->mount);
+	if (!str)
+		goto out;
+
+	prog = NULL;
+	argv = NULL;
+
+	argc = construct_argv(str, &prog, &argv);
+	if (argc == -1) {
+		error(ap->logopt, MODPREFIX
+		      "%s: error creating mount arguments", entry->type);
+		free(str);
+		goto out;
+	}
+
+	/* The am-utils documentation doesn't actually say that the
+	 * mount (and umount, if given) command need to use ${fs} as
+	 * the mount point in the command.
+	 *
+	 * For program mounts there's no way to know what the mount
+	 * point is so ${fs} must be used in the mount (and umount,
+	 * if given) in order to create the mount point directory
+	 * before executing the mount command and removing it at
+	 * umount.
+	 */
+	if (ext_mount_inuse(entry->fs)) {
+		rv = 0;
+		ext_mount_add(&entry->ext_mount, entry->fs, 1);
+	} else {
+		rv = mkdir_path(entry->fs, 0555);
+		if (rv && errno != EEXIST) {
+			char *buf[MAX_ERR_BUF];
+			char * estr;
+
+			estr = strerror_r(errno, buf, MAX_ERR_BUF);
+			error(ap->logopt,
+			      MODPREFIX "%s: mkdir_path %s failed: %s",
+			      entry->type, entry->fs, estr);
+			goto do_free;
+		}
+
+		rv = spawnv(ap->logopt, prog, (const char * const *) argv);
+		if (WIFEXITED(rv) && !WEXITSTATUS(rv)) {
+			rv = 0;
+			ext_mount_add(&entry->ext_mount, entry->fs, 1);
+			debug(ap->logopt, MODPREFIX
+			      "%s: mounted %s", entry->type, entry->fs);
+		} else {
+			if (!ext_mount_inuse(entry->fs))
+				rmdir_path(ap, entry->fs, ap->dev);
+			error(ap->logopt, MODPREFIX
+			     "%s: failed to mount using: %s",
+			     entry->type, entry->mount);
+		}
+	}
+do_free:
+	free_argv(argc, (const char **) argv);
+	free(str);
+
+	if (rv)
+		goto out;
+
+	rv = do_link_mount(ap, name, entry, 0);
+	if (!rv)
+		goto out;
+
+	if (umount_amd_ext_mount(ap, entry)) {
+		if (!ext_mount_inuse(entry->fs))
+			rmdir_path(ap, entry->fs, ap->dev);
+		debug(ap->logopt, MODPREFIX
+		      "%s: failed to umount external mount at %s",
+		      entry->type, entry->fs);
+	}
+out:
+	return rv;
+}
+
 static unsigned int validate_auto_options(unsigned int logopt,
 					  struct amd_entry *entry)
 {
@@ -1348,6 +1462,29 @@ static unsigned int validate_host_options(unsigned int logopt,
 	return 1;
 }
 
+static unsigned int validate_program_options(unsigned int logopt,
+					     struct amd_entry *entry)
+{
+	/*
+	 * entry->mount will be NULL if there is a problem expanding
+	 * ${} macros in expandamdent().
+	 */
+	if (!entry->mount) {
+		error(logopt, MODPREFIX
+		      "%s: mount program invalid or not set", entry->type);
+		return 0;
+	}
+
+	if (!entry->fs && !*entry->fs) {
+		error(logopt, MODPREFIX
+		    "%s: ${fs} must be used as the mount point but is not set",
+		    entry->type);
+		return 0;
+	}
+
+	return 1;
+}
+
 static int amd_mount(struct autofs_point *ap, const char *name,
 		     struct amd_entry *entry, struct map_source *source,
 		     struct substvar *sv, unsigned int flags,
@@ -1411,6 +1548,12 @@ static int amd_mount(struct autofs_point *ap, const char *name,
 		if (!validate_host_options(ap->logopt, entry))
 			return 1;
 		ret = do_host_mount(ap, name, entry, source, flags);
+		break;
+
+	case AMD_MOUNT_TYPE_PROGRAM:
+		if (!validate_program_options(ap->logopt, entry))
+			return 1;
+		ret = do_program_mount(ap, entry, name);
 		break;
 
 	default:

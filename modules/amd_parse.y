@@ -347,13 +347,18 @@ option_assignment: MAP_OPTION OPTION_ASSIGN FS_TYPE
 			amd_set_value(&entry.rfs, fs_opt_val);
 		else if (!strcmp($1, "dev"))
 			amd_set_value(&entry.dev, fs_opt_val);
-		else if (!strcmp($1, "mount") ||
-			 !strcmp($1, "unmount") ||
+		else if (!strcmp($1, "mount"))
+			amd_set_value(&entry.mount, fs_opt_val);
+		else if (!strcmp($1, "unmount") ||
 			 !strcmp($1, "umount")) {
-			amd_info("file system type program is not "
-				 "yet implemented, option ignored");
-			free(fs_opt_val);
-			YYABORT;
+			if (entry.umount) {
+				sprintf(msg_buf,
+				    "unmount or umount may only be used once");
+				amd_info(msg_buf);
+				free(fs_opt_val);
+				YYABORT;
+			}
+			entry.umount = fs_opt_val;
 		} else if (!strcmp($1, "delay") ||
 			   !strcmp($1, "cachedir")) {
 			sprintf(msg_buf, "option %s is not used by autofs", $1);
@@ -381,7 +386,14 @@ option_assignment: MAP_OPTION OPTION_ASSIGN FS_TYPE
 			amd_set_value(&entry.rfs, empty);
 		else if (!strcmp($1, "dev"))
 			amd_set_value(&entry.dev, empty);
-		else {
+		else if (!strcmp($1, "mount")) {
+			amd_set_value(&entry.mount, NULL);
+			free(empty);
+		} else if (!strcmp($1, "umount") ||
+			   !strcmp($1, "unmount")) {
+			amd_set_value(&entry.umount, NULL);
+			free(empty);
+		} else {
 			amd_notify($1);
 			free(empty);
 			YYABORT;
@@ -426,8 +438,7 @@ option_assignment: MAP_OPTION OPTION_ASSIGN FS_TYPE
 options: OPTION
 	{
 		if (!strcmp($1, "fullybrowsable") ||
-		    !strcmp($1, "nounmount") ||
-		    !strcmp($1, "unmount")) {
+		    !strcmp($1, "nounmount")) {
 			sprintf(msg_buf, "option %s is not currently "
 					 "implemented, ignored", $1);
 			amd_info(msg_buf);
@@ -496,7 +507,9 @@ static int match_map_option_fs_type(char *map_option, char *type)
 		   !strcmp(fs_type, "ext3") ||
 		   !strcmp(fs_type, "ext4"))
 		entry.flags |= AMD_MOUNT_TYPE_EXT;
-	} else if (!strcmp(fs_type, "ufs")) {
+	else if (!strcmp(fs_type, "program"))
+		entry.flags |= AMD_MOUNT_TYPE_PROGRAM;
+	else if (!strcmp(fs_type, "ufs")) {
 		entry.flags |= AMD_MOUNT_TYPE_UFS;
 		entry.type = conf_amd_get_linux_ufs_mount_type();
 		if (!entry.type) {
@@ -520,7 +533,6 @@ static int match_map_option_fs_type(char *map_option, char *type)
 		fs_type = NULL;
 	} else if (!strcmp(fs_type, "jfs") ||
 		   !strcmp(fs_type, "nfsx") ||
-		   !strcmp(fs_type, "program") ||
 		   !strcmp(fs_type, "lustre") ||
 		   !strcmp(fs_type, "direct")) {
 		sprintf(msg_buf, "file system type %s is "
@@ -880,6 +892,8 @@ static int add_location(void)
 	new->addopts = entry.addopts;
 	new->remopts = entry.remopts;
 	new->sublink = entry.sublink;
+	new->mount = entry.mount;
+	new->umount = entry.umount;
 	new->selector = entry.selector;
 	list_add_tail(&new->list, entries);
 	memset(&entry, 0, sizeof(struct amd_entry));

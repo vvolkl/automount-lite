@@ -30,6 +30,7 @@
 #define AMD_MOUNT_TYPE_JFS	0x00000800
 #define AMD_MOUNT_TYPE_CACHEFS	0x00001000
 #define AMD_MOUNT_TYPE_CDFS	0x00002000
+#define AMD_MOUNT_TYPE_PROGRAM	0x00004000
 #define AMD_MOUNT_TYPE_MASK	0x0000ffff
 
 #define AMD_ENTRY_CUT		0x00010000
@@ -60,6 +61,8 @@ struct amd_entry {
 	char *addopts;
 	char *remopts;
 	char *sublink;
+	char *mount;
+	char *umount;
 	struct selector *selector;
 	struct list_head list;
 	struct list_head entries;

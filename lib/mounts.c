@@ -2064,6 +2064,46 @@ int umount_amd_ext_mount(struct autofs_point *ap, struct amd_entry *entry)
 {
 	int rv = 1;
 
+	if (entry->umount) {
+		char *prog, *str;
+		char **argv;
+		int argc = -1;
+
+		str = strdup(entry->umount);
+		if (!str)
+			goto out;
+
+		prog = NULL;
+		argv = NULL;
+
+		argc = construct_argv(str, &prog, &argv);
+		if (argc == -1) {
+			free(str);
+			goto out;
+		}
+
+		if (!ext_mount_remove(&entry->ext_mount, entry->fs)) {
+			rv =0;
+			goto out;
+		}
+
+		rv = spawnv(ap->logopt, prog, (const char * const *) argv);
+		if (rv == -1 || (WIFEXITED(rv) && WEXITSTATUS(rv)))
+			error(ap->logopt,
+			     "failed to umount program mount at %s", entry->fs);
+		else {
+			rv = 0;
+			debug(ap->logopt,
+			      "umounted program mount at %s", entry->fs);
+			rmdir_path(ap, entry->fs, ap->dev);
+		}
+
+		free_argv(argc, (const char **) argv);
+		free(str);
+
+		goto out;
+	}
+
 	if (ext_mount_remove(&entry->ext_mount, entry->fs)) {
 		rv = umount_ent(ap, entry->fs);
 		if (rv)
@@ -2073,7 +2113,7 @@ int umount_amd_ext_mount(struct autofs_point *ap, struct amd_entry *entry)
 			debug(ap->logopt,
 			      "umounted external mount %s", entry->fs);
 	}
-
+out:
 	return rv;
 }
 
