@@ -52,6 +52,7 @@ xx/xx/2017 autofs-5.1.4
 - fix amd parser double quote handling.
 - fix expandamdent() quote handling.
 - fix possible memory leak during amd parse.
+- remove path restriction of amd external mount.
 
 24/05/2017 autofs-5.1.3
 =======================

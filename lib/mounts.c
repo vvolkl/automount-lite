@@ -696,17 +696,8 @@ static struct ext_mount *ext_mount_lookup(const char *mountpoint)
 int ext_mount_add(struct list_head *entry, const char *path, unsigned int umount)
 {
 	struct ext_mount *em;
-	char *auto_dir;
 	u_int32_t hval;
 	int ret = 0;
-
-	/* Not a mount in the external mount directory */
-	auto_dir = conf_amd_get_auto_dir();
-	if (strncmp(path, auto_dir, strlen(auto_dir))) {
-		free(auto_dir);
-		return 0;
-	}
-	free(auto_dir);
 
 	pthread_mutex_lock(&ext_mount_hash_mutex);
 
@@ -753,16 +744,7 @@ done:
 int ext_mount_remove(struct list_head *entry, const char *path)
 {
 	struct ext_mount *em;
-	char *auto_dir;
 	int ret = 0;
-
-	/* Not a mount in the external mount directory */
-	auto_dir = conf_amd_get_auto_dir();
-	if (strncmp(path, auto_dir, strlen(auto_dir))) {
-		free(auto_dir);
-		return 0;
-	}
-	free(auto_dir);
 
 	pthread_mutex_lock(&ext_mount_hash_mutex);
 
