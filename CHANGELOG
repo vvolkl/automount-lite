@@ -54,6 +54,7 @@ xx/xx/2017 autofs-5.1.4
 - fix possible memory leak during amd parse.
 - remove path restriction of amd external mount.
 - add function umount_amd_ext_mount().
+- add function ext_mount_inuse().
 
 24/05/2017 autofs-5.1.3
 =======================

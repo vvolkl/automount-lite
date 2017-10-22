@@ -770,6 +770,23 @@ done:
 	return ret;
 }
 
+int ext_mount_inuse(const char *path)
+{
+	struct ext_mount *em;
+	int ret = 0;
+
+	pthread_mutex_lock(&ext_mount_hash_mutex);
+	em = ext_mount_lookup(path);
+	if (!em)
+		goto done;
+
+	if (!list_empty(&em->mounts))
+		ret = 1;
+done:
+	pthread_mutex_unlock(&ext_mount_hash_mutex);
+	return ret;
+}
+
 /*
  * Get list of mounts under path in longest->shortest order
  */
