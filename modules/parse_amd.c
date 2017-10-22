@@ -980,8 +980,7 @@ symlink:
 
 	if (entry->sublink) {
 		/* failed to complete sublink mount */
-		if (ext_mount_remove(&entry->ext_mount, entry->fs))
-			umount_ent(ap, entry->fs);
+		umount_amd_ext_mount(ap, entry);
 	}
 out:
 	return ret;

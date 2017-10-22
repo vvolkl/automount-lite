@@ -607,16 +607,7 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 		}
 		list_del(&entry->entries);
 		mounts_mutex_unlock(ap);
-		if (ext_mount_remove(&entry->ext_mount, entry->fs)) {
-			if (umount_ent(ap, entry->fs))
-				debug(ap->logopt,
-				      "failed to umount external mount %s",
-				      entry->fs);
-			else
-				debug(ap->logopt,
-				      "umounted external mount %s",
-				      entry->fs);
-		}
+		umount_amd_ext_mount(ap, entry);
 		free_amd_entry(entry);
 	}
 done:
@@ -663,16 +654,7 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 		}
 		list_del(&entry->entries);
 		mounts_mutex_unlock(ap);
-		if (ext_mount_remove(&entry->ext_mount, entry->fs)) {
-			if (umount_ent(ap, entry->fs))
-				debug(ap->logopt,
-				      "failed to umount external mount %s",
-				      entry->fs);
-			else
-				debug(ap->logopt,
-				      "umounted external mount %s",
-				      entry->fs);
-		}
+		umount_amd_ext_mount(ap, entry);
 		free_amd_entry(entry);
 		return 0;
 	}

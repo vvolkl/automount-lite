@@ -2043,6 +2043,23 @@ int umount_ent(struct autofs_point *ap, const char *path)
 	return rv;
 }
 
+int umount_amd_ext_mount(struct autofs_point *ap, struct amd_entry *entry)
+{
+	int rv = 1;
+
+	if (ext_mount_remove(&entry->ext_mount, entry->fs)) {
+		rv = umount_ent(ap, entry->fs);
+		if (rv)
+			error(ap->logopt,
+			      "failed to umount external mount %s", entry->fs);
+		else
+			debug(ap->logopt,
+			      "umounted external mount %s", entry->fs);
+	}
+
+	return rv;
+}
+
 static int do_mount_autofs_offset(struct autofs_point *ap,
 				  struct mapent *oe, const char *root,
 				  char *offset)
