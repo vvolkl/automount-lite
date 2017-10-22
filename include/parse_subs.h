@@ -125,6 +125,7 @@ char *sanitize_path(const char *, int, unsigned int, unsigned int);
 char *merge_options(const char *, const char *);
 int expandamdent(const char *, char *, const struct substvar *);
 int expand_selectors(struct autofs_point *, const char *, char **, struct substvar *);
+int construct_argv(char *, char **, char ***);
 void free_map_type_info(struct map_type_info *);
 struct map_type_info *parse_map_type_info(const char *);
 

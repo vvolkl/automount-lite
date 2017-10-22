@@ -1196,6 +1196,86 @@ int expand_selectors(struct autofs_point *ap,
 	return len;
 }
 
+/* Get next space seperated argument, arguments containing
+ * space characters may be single quoted.
+ */
+static char *next_arg(char *str, char **next)
+{
+	char *start;
+	char *ptr;
+
+	if (!*str)
+		return NULL;
+
+	start = ptr = str;
+
+	/* The amd map format parser should ensure there
+	 * are matching single quotes.
+	 */
+	if (*start == 39) {
+		start++;
+		ptr++;
+		while (*ptr && *ptr != 39)
+			ptr++;
+	} else {
+		while (*ptr && *ptr != ' ')
+			ptr++;
+	}
+
+	if (*ptr)
+		*ptr++ = 0;
+	*next = ptr;
+
+	return start;
+}
+
+/* Construct program path name plus argument array for use with
+ * execv(3).
+ */
+int construct_argv(char *str, char **prog, char ***argv)
+{
+	char *program = NULL;
+	char *start, *next;
+	char **args, *arg;
+	int argc;
+
+	start = str;
+
+	args = malloc(sizeof(char *));
+	if (!args)
+		return -1;
+
+	args[0] = NULL;
+	argc = 0;
+
+	next = NULL;
+	program = next_arg(str, &next);
+	if (!program) {
+		free(args);
+		return -1;
+	}
+
+	start = next;
+
+	while (1) {
+		if (!*next)
+			break;
+		arg = next_arg(start, &next);
+		if (arg) {
+			argc++;
+			args = add_argv(argc, args, arg);
+			if (!args)
+				return -1;
+		}
+		start = next;
+	}
+
+	*prog = program;
+	*argv = args;
+
+	return argc;
+}
+
 void free_map_type_info(struct map_type_info *info)
 {
 	if (info->type)
