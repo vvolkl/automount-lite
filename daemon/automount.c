@@ -2092,6 +2092,27 @@ static void remove_empty_args(char **argv, int *argc)
 	*argc = j;
 }
 
+static void do_master_list_reset(struct master *master)
+{
+	struct list_head *head, *p;
+
+	master_mutex_lock();
+
+	head = &master->mounts;
+	list_for_each(p, head) {
+		struct master_mapent *entry;
+
+		entry = list_entry(p, struct master_mapent, list);
+
+		if (!list_empty(&entry->list))
+			list_del(&entry->list);
+		master_free_mapent_sources(entry, 1);
+		master_free_mapent(entry);
+	}
+
+	master_mutex_unlock();
+}
+
 static int do_master_read_master(struct master *master, int wait)
 {
 	sigset_t signalset;
@@ -2110,6 +2131,8 @@ static int do_master_read_master(struct master *master, int wait)
 
 	while (1) {
 		struct timespec t = { retry_wait, 0 };
+
+		do_master_list_reset(master);
 
 		age = monotonic_time(NULL);
 		if (master_read_master(master, age, 0)) {
@@ -2581,6 +2604,8 @@ int main(int argc, char *argv[])
 			 * Failed to read master map, continue with what
 			 * we have anyway.
 			 */
+			do_master_list_reset(master_list);
+			age = time(NULL);
 			master_read_master(master_list, age, 1);
 		}
 	}
