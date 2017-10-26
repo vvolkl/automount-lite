@@ -70,6 +70,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	char *nfsoptions = NULL;
 	unsigned int flags = ap->flags &
 			(MOUNT_FLAG_RANDOM_SELECT | MOUNT_FLAG_USE_WEIGHT_ONLY);
+	int symlink = (*name != '/' && (ap->flags & MOUNT_FLAG_SYMLINK));
 	int nobind = ap->flags & MOUNT_FLAG_NOBIND;
 	int len, status, err, existed = 1;
 	int nosymlink = 0;
@@ -140,6 +141,9 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 				     "and will soon be removed, "
 				     "use the \"nobind\" option instead");
 				nosymlink = 1;
+			} else if (_strncmp("symlink", cp, o_len) == 0) {
+				if (*name != '/')
+					symlink = 1;
 			} else if (_strncmp("nobind", cp, o_len) == 0) {
 				nobind = 1;
 			} else if (_strncmp("no-use-weight-only", cp, o_len) == 0) {
@@ -293,11 +297,13 @@ dont_probe:
 		if (!(nosymlink || nobind) &&
 		    this->proximity == PROXIMITY_LOCAL) {
 			/* Local host -- do a "bind" */
-			const char *bind_options = ro ? "ro" : "";
+			const char *bind_options;
 
 			debug(ap->logopt,
 			      MODPREFIX "%s is local, attempt bind mount",
 			      name);
+
+			bind_options = symlink ? "symlink" : ro ? "ro" : "";
 
 			err = mount_bind->mount_mount(ap, root, name, name_len,
 					       this->path, "bind", bind_options,
