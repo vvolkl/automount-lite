@@ -463,14 +463,28 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 	}
 
 	me = match_cached_key(ap, MODPREFIX, source, lkp_key);
-	free(lkp_key);
-	if (!me)
-		return NSS_STATUS_NOTFOUND;
 
-	if (!me->mapent)
+	if (!me) {
+		free(lkp_key);
+		return NSS_STATUS_NOTFOUND;
+	}
+
+	if (!me->mapent) {
+		free(lkp_key);
 		return NSS_STATUS_UNAVAIL;
+	}
 
 	mapent = strdup(me->mapent);
+	if (!mapent) {
+		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+		error(ap->logopt, "malloc: %s", estr);
+		free(lkp_key);
+		return NSS_STATUS_UNKNOWN;
+	}
+
+	debug(ap->logopt, MODPREFIX "%s -> %s", lkp_key, mapent);
+
+	free(lkp_key);
 
 	rv = ctxt->parser->parse_mount(ap, key, key_len,
 				       mapent, ctxt->parser->context);

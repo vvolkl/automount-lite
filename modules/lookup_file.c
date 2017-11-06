@@ -1285,18 +1285,24 @@ do_cache_lookup:
 		}
 	}
 	cache_unlock(mc);
-	free(lkp_key);
 
-	if (!me)
+	if (!me) {
+		free(lkp_key);
 		return NSS_STATUS_NOTFOUND;
+	}
 
-	if (!mapent)
+	if (!mapent) {
+		free(lkp_key);
 		return NSS_STATUS_TRYAGAIN;
+	}
+
+	debug(ap->logopt, MODPREFIX "%s -> %s", lkp_key, mapent);
+
+	free(lkp_key);
 
 	master_source_current_wait(ap->entry);
 	ap->entry->current = source;
 
-	debug(ap->logopt, MODPREFIX "%s -> %s", key, mapent);
 	ret = ctxt->parse->parse_mount(ap, key, key_len,
 				       mapent, ctxt->parse->context);
 	if (ret) {

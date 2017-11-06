@@ -927,28 +927,35 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 		}
 	}
 	cache_unlock(mc);
+
+	if (!me) {
+		free(lkp_key);
+		return NSS_STATUS_NOTFOUND;
+	}
+
+	if (!mapent) {
+		free(lkp_key);
+		return NSS_STATUS_TRYAGAIN;
+	}
+
+	debug(ap->logopt, MODPREFIX "%s -> %s", lkp_key, mapent);
+
 	free(lkp_key);
 
-	if (mapent) {
-		master_source_current_wait(ap->entry);
-		ap->entry->current = source;
+	master_source_current_wait(ap->entry);
+	ap->entry->current = source;
 
-		debug(ap->logopt, MODPREFIX "%s -> %s", key, mapent);
-		ret = ctxt->parse->parse_mount(ap, key, key_len,
-					       mapent, ctxt->parse->context);
-		if (ret) {
-			/* Don't update negative cache when re-connecting */
-			if (ap->flags & MOUNT_FLAG_REMOUNT)
-				return NSS_STATUS_TRYAGAIN;
-			cache_writelock(mc);
-			cache_update_negative(mc, source, key, ap->negative_timeout);
-			cache_unlock(mc);
+	ret = ctxt->parse->parse_mount(ap, key, key_len,
+				       mapent, ctxt->parse->context);
+	if (ret) {
+		/* Don't update negative cache when re-connecting */
+		if (ap->flags & MOUNT_FLAG_REMOUNT)
 			return NSS_STATUS_TRYAGAIN;
-		}
-	 }
-
-	if (ret)
+		cache_writelock(mc);
+		cache_update_negative(mc, source, key, ap->negative_timeout);
+		cache_unlock(mc);
 		return NSS_STATUS_TRYAGAIN;
+	}
 
 	return NSS_STATUS_SUCCESS;
 }

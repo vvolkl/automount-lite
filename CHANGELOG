@@ -42,6 +42,7 @@ xx/xx/2017 autofs-5.1.4
 - fix open calls not using open_xxxx() calls.
 - move open_xxxx() functions to spawn.c.
 - serialize calls to open_xxxx() functions.
+- improve debug logging of lookup key.
 
 24/05/2017 autofs-5.1.3
 =======================
