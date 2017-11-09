@@ -45,6 +45,7 @@ xx/xx/2017 autofs-5.1.4
 - improve debug logging of lookup key.
 - fix typo in amd_parse.c.
 - add missing MODPREFIX to logging in amd parser.
+- fix symlink false negative in umount_multi().
 
 24/05/2017 autofs-5.1.3
 =======================

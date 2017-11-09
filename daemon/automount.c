@@ -633,10 +633,6 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 
 	debug(ap->logopt, "path %s incl %d", path, incl);
 
-	/* If path is a mount it can't be a symlink */
-	if (is_mounted(_PATH_MOUNTED, path, MNTS_ALL))
-		goto real_mount;
-
 	if (lstat(path, &st)) {
 		warn(ap->logopt,
 		     "failed to stat directory or symlink %s", path);
@@ -681,7 +677,6 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 		return 0;
 	}
 
-real_mount:
 	is_autofs_fs = 0;
 	if (master_find_submount(ap, path))
 		is_autofs_fs = 1;
