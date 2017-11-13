@@ -222,7 +222,7 @@ int check_nfs_mount_version(struct nfs_mount_vers *vers,
 	char *s_ver;
 	int cancel_state;
 
-	if (pipe(pipefd))
+	if (open_pipe(pipefd))
 		return -1;
 
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cancel_state);

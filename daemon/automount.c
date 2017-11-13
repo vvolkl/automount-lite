@@ -1000,7 +1000,7 @@ static int set_log_priority(const char *path, int priority)
 	 * Specify O_NONBLOCK so that the open will fail if there is no
 	 * daemon reading from the other side of the FIFO.
 	 */
-	fd = open(fifo_name, O_WRONLY|O_NONBLOCK);
+	fd = open_fd(fifo_name, O_WRONLY|O_NONBLOCK);
 	if (fd < 0) {
 		fprintf(stderr, "%s: open of %s failed with %s\n",
 			__FUNCTION__, fifo_name, strerror(errno));
