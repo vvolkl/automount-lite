@@ -230,6 +230,7 @@ int check_nfs_mount_version(struct nfs_mount_vers *vers,
 	sigfillset(&allsigs);
 	pthread_sigmask(SIG_BLOCK, &allsigs, &oldsig);
 
+	open_mutex_lock();
 	f = fork();
 	if (f == 0) {
 		reset_signals();
@@ -248,6 +249,7 @@ int check_nfs_mount_version(struct nfs_mount_vers *vers,
 
 	sigaddset(&tmpsig, SIGCHLD);
 	pthread_sigmask(SIG_SETMASK, &tmpsig, NULL);
+	open_mutex_unlock();
 
 	close(pipefd[1]);
 

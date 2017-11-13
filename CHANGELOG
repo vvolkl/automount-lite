@@ -41,6 +41,7 @@ xx/xx/2017 autofs-5.1.4
 - update configure to check for pipe2(2).
 - fix open calls not using open_xxxx() calls.
 - move open_xxxx() functions to spawn.c.
+- serialize calls to open_xxxx() functions.
 
 24/05/2017 autofs-5.1.3
 =======================

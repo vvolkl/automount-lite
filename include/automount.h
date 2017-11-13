@@ -257,6 +257,8 @@ int spawnv(unsigned logopt, const char *prog, const char *const *argv);
 int spawn_mount(unsigned logopt, ...);
 int spawn_bind_mount(unsigned logopt, ...);
 int spawn_umount(unsigned logopt, ...);
+void open_mutex_lock(void);
+void open_mutex_unlock(void);
 int open_fd(const char *, int);
 int open_fd_mode(const char *, int, int);
 int open_pipe(int[2]);

@@ -225,6 +225,7 @@ static char *lookup_one(struct autofs_point *ap,
 		goto out_error;
 	}
 
+	open_mutex_lock();
 	f = fork();
 	if (f < 0) {
 		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
@@ -233,6 +234,7 @@ static char *lookup_one(struct autofs_point *ap,
 		close(pipefd[1]);
 		close(epipefd[0]);
 		close(epipefd[1]);
+		open_mutex_unlock();
 		goto out_error;
 	} else if (f == 0) {
 		reset_signals();
@@ -262,6 +264,7 @@ static char *lookup_one(struct autofs_point *ap,
 	}
 	close(pipefd[1]);
 	close(epipefd[1]);
+	open_mutex_unlock();
 
 	mapp = mapent;
 	errp = errbuf;

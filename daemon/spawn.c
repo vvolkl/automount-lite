@@ -30,6 +30,7 @@
 #include "automount.h"
 
 static pthread_mutex_t spawn_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t open_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 #define SPAWN_OPT_NONE		0x0000
 #define SPAWN_OPT_LOCK		0x0001
@@ -47,6 +48,20 @@ void dump_core(void)
 	sigprocmask(SIG_UNBLOCK, &segv, NULL);
 
 	raise(SIGSEGV);
+}
+
+void open_mutex_lock(void)
+{
+	int _o_lock = pthread_mutex_lock(&open_mutex);
+	if (_o_lock)
+		fatal(_o_lock);
+}
+
+void open_mutex_unlock(void)
+{
+	int _o_unlock = pthread_mutex_unlock(&open_mutex);
+	if (_o_unlock)
+		fatal(_o_unlock);
 }
 
 /*
@@ -72,14 +87,18 @@ int open_fd(const char *path, int flags)
 {
 	int fd;
 
+	open_mutex_lock();
 #if defined(O_CLOEXEC) && defined(SOCK_CLOEXEC)
 	if (cloexec_works != -1)
 		flags |= O_CLOEXEC;
 #endif
 	fd = open(path, flags);
-	if (fd == -1)
+	if (fd == -1) {
+		open_mutex_unlock();
 		return -1;
+	}
 	check_cloexec(fd);
+	open_mutex_unlock();
 	return fd;
 }
 
@@ -87,14 +106,18 @@ int open_fd_mode(const char *path, int flags, int mode)
 {
 	int fd;
 
+	open_mutex_lock();
 #if defined(O_CLOEXEC) && defined(SOCK_CLOEXEC)
 	if (cloexec_works != -1)
 		flags |= O_CLOEXEC;
 #endif
 	fd = open(path, flags, mode);
-	if (fd == -1)
+	if (fd == -1) {
+		open_mutex_unlock();
 		return -1;
+	}
 	check_cloexec(fd);
+	open_mutex_unlock();
 	return fd;
 }
 
@@ -102,35 +125,45 @@ int open_pipe(int pipefd[2])
 {
 	int ret;
 
+	open_mutex_lock();
 #if defined(O_CLOEXEC) && defined(SOCK_CLOEXEC) && defined(HAVE_PIPE2)
 	if (cloexec_works != -1) {
 		ret = pipe2(pipefd, O_CLOEXEC);
 		if (ret != -1)
-			return 0;
+			goto done;
 		if (errno != EINVAL)
-			return -1;
+			goto err;
 	}
 #endif
 	ret = pipe(pipefd);
 	if (ret == -1)
-		return -1;
+		goto err;
 	check_cloexec(pipefd[0]);
 	check_cloexec(pipefd[1]);
+done:
+	open_mutex_unlock();
 	return 0;
+err:
+	open_mutex_unlock();
+	return -1;
 }
 
 int open_sock(int domain, int type, int protocol)
 {
 	int fd;
 
+	open_mutex_lock();
 #ifdef SOCK_CLOEXEC
 	if (cloexec_works != -1)
 		type |= SOCK_CLOEXEC;
 #endif
 	fd = socket(domain, type, protocol);
-	if (fd == -1)
+	if (fd == -1) {
+		open_mutex_unlock();
 		return -1;
+	}
 	check_cloexec(fd);
+	open_mutex_unlock();
 	return fd;
 }
 
@@ -138,19 +171,24 @@ FILE *open_fopen_r(const char *path)
 {
 	FILE *f;
 
+	open_mutex_lock();
 #if defined(O_CLOEXEC) && defined(SOCK_CLOEXEC)
 	if (cloexec_works != -1) {
 		f = fopen(path, "re");
 		if (f != NULL) {
 			check_cloexec(fileno(f));
+			open_mutex_unlock();
 			return f;
 		}
 	}
 #endif
 	f = fopen(path, "r");
-	if (f == NULL)
+	if (f == NULL) {
+		open_mutex_unlock();
 		return NULL;
+	}
 	check_cloexec(fileno(f));
+	open_mutex_unlock();
 	return f;
 }
 
@@ -158,19 +196,24 @@ FILE *open_setmntent_r(const char *table)
 {
 	FILE *tab;
 
+	open_mutex_lock();
 #if defined(O_CLOEXEC) && defined(SOCK_CLOEXEC)
 	if (cloexec_works != -1) {
 		tab = setmntent(table, "re");
 		if (tab != NULL) {
 			check_cloexec(fileno(tab));
+			open_mutex_unlock();
 			return tab;
 		}
 	}
 #endif
 	tab = fopen(table, "r");
-	if (tab == NULL)
+	if (tab == NULL) {
+		open_mutex_unlock();
 		return NULL;
+	}
 	check_cloexec(fileno(tab));
+	open_mutex_unlock();
 	return tab;
 }
 
@@ -284,6 +327,7 @@ static int do_spawn(unsigned logopt, unsigned int wait,
 		egid = tsv->gid;
 	}
 
+	open_mutex_lock();
 	f = fork();
 	if (f == 0) {
 		char **pargv = (char **) argv;
@@ -398,6 +442,7 @@ done:
 
 		sigaddset(&tmpsig, SIGCHLD);
 		pthread_sigmask(SIG_SETMASK, &tmpsig, NULL);
+		open_mutex_unlock();
 
 		close(pipefd[1]);
 
