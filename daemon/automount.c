@@ -75,9 +75,6 @@ static sigset_t block_sigs;
 /* Pre-calculated kernel packet length */
 static size_t kpkt_len;
 
-/* Does kernel know about SOCK_CLOEXEC and friends */
-static int cloexec_works = 0;
-
 /* Attributes for creating detached and joinable threads */
 pthread_attr_t th_attr;
 pthread_attr_t th_attr_detached;

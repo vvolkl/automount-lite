@@ -50,6 +50,131 @@ void dump_core(void)
 }
 
 /*
+ * Use CLOEXEC flag for open(), pipe(), fopen() (read-only case) and
+ * socket() if possible.
+ */
+static int cloexec_works = 0;
+
+static void check_cloexec(int fd)
+{
+	if (cloexec_works == 0) {
+		int fl = fcntl(fd, F_GETFD);
+		if (fl != -1)
+			cloexec_works = (fl & FD_CLOEXEC) ? 1 : -1;
+	}
+	if (cloexec_works > 0)
+		return;
+	fcntl(fd, F_SETFD, FD_CLOEXEC);
+	return;
+}
+
+int open_fd(const char *path, int flags)
+{
+	int fd;
+
+#if defined(O_CLOEXEC) && defined(SOCK_CLOEXEC)
+	if (cloexec_works != -1)
+		flags |= O_CLOEXEC;
+#endif
+	fd = open(path, flags);
+	if (fd == -1)
+		return -1;
+	check_cloexec(fd);
+	return fd;
+}
+
+int open_fd_mode(const char *path, int flags, int mode)
+{
+	int fd;
+
+#if defined(O_CLOEXEC) && defined(SOCK_CLOEXEC)
+	if (cloexec_works != -1)
+		flags |= O_CLOEXEC;
+#endif
+	fd = open(path, flags, mode);
+	if (fd == -1)
+		return -1;
+	check_cloexec(fd);
+	return fd;
+}
+
+int open_pipe(int pipefd[2])
+{
+	int ret;
+
+#if defined(O_CLOEXEC) && defined(SOCK_CLOEXEC) && defined(HAVE_PIPE2)
+	if (cloexec_works != -1) {
+		ret = pipe2(pipefd, O_CLOEXEC);
+		if (ret != -1)
+			return 0;
+		if (errno != EINVAL)
+			return -1;
+	}
+#endif
+	ret = pipe(pipefd);
+	if (ret == -1)
+		return -1;
+	check_cloexec(pipefd[0]);
+	check_cloexec(pipefd[1]);
+	return 0;
+}
+
+int open_sock(int domain, int type, int protocol)
+{
+	int fd;
+
+#ifdef SOCK_CLOEXEC
+	if (cloexec_works != -1)
+		type |= SOCK_CLOEXEC;
+#endif
+	fd = socket(domain, type, protocol);
+	if (fd == -1)
+		return -1;
+	check_cloexec(fd);
+	return fd;
+}
+
+FILE *open_fopen_r(const char *path)
+{
+	FILE *f;
+
+#if defined(O_CLOEXEC) && defined(SOCK_CLOEXEC)
+	if (cloexec_works != -1) {
+		f = fopen(path, "re");
+		if (f != NULL) {
+			check_cloexec(fileno(f));
+			return f;
+		}
+	}
+#endif
+	f = fopen(path, "r");
+	if (f == NULL)
+		return NULL;
+	check_cloexec(fileno(f));
+	return f;
+}
+
+FILE *open_setmntent_r(const char *table)
+{
+	FILE *tab;
+
+#if defined(O_CLOEXEC) && defined(SOCK_CLOEXEC)
+	if (cloexec_works != -1) {
+		tab = setmntent(table, "re");
+		if (tab != NULL) {
+			check_cloexec(fileno(tab));
+			return tab;
+		}
+	}
+#endif
+	tab = fopen(table, "r");
+	if (tab == NULL)
+		return NULL;
+	check_cloexec(fileno(tab));
+	return tab;
+}
+
+/*
  * Used by subprocesses which exec to avoid carrying over the main
  * daemon's signalling environment
  */

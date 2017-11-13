@@ -40,6 +40,7 @@ xx/xx/2017 autofs-5.1.4
 - fix ordering of seteuid/setegid in do_spawn().
 - update configure to check for pipe2(2).
 - fix open calls not using open_xxxx() calls.
+- move open_xxxx() functions to spawn.c.
 
 24/05/2017 autofs-5.1.3
 =======================
