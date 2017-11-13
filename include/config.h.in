@@ -60,6 +60,9 @@
 /* define if the umount command supports the -c option */
 #undef HAVE_NO_CANON_UMOUNT
 
+/* Define to 1 if you have the `pipe2' function. */
+#undef HAVE_PIPE2
+
 /* define if the mount command supports the -s option */
 #undef HAVE_SLOPPY_MOUNT
 

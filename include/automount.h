@@ -685,7 +685,7 @@ static inline int open_pipe(int pipefd[2])
 {
 	int ret;
 
-#if defined(O_CLOEXEC) && defined(SOCK_CLOEXEC) && defined(__have_pipe2)
+#if defined(O_CLOEXEC) && defined(SOCK_CLOEXEC) && defined(HAVE_PIPE2)
 	if (cloexec_works != -1) {
 		ret = pipe2(pipefd, O_CLOEXEC);
 		if (ret != -1)
