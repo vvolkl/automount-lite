@@ -771,6 +771,36 @@ done:
 	return ret; 
 }
 
+/* Called with cache_lock held for map entry me and is released
+ * on return.
+ */
+int cache_lookup_negative(struct mapent *me, const char *key)
+{
+	if (me->status >= monotonic_time(NULL)) {
+		cache_unlock(me->mc);
+		return CHE_UNAVAIL;
+	} else {
+		struct mapent_cache *smc = me->mc;
+		struct mapent *sme;
+
+		if (me->mapent)
+			cache_unlock(smc);
+		else {
+			cache_unlock(smc);
+			cache_writelock(smc);
+			sme = cache_lookup_distinct(smc, key);
+			/* Negative timeout expired for non-existent entry. */
+			if (sme && !sme->mapent) {
+				if (cache_pop_mapent(sme) == CHE_FAIL)
+					cache_delete(smc, key);
+			}
+			cache_unlock(smc);
+		}
+	}
+
+	return CHE_OK;
+}
+
 void cache_update_negative(struct mapent_cache *mc,
 			   struct map_source *ms, const char *key,
 			   time_t timeout)

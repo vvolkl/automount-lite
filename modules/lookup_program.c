@@ -601,27 +601,9 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 	/* Check if we recorded a mount fail for this key anywhere */
 	me = lookup_source_mapent(ap, name, LKP_DISTINCT);
 	if (me) {
-		if (me->status >= monotonic_time(NULL)) {
-			cache_unlock(me->mc);
+		/* negative timeout has not passed, return fail */
+		if (cache_lookup_negative(me, name) == CHE_UNAVAIL)
 			return NSS_STATUS_NOTFOUND;
-		} else {
-			struct mapent_cache *smc = me->mc;
-			struct mapent *sme;
-
-			if (me->mapent)
-				cache_unlock(smc);
-			else {
-				cache_unlock(smc);
-				cache_writelock(smc);
-				sme = cache_lookup_distinct(smc, name);
-				/* Negative timeout expired for non-existent entry. */
-				if (sme && !sme->mapent) {
-					if (cache_pop_mapent(sme) == CHE_FAIL)
-						cache_delete(smc, name);
-				}
-				cache_unlock(smc);
-			}
-		}
 	}
 
 	/* Catch installed direct offset triggers */
