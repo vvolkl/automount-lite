@@ -192,7 +192,7 @@ or with individual map entries. The option is ignored for direct mounts
 and non-root offest mount entries.
 .TP
 .I "\-r, \-\-random-multimount-selection"
-Enables the use of ramdom selection when choosing a host from a
+Enables the use of random selection when choosing a host from a
 list of replicated servers. This option is applied to this mount
 only, overriding the global setting that may be specified on the
 command line.
