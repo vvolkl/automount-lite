@@ -844,7 +844,7 @@ int spawn_umount(unsigned logopt, ...)
 			 * the mtab.
 			 */
 			if (!printed) {
-				debug(logopt, "mount failed with error code 16"
+				debug(logopt, "umount failed with error code 16"
 				      ", retrying with the -f option");
 				printed = 1;
 			}
