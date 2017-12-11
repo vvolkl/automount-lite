@@ -2084,7 +2084,7 @@ int umount_amd_ext_mount(struct autofs_point *ap, struct amd_entry *entry)
 
 		if (!ext_mount_remove(&entry->ext_mount, entry->fs)) {
 			rv =0;
-			goto out;
+			goto out_free;
 		}
 
 		rv = spawnv(ap->logopt, prog, (const char * const *) argv);
@@ -2097,7 +2097,7 @@ int umount_amd_ext_mount(struct autofs_point *ap, struct amd_entry *entry)
 			      "umounted program mount at %s", entry->fs);
 			rmdir_path(ap, entry->fs, ap->dev);
 		}
-
+out_free:
 		free_argv(argc, (const char **) argv);
 		free(str);
 
