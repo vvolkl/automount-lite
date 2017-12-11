@@ -1475,7 +1475,7 @@ static unsigned int validate_program_options(unsigned int logopt,
 		return 0;
 	}
 
-	if (!entry->fs && !*entry->fs) {
+	if (!entry->fs || !*entry->fs) {
 		error(logopt, MODPREFIX
 		    "%s: ${fs} must be used as the mount point but is not set",
 		    entry->type);
