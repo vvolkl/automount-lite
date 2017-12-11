@@ -58,6 +58,7 @@ xx/xx/2017 autofs-5.1.4
 - add function construct_argv().
 - add amd mount type program mount support.
 - fix memory leak in umount_amd_ext_mount().
+- fix strerror_r() parameter declaration in do program_mount().
 
 24/05/2017 autofs-5.1.3
 =======================

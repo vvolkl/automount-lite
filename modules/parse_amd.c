@@ -1290,8 +1290,8 @@ static int do_program_mount(struct autofs_point *ap,
 	} else {
 		rv = mkdir_path(entry->fs, 0555);
 		if (rv && errno != EEXIST) {
-			char *buf[MAX_ERR_BUF];
-			char * estr;
+			char buf[MAX_ERR_BUF];
+			char *estr;
 
 			estr = strerror_r(errno, buf, MAX_ERR_BUF);
 			error(ap->logopt,
