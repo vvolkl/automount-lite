@@ -18,7 +18,7 @@
 
 Summary: A tool from automatically mounting and umounting filesystems.
 Name: autofs
-%define version 5.1.3
+%define version 5.1.4
 %define release 1
 Version: %{version}
 Release: %{release}
