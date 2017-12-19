@@ -51,6 +51,8 @@ const char *libdir = AUTOFS_LIB_DIR;	/* Location of library modules */
 const char *mapdir = AUTOFS_MAP_DIR;	/* Location of mount maps */
 const char *confdir = AUTOFS_CONF_DIR;	/* Location of autofs config file */
 
+unsigned int mp_mode = 0755;
+
 unsigned int nfs_mount_uses_string_options = 0;
 static struct nfs_mount_vers vers, check = {1, 1, 1};
 

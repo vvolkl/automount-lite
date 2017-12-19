@@ -277,7 +277,7 @@ dont_probe:
 
 	debug(ap->logopt, MODPREFIX "calling mkdir_path %s", fullpath);
 
-	status = mkdir_path(fullpath, 0555);
+	status = mkdir_path(fullpath, mp_mode);
 	if (status && errno != EEXIST) {
 		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 		error(ap->logopt,

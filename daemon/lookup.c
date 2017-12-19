@@ -802,7 +802,7 @@ int lookup_ghost(struct autofs_point *ap, const char *root)
 				goto next;
 			}
 
-			ret = mkdir_path(fullpath, 0555);
+			ret = mkdir_path(fullpath, mp_mode);
 			if (ret < 0 && errno != EEXIST) {
 				char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 				warn(ap->logopt,

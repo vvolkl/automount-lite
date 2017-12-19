@@ -69,7 +69,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 
 	debug(ap->logopt, MODPREFIX "calling mkdir_path %s", fullpath);
 
-	status = mkdir_path(fullpath, 0555);
+	status = mkdir_path(fullpath, mp_mode);
 	if (status && errno != EEXIST) {
 		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 		error(ap->logopt,

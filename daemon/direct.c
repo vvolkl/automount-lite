@@ -424,7 +424,7 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 	}
 
 	/* In case the directory doesn't exist, try to mkdir it */
-	if (mkdir_path(me->key, 0555) < 0) {
+	if (mkdir_path(me->key, mp_mode) < 0) {
 		if (errno != EEXIST && errno != EROFS) {
 			crit(ap->logopt,
 			     "failed to create mount directory %s", me->key);
@@ -739,7 +739,7 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *
 	strcat(mountpoint, offset);
 
 	/* In case the directory doesn't exist, try to mkdir it */
-	if (mkdir_path(mountpoint, 0555) < 0) {
+	if (mkdir_path(mountpoint, mp_mode) < 0) {
 		if (errno == EEXIST) {
 			/*
 			 * If the mount point directory is a real mount

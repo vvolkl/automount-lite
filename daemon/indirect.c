@@ -133,7 +133,7 @@ static int do_mount_autofs_indirect(struct autofs_point *ap, const char *root)
 	}
 
 	/* In case the directory doesn't exist, try to mkdir it */
-	if (mkdir_path(root, 0555) < 0) {
+	if (mkdir_path(root, mp_mode) < 0) {
 		if (errno != EEXIST && errno != EROFS) {
 			crit(ap->logopt,
 			     "failed to create autofs directory %s",

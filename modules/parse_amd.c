@@ -1288,7 +1288,7 @@ static int do_program_mount(struct autofs_point *ap,
 		rv = 0;
 		ext_mount_add(&entry->ext_mount, entry->fs, 1);
 	} else {
-		rv = mkdir_path(entry->fs, 0555);
+		rv = mkdir_path(entry->fs, mp_mode);
 		if (rv && errno != EEXIST) {
 			char buf[MAX_ERR_BUF];
 			char *estr;

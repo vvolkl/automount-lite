@@ -151,7 +151,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 
 		debug(ap->logopt, MODPREFIX "calling mkdir_path %s", fullpath);
 
-		status = mkdir_path(fullpath, 0555);
+		status = mkdir_path(fullpath, mp_mode);
 		if (status && errno != EEXIST) {
 			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 			error(ap->logopt,
@@ -203,7 +203,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 		} else {
 			debug(ap->logopt,
 			      MODPREFIX "calling mkdir_path %s", basepath);
-			if (mkdir_path(basepath, 0555) && errno != EEXIST) {
+			if (mkdir_path(basepath, mp_mode) && errno != EEXIST) {
 				char *estr;
 				estr = strerror_r(errno, buf, MAX_ERR_BUF);
 				error(ap->logopt,
@@ -219,7 +219,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 			      "failed to create symlink %s -> %s",
 			      fullpath, what);
 			if ((ap->flags & MOUNT_FLAG_GHOST) && !status) {
-				if (mkdir_path(fullpath, 0555) && errno != EEXIST) {
+				if (mkdir_path(fullpath, mp_mode) && errno != EEXIST) {
 					char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 					error(ap->logopt,
 					      MODPREFIX "mkdir_path %s failed: %s",
