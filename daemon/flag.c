@@ -164,7 +164,7 @@ int aquire_flag_file(void)
 	while (!we_created_flagfile) {
 		int errsv, i, j;
 
-		i = open_fd_mode(linkf, O_WRONLY|O_CREAT, 0);
+		i = open_fd_mode(linkf, O_WRONLY|O_CREAT, 0644);
 		if (i < 0) {
 			release_flag_file();
 			return 0;
