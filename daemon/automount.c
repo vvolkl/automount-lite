@@ -2070,13 +2070,17 @@ static void remove_empty_args(char **argv, int *argc)
 
 static void do_master_list_reset(struct master *master)
 {
-	struct list_head *head, *p;
+	struct list_head *head, *p, *n;
 
 	master_mutex_lock();
 
 	head = &master->mounts;
-	list_for_each(p, head) {
+	n = head->next;
+	while (n != head) {
 		struct master_mapent *entry;
+
+		p = n;
+		n = p->next;
 
 		entry = list_entry(p, struct master_mapent, list);
 

@@ -1,6 +1,7 @@
 xx/xx/2018 autofs-5.1.5
 - fix flag file permission.
 - fix directory create permission.
+- fix use after free in do_master_list_reset().
 
 19/12/2017 autofs-5.1.4
 - fix spec file url.
