@@ -338,6 +338,7 @@ static int do_spawn(unsigned logopt, unsigned int wait,
 		dup2(pipefd[1], STDOUT_FILENO);
 		dup2(pipefd[1], STDERR_FILENO);
 		close(pipefd[1]);
+		open_mutex_unlock();
 
 		/* what to mount must always be second last */
 		while (*pargv++)
