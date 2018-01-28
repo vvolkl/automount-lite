@@ -725,6 +725,17 @@ static struct substvar *expand_entry(struct autofs_point *ap,
 		entry->rhost = host;
 	}
 next:
+	if (entry->pref) {
+		if (expand_selectors(ap, entry->pref, &expand, sv)) {
+			debug(logopt, MODPREFIX
+			      "pref expand(\"%s\") -> %s",
+			      entry->pref, expand);
+			free(entry->pref);
+			entry->pref = expand;
+		}
+		sv = macro_addvar(sv, "pref", 4, entry->pref);
+	}
+
 	if (entry->sublink) {
 		if (expand_selectors(ap, entry->sublink, &expand, sv)) {
 			debug(logopt, MODPREFIX
