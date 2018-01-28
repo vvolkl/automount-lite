@@ -967,8 +967,8 @@ static int do_auto_mount(struct autofs_point *ap, const char *name,
 static int do_link_mount(struct autofs_point *ap, const char *name,
 			 struct amd_entry *entry, unsigned int flags)
 {
-	char target[PATH_MAX + 1];
 	const char *opts = (entry->opts && *entry->opts) ? entry->opts : NULL;
+	char *target;
 	int ret;
 
 	if (entry->sublink) {
@@ -977,14 +977,14 @@ static int do_link_mount(struct autofs_point *ap, const char *name,
 			     "error: sublink option length is too long");
 			return 0;
 		}
-		strcpy(target, entry->sublink);
+		target = entry->sublink;
 	} else {
 		if (strlen(entry->fs) > PATH_MAX) {
 			error(ap->logopt, MODPREFIX
 			     "error: fs option length is too long");
 			return 0;
 		}
-		strcpy(target, entry->fs);
+		target = entry->fs;
 	}
 
 	if (!(flags & CONF_AUTOFS_USE_LOFS))
