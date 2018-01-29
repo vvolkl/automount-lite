@@ -83,7 +83,7 @@ void seed_random(void)
 	return;
 }
 
-struct host *new_host(const char *name,
+struct host *new_host(const char *name, int ent_num,
 		      struct sockaddr *addr, size_t addr_len,
 		      unsigned int proximity, unsigned int weight,
 		      unsigned int options)
@@ -116,6 +116,7 @@ struct host *new_host(const char *name,
 	memset(new, 0, sizeof(struct host));
 
 	new->name = tmp1;
+	new->ent_num = ent_num;
 	new->addr_len = addr_len;
 	new->addr = tmp2;
 	new->proximity = proximity;
@@ -714,7 +715,7 @@ done:
 int prune_host_list(unsigned logopt, struct host **list,
 		    unsigned int vers, int port)
 {
-	struct host *this, *last, *first;
+	struct host *this, *last, *first, *prev;
 	struct host *new = NULL;
 	unsigned int proximity, selected_version = 0;
 	unsigned int v2_tcp_count, v3_tcp_count, v4_tcp_count;
@@ -725,12 +726,6 @@ int prune_host_list(unsigned logopt, struct host **list,
 
 	if (!*list)
 		return 0;
-
-	/* If we're using the host name then there's no point probing
-	 * avialability and respose time.
-	 */
-	if (defaults_use_hostname_for_mounts())
-		return 1;
 
 	/* Use closest hosts to choose NFS version */
 
@@ -877,11 +872,18 @@ int prune_host_list(unsigned logopt, struct host **list,
 
 	first = last;
 	this = first;
+	prev = NULL;
 	while (this) {
 		struct host *next = this->next;
 		if (!this->name) {
 			remove_host(list, this);
 			add_host(&new, this);
+		} else if (defaults_use_hostname_for_mounts() && prev &&
+			   prev->ent_num == this->ent_num) {
+			/* When we use the hostname to mount, there is no
+			 * point in probing every address it has, just one is
+			 * enough.  Skip the rest.
+			 */
 		} else {
 			status = get_supported_ver_and_cost(logopt, this,
 						selected_version, port);
@@ -889,6 +891,7 @@ int prune_host_list(unsigned logopt, struct host **list,
 				this->version = selected_version;
 				remove_host(list, this);
 				add_host(&new, this);
+				prev = this;
 			}
 		}
 		this = next;
@@ -901,7 +904,7 @@ int prune_host_list(unsigned logopt, struct host **list,
 }
 
 static int add_new_host(struct host **list,
-			const char *host, unsigned int weight,
+			const char *host, int ent_num, unsigned int weight,
 			struct addrinfo *host_addr,
 			unsigned int rr, unsigned int options)
 {
@@ -940,7 +943,7 @@ static int add_new_host(struct host **list,
 	else
 		return 0;
 
-	new = new_host(host, host_addr->ai_addr, addr_len, prx, weight, options);
+	new = new_host(host, ent_num, host_addr->ai_addr, addr_len, prx, weight, options);
 	if (!new)
 		return 0;
 
@@ -953,7 +956,7 @@ static int add_new_host(struct host **list,
 	return 1;
 }
 
-static int add_host_addrs(struct host **list, const char *host,
+static int add_host_addrs(struct host **list, const char *host, int ent_num,
 			  unsigned int weight, unsigned int options)
 {
 	struct addrinfo hints, *ni, *this;
@@ -988,7 +991,7 @@ static int add_host_addrs(struct host **list, const char *host,
 
 	this = ni;
 	while (this) {
-		ret = add_new_host(list, host, weight, this, 0, options);
+		ret = add_new_host(list, host, ent_num, weight, this, 0, options);
 		if (!ret)
 			break;
 		this = this->ai_next;
@@ -1027,7 +1030,7 @@ try_name:
 		rr++;
 	this = ni;
 	while (this) {
-		ret = add_new_host(list, host, weight, this, rr, options);
+		ret = add_new_host(list, host, ent_num, weight, this, rr, options);
 		if (!ret)
 			break;
 		this = this->ai_next;
@@ -1120,6 +1123,7 @@ int parse_location(unsigned logopt, struct host **hosts,
 {
 	char *str, *p, *delim;
 	unsigned int empty = 1;
+	int ent_num = 1;
 
 	if (!list)
 		return 0;
@@ -1177,7 +1181,7 @@ int parse_location(unsigned logopt, struct host **hosts,
 				}
 
 				if (p != delim) {
-					if (!add_host_addrs(hosts, p, weight, options)) {
+					if (!add_host_addrs(hosts, p, ent_num, weight, options)) {
 						if (empty) {
 							p = next;
 							continue;
@@ -1199,7 +1203,7 @@ int parse_location(unsigned logopt, struct host **hosts,
 				*delim = '\0';
 				next = delim + 1;
 
-				if (!add_host_addrs(hosts, p, weight, options)) {
+				if (!add_host_addrs(hosts, p, ent_num, weight, options)) {
 					p = next;
 					continue;
 				}
@@ -1213,6 +1217,7 @@ int parse_location(unsigned logopt, struct host **hosts,
 			return 0;
 		}
 
+		ent_num++;
 		p = next;
 	}
 

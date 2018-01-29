@@ -236,7 +236,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	    (vers & NFS4_VERS_MASK) != 0 &&
 	    !(vers & UDP6_REQUESTED)) {
 		unsigned int v4_probe_ok = 0;
-		struct host *tmp = new_host(hosts->name,
+		struct host *tmp = new_host(hosts->name, 0,
 					    hosts->addr, hosts->addr_len,
 					    hosts->proximity,
 					    hosts->weight, hosts->options);

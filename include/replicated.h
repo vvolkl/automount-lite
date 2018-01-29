@@ -57,6 +57,7 @@
 
 struct host {
 	char *name;
+	int ent_num;
 	struct sockaddr *addr;
 	size_t addr_len;
 	unsigned int rr;
@@ -70,7 +71,7 @@ struct host {
 };
 
 void seed_random(void);
-struct host *new_host(const char *, struct sockaddr *, size_t,
+struct host *new_host(const char *, int, struct sockaddr *, size_t,
 		      unsigned int, unsigned int, unsigned int);
 void free_host_list(struct host **);
 int parse_location(unsigned, struct host **, const char *, unsigned int);
