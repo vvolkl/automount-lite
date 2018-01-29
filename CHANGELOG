@@ -10,6 +10,7 @@ xx/xx/2018 autofs-5.1.5
 - add error handling for ext_mount_add().
 - account for recent libnsl changes.
 - use_hostname_for_mounts shouldn't prevent selection among replicas.
+- fix monotonic_elapsed.
 
 19/12/2017 autofs-5.1.4
 - fix spec file url.
