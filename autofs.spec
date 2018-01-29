@@ -121,6 +121,12 @@ install -m 755 redhat/autofs.init $RPM_BUILD_ROOT/etc/rc.d/init.d/autofs
 install -m 644 redhat/autofs.conf $RPM_BUILD_ROOT/etc/autofs.conf
 install -m 644 redhat/autofs.sysconfig $RPM_BUILD_ROOT/etc/sysconfig/autofs
 
+install -m 644 samples/auto.master $RPM_BUILD_ROOT/etc/auto.master
+install -m 644 samples/auto.misc $RPM_BUILD_ROOT/etc/auto.misc
+install -m 644 samples/auto.net $RPM_BUILD_ROOT/etc/auto.net
+install -m 644 samples/auto.smb $RPM_BUILD_ROOT/etc/auto.smb
+install -m 600 samples/autofs_ldap_auth.conf $RPM_BUILD_ROOT/etc/autofs_ldap_auth.conf
+
 %clean
 [ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
 
