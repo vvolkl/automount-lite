@@ -1080,7 +1080,14 @@ static int do_generic_mount(struct autofs_point *ap, const char *name,
 			umount = 1;
 		}
 		/* We have an external mount */
-		ext_mount_add(&entry->ext_mount, entry->fs, umount);
+		if (!ext_mount_add(&entry->ext_mount, entry->fs, umount)) {
+			umount_ent(ap, entry->fs);
+			error(ap->logopt, MODPREFIX
+			      "error: could not add external mount %s",
+			      entry->fs);
+			ret = 1;
+			goto out;
+		}
 		ret = do_link_mount(ap, name, entry, flags);
 	}
 out:
@@ -1124,7 +1131,13 @@ static int do_nfs_mount(struct autofs_point *ap, const char *name,
 			umount = 1;
 		}
 		/* We might be using an external mount */
-		ext_mount_add(&entry->ext_mount, entry->fs, umount);
+		if (!ext_mount_add(&entry->ext_mount, entry->fs, umount)) {
+			umount_ent(ap, entry->fs);
+			error(ap->logopt, MODPREFIX
+			      "error: could not add external mount %s", entry->fs);
+			ret = 1;
+			goto out;
+		}
 		ret = do_link_mount(ap, name, entry, flags);
 	}
 out:
@@ -1309,6 +1322,9 @@ static int do_program_mount(struct autofs_point *ap,
 	 */
 	if (ext_mount_inuse(entry->fs)) {
 		rv = 0;
+		/* An external mount with path entry->fs exists
+		 * so ext_mount_add() won't fail.
+		 */
 		ext_mount_add(&entry->ext_mount, entry->fs, 1);
 	} else {
 		rv = mkdir_path(entry->fs, mp_mode);
@@ -1325,17 +1341,19 @@ static int do_program_mount(struct autofs_point *ap,
 
 		rv = spawnv(ap->logopt, prog, (const char * const *) argv);
 		if (WIFEXITED(rv) && !WEXITSTATUS(rv)) {
-			rv = 0;
-			ext_mount_add(&entry->ext_mount, entry->fs, 1);
-			debug(ap->logopt, MODPREFIX
-			      "%s: mounted %s", entry->type, entry->fs);
-		} else {
-			if (!ext_mount_inuse(entry->fs))
-				rmdir_path(ap, entry->fs, ap->dev);
-			error(ap->logopt, MODPREFIX
-			     "%s: failed to mount using: %s",
-			     entry->type, entry->mount);
+			if (ext_mount_add(&entry->ext_mount, entry->fs, 1)) {
+				rv = 0;
+				debug(ap->logopt, MODPREFIX
+				     "%s: mounted %s", entry->type, entry->fs);
+				goto do_free;
+			}
+			umount_ent(ap, entry->fs);
 		}
+
+		if (!ext_mount_inuse(entry->fs))
+			rmdir_path(ap, entry->fs, ap->dev);
+		error(ap->logopt, MODPREFIX
+		   "%s: failed to mount using %s", entry->type, entry->mount);
 	}
 do_free:
 	free_argv(argc, (const char **) argv);

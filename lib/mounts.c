@@ -715,15 +715,12 @@ int ext_mount_add(struct list_head *entry, const char *path, unsigned int umount
 	}
 
 	em = malloc(sizeof(struct ext_mount));
-	if (!em) {
-		ret = -1;
+	if (!em)
 		goto done;
-	}
 
 	em->mountpoint = strdup(path);
 	if (!em->mountpoint) {
 		free(em);
-		ret = -1;
 		goto done;
 	}
 	em->umount = umount;
