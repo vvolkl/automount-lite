@@ -1099,7 +1099,7 @@ static int do_nfs_mount(struct autofs_point *ap, const char *name,
 	if (strlen(entry->rhost) + strlen(entry->rfs) + 1 > PATH_MAX) {
 		error(ap->logopt, MODPREFIX
 		     "error: rhost + rfs options length is too long");
-		return 0;
+		return 1;
 	}
 
 	strcpy(target, entry->rhost);
