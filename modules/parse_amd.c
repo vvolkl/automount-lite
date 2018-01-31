@@ -645,6 +645,18 @@ static void update_with_defaults(struct amd_entry *defaults,
 		}
 	}
 
+	if (!entry->sublink) {
+		if (defaults->sublink) {
+			tmp = strdup(defaults->sublink);
+			if (tmp)
+				entry->sublink = tmp;
+		} else {
+			v = macro_findvar(sv, "sublink", 2);
+			if (v)
+				entry->sublink = strdup(v->val);
+		}
+	}
+
 	return;
 }
 
