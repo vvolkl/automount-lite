@@ -417,3 +417,48 @@ fi
 LIBS="$af_check_ldap_parse_page_control_save_libs"
 ])
 
+dnl --------------------------------------------------------------------------
+dnl AF_CHECK_YPCLNT_HEADER
+dnl
+dnl Check for include file rpcsvc/ypclnt.h for YellowPages support.
+dnl --------------------------------------------------------------------------
+AC_DEFUN([AF_CHECK_YPCLNT_HEADER],
+[
+# save current CFLAGS
+af_check_ypclnt_header_save_cflags="$CFLAGS"
+CFLAGS="$CFLAGS $NSL_CFLAGS $TIRPC_CFLAGS"
+
+HAVE_YPCLNT=0
+AC_CHECK_HEADER([rpcsvc/ypclnt.h], HAVE_YPCLNT=1)
+AC_SUBST(HAVE_YPCLNT)
+if test "$HAVE_YPCLNT" = "1"; then
+	AC_DEFINE(HAVE_YPCLNT, 1,
+		[Define if using YellowPages])
+fi
+
+# restore libs
+CFLAGS="$af_check_ypclnt_header_save_cflags"
+])
+
+dnl --------------------------------------------------------------------------
+dnl AF_CHECK_NIS_HEADER
+dnl
+dnl Check for include file rpcsvc/nis.h for NIS+ support.
+dnl --------------------------------------------------------------------------
+AC_DEFUN([AF_CHECK_NIS_HEADER],
+[
+# save current CFLAGS
+af_check_nis_header_save_cflags="$CFLAGS"
+CFLAGS="$CFLAGS $NSL_CFLAGS $TIRPC_CFLAGS"
+
+HAVE_NISPLUS=0
+AC_CHECK_HEADER([rpcsvc/nis.h], HAVE_NISPLUS=1)
+AC_SUBST(HAVE_NISPLUS)
+if test "$HAVE_NISPLUS" = "1"; then
+	AC_DEFINE(HAVE_NISPLUS, 1,
+		[Define if using NIS+])
+fi
+
+# restore libs
+CFLAGS="$af_check_nis_header_save_cflags"
+])

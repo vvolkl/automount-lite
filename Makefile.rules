@@ -54,8 +54,6 @@ ifdef DMALLOCLIB
 LIBS += $(DMALLOCLIB)
 endif
 
-LIBS += $(LIBNSL)
-
 LIBS += $(LIBCLOCK_GETTIME)
 
 # Standard rules

@@ -116,6 +116,16 @@ parse_amd.so: parse_amd.c amd_parse.tab.o amd_tok.o
 #
 # Ad hoc compilation rules for modules which need auxilliary libraries
 #
+lookup_yp.so: lookup_yp.c
+	$(CC) $(SOLDFLAGS) $(CFLAGS) $(NSLCFLAGS) -o lookup_yp.so \
+		lookup_yp.c $(LDFLAGS) $(AUTOFS_LIB) $(LIBS) $(NSLLIB)
+	$(STRIP) lookup_yp.so
+
+lookup_nisplus.so: lookup_nisplus.c
+	$(CC) $(SOLDFLAGS) $(CFLAGS) $(NSLCFLAGS) -o lookup_nisplus.so \
+		lookup_nisplus.c $(LDFLAGS) $(AUTOFS_LIB) $(LIBS) $(NSLLIB)
+	$(STRIP) lookup_nisplus.so
+
 lookup_hesiod.so: lookup_hesiod.c
 	$(CC) $(SOLDFLAGS) $(CFLAGS) $(HESIOD_FLAGS) -o lookup_hesiod.so \
 		lookup_hesiod.c $(LDFLAGS) $(AUTOFS_LIB) $(LIBHESIOD) $(LIBRESOLV) $(LIBS)

@@ -209,11 +209,13 @@ fi
 AC_CHECK_LIB(rt, clock_gettime, LIBCLOCK_GETTIME="-lrt")
 AC_SUBST(LIBCLOCK_GETTIME)
 
-#
-# glibc/libc 6 new libraries
-#
-AC_CHECK_LIB(nsl, yp_match, LIBNSL="-lnsl")
-AC_SUBST(LIBNSL)
+PKG_PROG_PKG_CONFIG()
+PKG_CHECK_MODULES([NSL],[libnsl],,
+[
+AC_CHECK_LIB(nsl, yp_match, NSL_LIBS="-lnsl")
+AC_SUBST(NSL_LIBS)
+NSL_CFLAGS=""
+])
 
 AC_CHECK_LIB(resolv, res_query, LIBRESOLV="-lresolv")
 AC_SUBST(LIBRESOLV)
@@ -254,19 +256,8 @@ AC_SUBST(LIBHESIOD)
 AC_SUBST(HESIOD_FLAGS)
 LDFLAGS="${AF_tmp_ldflags}"
 
-# NIS+ support?
-HAVE_NISPLUS=0
-AC_CHECK_HEADER(rpcsvc/nis.h, HAVE_NISPLUS=1)
-AC_SUBST(HAVE_NISPLUS)
-
-# YellowPages support?
-HAVE_YPCLNT=0
-AC_CHECK_HEADER([rpcsvc/ypclnt.h], HAVE_YPCLNT=1)
-AC_SUBST(HAVE_YPCLNT)
-if test "$HAVE_YPCLNT" = "1"; then
-	AC_DEFINE(HAVE_YPCLNT, 1,
-		[Define if using YellowPages])
-fi
+AF_CHECK_YPCLNT_HEADER()
+AF_CHECK_NIS_HEADER()
 
 #
 # OpenLDAP support?  Expect that this may have a special directory...

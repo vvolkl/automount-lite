@@ -14,8 +14,8 @@ DAEMON_LDFLAGS = @DAEMON_LDFLAGS@
 # Glibc < 2.17 requires librt for clock_gettime()
 LIBCLOCK_GETTIME = @LIBCLOCK_GETTIME@
 
-# Special parameters for glibc (libc 6)
-LIBNSL    = @LIBNSL@
+NSLLIB    = @NSL_LIBS@
+NSLCFLAGS = @NSL_CFLAGS@
 LIBRESOLV = @LIBRESOLV@
 
 # Hesiod support: yes (1) no (0)
