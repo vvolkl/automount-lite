@@ -749,6 +749,7 @@ int master_parse_entry(const char *buffer, unsigned int default_timeout, unsigne
 	struct map_source *source;
 	unsigned int logopt = logging;
 	unsigned int m_logopt = master->logopt;
+	size_t mp_len;
 	int ret;
 
 	local_init_vars();
@@ -762,6 +763,10 @@ int master_parse_entry(const char *buffer, unsigned int default_timeout, unsigne
 		local_free_vars();
 		return 0;
 	}
+
+	mp_len = strlen(path);
+	while (mp_len && path[--mp_len] == '/')
+		path[mp_len] = 0;
 
 	nc = master->nc;
 
