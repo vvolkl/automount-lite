@@ -3,7 +3,7 @@
 #
 
 # Root directory contents
-SUBDIRS = lib daemon modules man
+SUBDIRS = lib daemon fedfs modules man
 INCDIRS = include
 INCFILES = COPYING COPYRIGHT NEWS README* TODO Makefile Makefile.rules \
 	   Makefile.conf.in .version .autofs-* configure.in aclocal.m4 \

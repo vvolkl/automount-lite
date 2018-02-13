@@ -191,6 +191,7 @@ fi
 %config(noreplace) /etc/sysconfig/autofs
 %config(noreplace) /etc/autofs_ldap_auth.conf
 %{_sbindir}/automount
+%{_sbindir}/mount.fedfs
 %dir %{_libdir}/autofs
 %{_libdir}/autofs/*
 %{_mandir}/*/*

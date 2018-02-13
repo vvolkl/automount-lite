@@ -19,6 +19,9 @@ kernel:
 samples:
 	set -e; if [ -d samples ]; then $(MAKE) -C samples all; fi
 
+fedfs:
+	set -e; if [ -d fedfs ]; then $(MAKE) -C fedfs all; fi
+
 clean:
 	for i in $(SUBDIRS) samples; do \
 		if [ -d $$i ]; then $(MAKE) -C $$i clean; fi; done 	
