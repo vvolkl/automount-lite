@@ -17,6 +17,12 @@
 #
 +dir:/etc/auto.master.d
 #
+# If you have fedfs set up and the related binaries, either
+# built as part of autofs or installed from another package,
+# uncomment this line to use the fedfs program map to access
+# your fedfs mounts.
+#/nfs4  /usr/sbin/fedfs-map-nfs4 nobind
+#
 # Include central master map if it can be found using
 # nsswitch sources.
 #
