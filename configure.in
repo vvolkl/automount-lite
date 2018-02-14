@@ -195,6 +195,15 @@ if test x$enable_no_canon_umount = xyes; then
 	AC_DEFINE(HAVE_NO_CANON_UMOUNT, 1, [define if the umount command supports the -c option])
 fi
 
+ENABLE_FEDFS=""
+AC_ARG_ENABLE(fedfs,
+[  --enable-fedfs                enable inclusion of fedfs binaries mount.fedfs and fedfs-map-nfs4],,
+	enable_fedfs=no)
+if test x$enable_fedfs = xyes; then
+	ENABLE_FEDFS="1"
+fi
+AC_SUBST(ENABLE_FEDFS)
+
 # LDAP SASL auth needs libxml and Kerberos
 AF_CHECK_LIBXML()
 AF_CHECK_KRB5()

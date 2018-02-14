@@ -3,11 +3,15 @@
 #
 
 # Root directory contents
-SUBDIRS = lib daemon fedfs modules man
+SUBDIRS = lib daemon modules man
 INCDIRS = include
 INCFILES = COPYING COPYRIGHT NEWS README* TODO Makefile Makefile.rules \
 	   Makefile.conf.in .version .autofs-* configure.in aclocal.m4 \
 	   configure *.patch autofs.spec
+
+ifeq ($(FEDFS), 1)
+	SUBDIRS += fedfs
+endif
 
 # Attempt to be friends with autotools
 INSTALLROOT = $(DESTDIR)

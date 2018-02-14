@@ -16,6 +16,10 @@
 # disable them.
 %define with_libtirpc        %{?_without_libtirpc:        0} %{?!_without_libtirpc:        1}
 
+# Use --without fedfs in your rpmbuild command or force values to 0 to
+# disable them.
+%define with_fedfs           %{?_without_fedfs:         0} %{?!_without_fedfs: 1}
+
 Summary: A tool from automatically mounting and umounting filesystems.
 Name: autofs
 %define version 5.1.4
@@ -82,6 +86,9 @@ echo %{version}-%{release} > .version
 %if %{with_libtirpc}
   %define libtirpc_configure_arg --with-libtirpc
 %endif
+%if %{with_fedfs}
+  %define fedfs_configure_arg --enable-fedfs
+%endif
 
 %build
 CFLAGS="$RPM_OPT_FLAGS -Wall" \
@@ -90,7 +97,8 @@ LDFLAGS="-Wl,-z,now" \
 	--disable-mount-locking \
 	--enable-ignore-busy \
 	%{?systemd_configure_arg:} \
-	%{?libtirpc_configure_arg:}
+	%{?libtirpc_configure_arg:} \
+	%{?fedfs_configure_arg:}
 CFLAGS="$RPM_OPT_FLAGS -Wall" LDFLAGS="-Wl,-z,now" make initdir=/etc/rc.d/init.d DONTSTRIP=1
 
 %install
@@ -191,8 +199,10 @@ fi
 %config(noreplace) /etc/sysconfig/autofs
 %config(noreplace) /etc/autofs_ldap_auth.conf
 %{_sbindir}/automount
+%if %{with_fedfs}
 %{_sbindir}/mount.fedfs
 %{_sbindir}/fedfs-map-nfs4
+%endif
 %dir %{_libdir}/autofs
 %{_libdir}/autofs/*
 %{_mandir}/*/*

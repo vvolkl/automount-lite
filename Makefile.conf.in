@@ -58,6 +58,8 @@ EXT3FS = @HAVE_E3FSCK@
 # Support for calling e4fsck when mounting ext4 filesystems
 EXT4FS = @HAVE_E4FSCK@
 
+FEDFS = @ENABLE_FEDFS@
+
 LEX = @PATH_LEX@
 YACC = @PATH_YACC@
 RPCGEN = @PATH_RPCGEN@

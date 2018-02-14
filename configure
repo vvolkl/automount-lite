@@ -648,6 +648,7 @@ NSL_CFLAGS
 LIBCLOCK_GETTIME
 KRB5_CONFIG
 XML_CONFIG
+ENABLE_FEDFS
 sssldir
 HAVE_SSS_AUTOFS
 PATH_RPCGEN
@@ -743,6 +744,7 @@ with_libtirpc
 with_dmalloc
 enable_sloppy_mount
 enable_no_canon_umount
+enable_fedfs
 with_hesiod
 with_openldap
 with_sasl
@@ -1377,6 +1379,7 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-sloppy-mount         enable the use of the -s option to mount
   --enable-no-canon-umount         enable the use of the -c option to umount
+  --enable-fedfs                enable inclusion of fedfs binaries mount.fedfs and fedfs-map-nfs4
   --disable-ext-env	        disable search in environment for substitution variable
   --disable-mount-locking       disable use of locking when spawning mount command
   --enable-force-shutdown       enable USR1 signal to force unlink umount of any
@@ -4245,6 +4248,19 @@ if test x$enable_no_canon_umount = xyes; then
 $as_echo "#define HAVE_NO_CANON_UMOUNT 1" >>confdefs.h
 
 fi
+
+ENABLE_FEDFS=""
+# Check whether --enable-fedfs was given.
+if test "${enable_fedfs+set}" = set; then :
+  enableval=$enable_fedfs;
+else
+  enable_fedfs=no
+fi
+
+if test x$enable_fedfs = xyes; then
+	ENABLE_FEDFS="1"
+fi
+
 
 # LDAP SASL auth needs libxml and Kerberos
 for ac_prog in xml2-config
