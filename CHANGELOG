@@ -16,6 +16,7 @@ xx/xx/2018 autofs-5.1.5
 - fix libresolv configure check.
 - add fedfs-getsrvinfo.c.
 - add mount.fedfs.c.
+- add fedfs-map-nfs4.c.
 
 19/12/2017 autofs-5.1.4
 - fix spec file url.

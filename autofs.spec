@@ -192,6 +192,7 @@ fi
 %config(noreplace) /etc/autofs_ldap_auth.conf
 %{_sbindir}/automount
 %{_sbindir}/mount.fedfs
+%{_sbindir}/fedfs-map-nfs4
 %dir %{_libdir}/autofs
 %{_libdir}/autofs/*
 %{_mandir}/*/*
