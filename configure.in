@@ -217,7 +217,7 @@ AC_SUBST(NSL_LIBS)
 NSL_CFLAGS=""
 ])
 
-AC_CHECK_LIB(resolv, res_query, LIBRESOLV="-lresolv")
+AC_CHECK_LIB(resolv, res_query, LIBRESOLV="-lresolv", AC_CHECK_LIB(resolv, __res_query, LIBRESOLV="-lresolv"))
 AC_SUBST(LIBRESOLV)
 
 #
