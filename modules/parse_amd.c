@@ -260,7 +260,8 @@ static int match_my_name(unsigned int logopt, const char *name, struct substvar 
 	ret = getaddrinfo(v->val, NULL, &hints, &cni);
 	if (ret) {
 		error(logopt, MODPREFIX
-		      "hostname lookup failed: %s\n", gai_strerror(ret));
+		      "hostname lookup for %s failed: %s\n",
+		      v->val, gai_strerror(ret));
 		goto out;
 	}
 
@@ -270,7 +271,8 @@ static int match_my_name(unsigned int logopt, const char *name, struct substvar 
 	ret = getaddrinfo(name, NULL, &hints, &ni);
 	if (ret) {
 		error(logopt, MODPREFIX
-		      "hostname lookup failed: %s\n", gai_strerror(ret));
+		      "hostname lookup for %s failed: %s\n",
+		      name, gai_strerror(ret));
 		freeaddrinfo(cni);
 		goto out;
 	}
@@ -678,7 +680,8 @@ static char *normalize_hostname(unsigned int logopt, const char *host,
 		ret = getaddrinfo(host, NULL, &hints, &ni);
 		if (ret) {
 			error(logopt, MODPREFIX
-			      "hostname lookup failed: %s", gai_strerror(ret));
+			      "hostname lookup for %s failed: %s",
+			      host, gai_strerror(ret));
 			return NULL;
 		}
 		name = strdup(ni->ai_canonname);

@@ -1007,8 +1007,9 @@ try_name:
 
 	ret = getaddrinfo(name, NULL, &hints, &ni);
 	if (ret) {
-		error(LOGOPT_ANY, "hostname lookup failed: %s",
-		      gai_strerror(ret));
+		error(LOGOPT_ANY,
+		      "hostname lookup for %s failed: %s",
+		      name, gai_strerror(ret));
 		free(name);
 		return 0;
 	}

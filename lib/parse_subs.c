@@ -476,7 +476,8 @@ unsigned int get_network_proximity(const char *name)
 
 	ret = getaddrinfo(name_or_num, NULL, &hints, &ni);
 	if (ret) {
-		logerr("getaddrinfo: %s", gai_strerror(ret));
+		logerr("hostname lookup for %s failed: %s",
+		       name_or_num, gai_strerror(ret));
 		return PROXIMITY_ERROR;
 	}
 

@@ -357,7 +357,9 @@ static char *getdnsdomainname(unsigned int logopt)
 
 	ret = getaddrinfo(name, NULL, &hints, &ni);
 	if (ret) {
-		error(logopt, "hostname lookup failed: %s", gai_strerror(ret));
+		error(logopt,
+		      "hostname lookup for %s failed: %s",
+		      name, gai_strerror(ret));
 		return NULL;
 	}
 

@@ -693,7 +693,8 @@ static int create_client(struct conn_info *info, CLIENT **client)
 	ret = getaddrinfo(info->host, NULL, &hints, &ai);
 	if (ret) {
 		error(LOGOPT_ANY,
-		      "hostname lookup failed: %s", gai_strerror(ret));
+		      "hostname lookup for %s failed: %s",
+		      info->host, gai_strerror(ret));
 		goto out_close;
 	}
 
