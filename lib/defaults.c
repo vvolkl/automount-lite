@@ -1207,12 +1207,12 @@ unsigned int defaults_read_config(unsigned int to_syslog)
 
 	conf = open_fopen_r(DEFAULT_CONFIG_FILE);
 	if (!conf)
-		message(to_syslog, "failed to to open config %s",
+		message(to_syslog, "failed to open config %s",
 			DEFAULT_CONFIG_FILE);
 
 	oldconf = open_fopen_r(OLD_CONFIG_FILE);
-	if (!oldconf)
-		message(to_syslog, "failed to to open old config %s",
+	if (!oldconf && !conf)
+		message(to_syslog, "failed to open old config %s",
 			OLD_CONFIG_FILE);
 
 	/* Neither config has been updated */
