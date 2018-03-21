@@ -257,14 +257,17 @@ AC_DEFUN([AF_WITH_SYSTEMD],
       fi
     done
   fi
+  WITH_SYSTEMD=0
   if test -n "$systemddir"; then
     AC_MSG_RESULT($systemddir)
+    WITH_SYSTEMD=1
   else
     AC_MSG_RESULT(not found)
   fi
 else
  if test "$withval" != no; then
   systemddir=$withval
+  WITH_SYSTEMD=1
  fi
 fi])
 ])

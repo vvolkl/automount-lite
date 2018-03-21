@@ -48,6 +48,7 @@ AF_INIT_D()
 AC_SUBST(initdir)
 AF_PID_D()
 AC_SUBST(piddir)
+PKG_PROG_PKG_CONFIG()
 
 #
 # Check for systemd unit files direectory exists if unit file installation
@@ -55,6 +56,12 @@ AC_SUBST(piddir)
 #
 AF_WITH_SYSTEMD()
 AC_SUBST(systemddir)
+AC_SUBST(WITH_SYSTEMD)
+PKG_CHECK_MODULES([systemd],[libsystemd],,
+[
+  AC_CHECK_LIB(systemd, sm_notify, systemd_LIBS="-lsystemd")
+  AC_SUBST(systemd_LIBS)
+])
 
 #
 # Location of system config script directory?
@@ -218,7 +225,6 @@ fi
 AC_CHECK_LIB(rt, clock_gettime, LIBCLOCK_GETTIME="-lrt")
 AC_SUBST(LIBCLOCK_GETTIME)
 
-PKG_PROG_PKG_CONFIG()
 PKG_CHECK_MODULES([NSL],[libnsl],,
 [
 AC_CHECK_LIB(nsl, yp_match, NSL_LIBS="-lnsl")

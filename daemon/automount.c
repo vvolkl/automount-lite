@@ -36,6 +36,9 @@
 #include <dirent.h>
 #include <sys/vfs.h>
 #include <sys/utsname.h>
+#ifdef WITH_SYSTEMD
+#include <systemd/sd-daemon.h>
+#endif
 
 #include "automount.h"
 #if defined(LIBXML2_WORKAROUND) || defined(TIRPC_WORKAROUND)
@@ -67,7 +70,7 @@ unsigned int global_selection_options;
 long global_negative_timeout = -1;
 int do_force_unlink = 0;		/* Forceably unlink mount tree at startup */
 
-static int start_pipefd[2];
+static int start_pipefd[2] = {-1, -1};
 static int st_stat = 1;
 static int *pst_stat = &st_stat;
 static pthread_t state_mach_thid;
@@ -1206,12 +1209,6 @@ static void become_daemon(unsigned foreground, unsigned daemon_check)
 		exit(0);
 	}
 
-	if (open_pipe(start_pipefd) < 0) {
-		fprintf(stderr, "%s: failed to create start_pipefd.\n",
-			program);
-		exit(0);
-	}
-
 	/* Detach from foreground process */
 	if (foreground) {
 		if (daemon_check && !aquire_flag_file()) {
@@ -1221,6 +1218,12 @@ static void become_daemon(unsigned foreground, unsigned daemon_check)
 		}
 		log_to_stderr();
 	} else {
+		if (open_pipe(start_pipefd) < 0) {
+			fprintf(stderr, "%s: failed to create start_pipefd.\n",
+				program);
+			exit(0);
+		}
+
 		pid = fork();
 		if (pid > 0) {
 			close(start_pipefd[1]);
@@ -2450,8 +2453,10 @@ int main(int argc, char *argv[])
 	if (pthread_attr_init(&th_attr)) {
 		logerr("%s: failed to init thread attribute struct!",
 		     program);
-		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
-		close(start_pipefd[1]);
+		if (start_pipefd[1] != -1) {
+			res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+			close(start_pipefd[1]);
+		}
 		release_flag_file();
 		macro_free_global_table();
 		exit(1);
@@ -2460,8 +2465,10 @@ int main(int argc, char *argv[])
 	if (pthread_attr_init(&th_attr_detached)) {
 		logerr("%s: failed to init thread attribute struct!",
 		     program);
-		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
-		close(start_pipefd[1]);
+		if (start_pipefd[1] != -1) {
+			res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+			close(start_pipefd[1]);
+		}
 		release_flag_file();
 		macro_free_global_table();
 		exit(1);
@@ -2471,8 +2478,10 @@ int main(int argc, char *argv[])
 			&th_attr_detached, PTHREAD_CREATE_DETACHED)) {
 		logerr("%s: failed to set detached thread attribute!",
 		     program);
-		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
-		close(start_pipefd[1]);
+		if (start_pipefd[1] != -1) {
+			res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+			close(start_pipefd[1]);
+		}
 		release_flag_file();
 		macro_free_global_table();
 		exit(1);
@@ -2483,8 +2492,10 @@ int main(int argc, char *argv[])
 			&th_attr_detached, detached_thread_stack_size)) {
 		logerr("%s: failed to set stack size thread attribute!",
 		       program);
-		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
-		close(start_pipefd[1]);
+		if (start_pipefd[1] != -1) {
+			res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+			close(start_pipefd[1]);
+		}
 		release_flag_file();
 		macro_free_global_table();
 		exit(1);
@@ -2495,8 +2506,10 @@ int main(int argc, char *argv[])
 			&th_attr_detached, &detached_thread_stack_size)) {
 		logerr("%s: failed to get detached thread stack size!",
 		       program);
-		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
-		close(start_pipefd[1]);
+		if (start_pipefd[1] != -1) {
+			res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+			close(start_pipefd[1]);
+		}
 		release_flag_file();
 		macro_free_global_table();
 		exit(1);
@@ -2513,8 +2526,10 @@ int main(int argc, char *argv[])
 		logerr("%s: failed to create thread data key for std env vars!",
 		       program);
 		master_kill(master_list);
-		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
-		close(start_pipefd[1]);
+		if (start_pipefd[1] != -1) {
+			res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+			close(start_pipefd[1]);
+		}
 		release_flag_file();
 		macro_free_global_table();
 		exit(1);
@@ -2525,8 +2540,10 @@ int main(int argc, char *argv[])
 		logerr("%s: failed to create thread data key for attempt ID!",
 		       program);
 		master_kill(master_list);
-		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
-		close(start_pipefd[1]);
+		if (start_pipefd[1] != -1) {
+			res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+			close(start_pipefd[1]);
+		}
 		release_flag_file();
 		macro_free_global_table();
 		exit(1);
@@ -2537,8 +2554,10 @@ int main(int argc, char *argv[])
 	if (!alarm_start_handler()) {
 		logerr("%s: failed to create alarm handler thread!", program);
 		master_kill(master_list);
-		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
-		close(start_pipefd[1]);
+		if (start_pipefd[1] != -1) {
+			res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+			close(start_pipefd[1]);
+		}
 		release_flag_file();
 		macro_free_global_table();
 		exit(1);
@@ -2547,8 +2566,10 @@ int main(int argc, char *argv[])
 	if (!st_start_handler()) {
 		logerr("%s: failed to create FSM handler thread!", program);
 		master_kill(master_list);
-		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
-		close(start_pipefd[1]);
+		if (start_pipefd[1] != -1) {
+			res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+			close(start_pipefd[1]);
+		}
 		release_flag_file();
 		macro_free_global_table();
 		exit(1);
@@ -2596,9 +2617,15 @@ int main(int argc, char *argv[])
 	 */
 	do_force_unlink = 0;
 
-	st_stat = 0;
-	res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
-	close(start_pipefd[1]);
+	if (start_pipefd[1] != -1) {
+		st_stat = 0;
+		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+		close(start_pipefd[1]);
+	}
+
+#ifdef WITH_SYSTEMD
+	sd_notify(1, "READY=1");
+#endif
 
 	state_mach_thid = pthread_self();
 	statemachine(NULL);

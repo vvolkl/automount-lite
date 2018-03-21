@@ -4,10 +4,9 @@ After=network.target ypbind.service sssd.service network-online.target remote-fs
 Wants=network-online.target rpc-statd.service rpcbind.service
 
 [Service]
-Type=forking
-PIDFile=@@autofspiddir@@/autofs.pid
+Type=notify
 EnvironmentFile=-@@autofsconfdir@@/autofs
-ExecStart=@@sbindir@@/automount $OPTIONS --pid-file @@autofspiddir@@/autofs.pid
+ExecStart=@@sbindir@@/automount $OPTIONS --foreground --dont-check-daemon
 ExecReload=/usr/bin/kill -HUP $MAINPID
 KillMode=process
 TimeoutSec=180

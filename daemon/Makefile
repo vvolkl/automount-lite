@@ -22,6 +22,11 @@ CFLAGS += -DVERSION_STRING=\"$(version)\"
 LDFLAGS += -rdynamic
 LIBS += -ldl -lpthread
 
+ifeq ($(SYSTEMD), 1)
+    CFLAGS += -DWITH_SYSTEMD
+    LIBS += $(LIBSYSTEMD)
+endif
+
 ifeq ($(LDAP), 1)
     CFLAGS += $(XML_FLAGS)
     LIBS += $(XML_LIBS)

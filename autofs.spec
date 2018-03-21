@@ -32,6 +32,7 @@ Source: https://www.kernel.org/pub/linux/daemons/autofs/v5/autofs-%{version}.tar
 Buildroot: %{_tmppath}/%{name}-tmp
 %if %{with_systemd}
 BuildRequires: systemd-units
+BuildRequires: systemd-devel
 %endif
 %if %{with_libtirpc}
 BuildRequires: libtirpc-devel
