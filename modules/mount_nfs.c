@@ -86,11 +86,11 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	      root, name, what, fstype, options);
 
 	mount_default_proto = defaults_get_mount_nfs_default_proto();
-	vers = NFS_VERS_MASK | NFS_PROTO_MASK;
+	vers = NFS_VERS_DEFAULT | NFS_PROTO_DEFAULT;
 	if (strcmp(fstype, "nfs4") == 0)
-		vers = NFS4_VERS_MASK | TCP_SUPPORTED;
+		vers = NFS4_VERS_DEFAULT | TCP_SUPPORTED;
 	else if (mount_default_proto == 4)
-		vers = vers | NFS4_VERS_MASK;
+		vers = vers | NFS4_VERS_DEFAULT;
 
 	/* Extract "nosymlink" pseudo-option which stops local filesystems
 	 * from being symlinked.
