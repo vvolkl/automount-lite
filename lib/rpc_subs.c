@@ -183,7 +183,7 @@ static int rpc_do_create_client(struct sockaddr *addr, struct conn_info *info, i
 	in4_laddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	slen = sizeof(struct sockaddr_in);
 
-	if (!info->client) {
+	if (!info->client && *fd == RPC_ANYSOCK) {
 		struct sockaddr *laddr;
 
 		*fd = open_sock(addr->sa_family, type, proto);
@@ -296,7 +296,7 @@ static int rpc_do_create_client(struct sockaddr *addr, struct conn_info *info, i
 	 * it would bind to a reserved port, which has been shown to
 	 * exhaust the reserved port range in some situations.
 	 */
-	if (!info->client) {
+	if (!info->client && *fd == RPC_ANYSOCK) {
 		*fd = open_sock(addr->sa_family, type, proto);
 		if (*fd < 0) {
 			ret = -errno;

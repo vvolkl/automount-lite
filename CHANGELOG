@@ -25,6 +25,7 @@ xx/xx/2018 autofs-5.1.5
 - add units After line to include statd service.
 - use systemd sd_notify() at startup.
 - fix NFS version mask usage.
+- fix fd leak in rpc_do_create_client().
 
 19/12/2017 autofs-5.1.4
 - fix spec file url.
