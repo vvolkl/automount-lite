@@ -66,6 +66,14 @@ will process the map according to the specification described below for
 map entries. Indirect map entries must be unique in the master map so
 second and subsequent entries for an indirect mount point are ignored by
 .BR automount (8).
+.TP
+.B NOTE:
+autofs currently does not collapse multiple slashes in paths, so it is
+important to ensure paths used in maps are correct. If unnecessary multiple
+slashes are present in a path it can lead to unexpected failures such as
+an inability to expire automounts. An exception to this is a trailing slash
+at the end of the automount point path in the master map which will be
+removed if present.
 .SH "FORMAT"
 Master map entries have three fields separated by an arbitrary number
 of spaces or tabs. Lines beginning with # are comments. The first field
