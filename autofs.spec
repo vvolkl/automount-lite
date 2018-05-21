@@ -97,6 +97,7 @@ LDFLAGS="-Wl,-z,now" \
 ./configure --libdir=%{_libdir} \
 	--disable-mount-locking \
 	--enable-ignore-busy \
+	--enable-forced-shutdown \
 	%{?systemd_configure_arg:} \
 	%{?libtirpc_configure_arg:} \
 	%{?fedfs_configure_arg:}
