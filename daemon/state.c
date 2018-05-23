@@ -645,7 +645,7 @@ static unsigned int st_prepare_shutdown(struct autofs_point *ap)
 	ap->state = ST_SHUTDOWN_PENDING;
 
 	/* Unmount everything */
-	exp = expire_proc(ap, 1);
+	exp = expire_proc(ap, AUTOFS_EXP_IMMEDIATE);
 	switch (exp) {
 	case EXP_ERROR:
 	case EXP_PARTIAL:
@@ -671,7 +671,7 @@ static unsigned int st_force_shutdown(struct autofs_point *ap)
 	ap->state = ST_SHUTDOWN_FORCE;
 
 	/* Unmount everything */
-	exp = expire_proc(ap, 1);
+	exp = expire_proc(ap, AUTOFS_EXP_FORCE | AUTOFS_EXP_IMMEDIATE);
 	switch (exp) {
 	case EXP_ERROR:
 	case EXP_PARTIAL:
@@ -706,7 +706,7 @@ static unsigned int st_prune(struct autofs_point *ap)
 	assert(ap->state == ST_READY);
 	ap->state = ST_PRUNE;
 
-	switch (expire_proc(ap, 1)) {
+	switch (expire_proc(ap, AUTOFS_EXP_IMMEDIATE)) {
 	case EXP_ERROR:
 	case EXP_PARTIAL:
 		if (!ap->submount)
@@ -727,7 +727,7 @@ static unsigned int st_expire(struct autofs_point *ap)
 	assert(ap->state == ST_READY);
 	ap->state = ST_EXPIRE;
 
-	switch (expire_proc(ap, 0)) {
+	switch (expire_proc(ap, AUTOFS_EXP_NORMAL)) {
 	case EXP_ERROR:
 	case EXP_PARTIAL:
 		if (!ap->submount)

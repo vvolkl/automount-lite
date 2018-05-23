@@ -27,8 +27,10 @@
 #define AUTOFS_PROTO_SUBVERSION		2
 
 /* Mask for expire behaviour */
-#define AUTOFS_EXP_IMMEDIATE		1
-#define AUTOFS_EXP_LEAVES		2
+#define AUTOFS_EXP_NORMAL		0x00
+#define AUTOFS_EXP_IMMEDIATE		0x01
+#define AUTOFS_EXP_LEAVES		0x02
+#define AUTOFS_EXP_FORCE		0x04
 
 #define AUTOFS_TYPE_ANY			0U
 #define AUTOFS_TYPE_INDIRECT		1U
