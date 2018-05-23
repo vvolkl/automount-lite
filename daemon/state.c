@@ -267,7 +267,7 @@ void expire_proc_cleanup(void *arg)
 	return;
 }
 
-static enum expire expire_proc(struct autofs_point *ap, int now)
+static enum expire expire_proc(struct autofs_point *ap, int how)
 {
 	pthread_t thid;
 	struct expire_args *ea;
@@ -295,7 +295,7 @@ static enum expire expire_proc(struct autofs_point *ap, int now)
 		fatal(status);
 
 	ea->ap = ap;
-	ea->when = now;
+	ea->how = how;
 	ea->status = 1;
 
 	if (ap->type == LKP_INDIRECT)

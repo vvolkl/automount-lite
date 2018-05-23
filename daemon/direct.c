@@ -841,7 +841,7 @@ void *expire_proc_direct(void *arg)
 	struct expire_args ec;
 	struct autofs_point *ap;
 	struct mapent *me = NULL;
-	unsigned int now;
+	unsigned int how;
 	int ioctlfd, cur_state;
 	int status, ret, left;
 
@@ -852,7 +852,7 @@ void *expire_proc_direct(void *arg)
 		fatal(status);
 
 	ap = ec.ap = ea->ap;
-	now = ea->when;
+	how = ea->how;
 	ec.status = -1;
 
 	ea->signaled = 1;
@@ -946,7 +946,7 @@ void *expire_proc_direct(void *arg)
 
 			ioctlfd = me->ioctlfd;
 
-			ret = ops->expire(ap->logopt, ioctlfd, next->path, now);
+			ret = ops->expire(ap->logopt, ioctlfd, next->path, how);
 			if (ret) {
 				left++;
 				pthread_setcancelstate(cur_state, NULL);
@@ -972,7 +972,7 @@ void *expire_proc_direct(void *arg)
 		debug(ap->logopt, "send expire to trigger %s", next->path);
 
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-		ret = ops->expire(ap->logopt, ioctlfd, next->path, now);
+		ret = ops->expire(ap->logopt, ioctlfd, next->path, how);
 		if (ret)
 			left++;
 		pthread_setcancelstate(cur_state, NULL);

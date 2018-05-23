@@ -392,7 +392,7 @@ void *expire_proc_indirect(void *arg)
 	struct mnt_list *mnts = NULL, *next;
 	struct expire_args *ea;
 	struct expire_args ec;
-	unsigned int now;
+	unsigned int how;
 	int offsets, submnts, count;
 	int retries;
 	int ioctlfd, cur_state;
@@ -405,7 +405,7 @@ void *expire_proc_indirect(void *arg)
 		fatal(status);
 
 	ap = ec.ap = ea->ap;
-	now = ea->when;
+	how = ea->how;
 	ec.status = -1;
 
 	ea->signaled = 1;
@@ -530,7 +530,7 @@ void *expire_proc_indirect(void *arg)
 		debug(ap->logopt, "expire %s", next->path);
 
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-		ret = ops->expire(ap->logopt, ioctlfd, next->path, now);
+		ret = ops->expire(ap->logopt, ioctlfd, next->path, how);
 		if (ret)
 			left++;
 		pthread_setcancelstate(cur_state, NULL);
@@ -544,7 +544,7 @@ void *expire_proc_indirect(void *arg)
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
 	retries = (count_mounts(ap, ap->path, ap->dev) + 1);
 	while (retries--) {
-		ret = ops->expire(ap->logopt, ap->ioctlfd, ap->path, now);
+		ret = ops->expire(ap->logopt, ap->ioctlfd, ap->path, how);
 		if (ret)
 			left++;
 	}

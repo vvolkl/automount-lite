@@ -55,7 +55,7 @@ struct expire_args {
 	unsigned int signaled;
 	struct autofs_point *ap; /* autofs mount we are working on */
 	enum states state;	 /* State prune or expire */
-	unsigned int when;	 /* Immediate expire ? */
+	unsigned int how;	 /* Normal, immediate expire ? */
 	int status;		 /* Return status */
 };
 
