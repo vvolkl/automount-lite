@@ -489,8 +489,10 @@ void add_std_amd_vars(struct substvar *sv)
 		const struct substvar *v = macro_findvar(sv, "domain", 4);
 		if (v && *v->val) {
 			tmp = strdup(v->val);
-			if (tmp)
+			if (tmp) {
 				macro_global_addvar("cluster", 7, tmp);
+				free(tmp);
+			}
 		}
 	}
 

@@ -822,13 +822,13 @@ static int make_selector(char *name,
 		if (!value1)
 			tmp = NULL;
 		else {
-			char *tmp = amd_strdup(value1);
+			tmp = amd_strdup(value1);
 			if (!tmp)
 				goto error;
 		}
 		s->func.arg1 = tmp;
 	} else if (s->sel->flags & SEL_FLAG_FUNC2) {
-		char *tmp = amd_strdup(value1);
+		tmp = amd_strdup(value1);
 		if (!tmp)
 			goto error;
 		s->func.arg1 = tmp;

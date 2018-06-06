@@ -389,6 +389,7 @@ static enum clnt_stat rpc_get_netid(const sa_family_t family,
 		}
 
 		*netid = nc_netid;
+		break;
 	}
 	endnetconfig(handle);
 	free(nc_proto);

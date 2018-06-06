@@ -1137,6 +1137,7 @@ int parse_ldap_config(unsigned logopt, struct lookup_context *ctxt)
 		error(logopt,
 		      MODPREFIX "stat(2) failed with error %s.",
 		      strerror(errno));
+		free(auth_conf);
 		return 0;
 	}
 
@@ -1148,6 +1149,7 @@ int parse_ldap_config(unsigned logopt, struct lookup_context *ctxt)
 		      "Please make sure that it is owned by root, group "
 		      "is root, and the mode is 0600.",
 		      auth_conf);
+		free(auth_conf);
 		return -1;
 	}
 
@@ -1182,9 +1184,11 @@ int parse_ldap_config(unsigned logopt, struct lookup_context *ctxt)
 		goto out;
 	}
 
-	if (!usetls || ctxt->port == LDAPS_PORT)
+	if (!usetls || ctxt->port == LDAPS_PORT) {
 		use_tls = LDAP_TLS_DONT_USE;
-	else {
+		if (usetls)
+			free(usetls);
+	} else {
 		if (!strcasecmp(usetls, "yes"))
 			use_tls = LDAP_TLS_INIT;
 		else if (!strcasecmp(usetls, "no"))
@@ -1194,6 +1198,7 @@ int parse_ldap_config(unsigned logopt, struct lookup_context *ctxt)
 			      MODPREFIX
 			      "The usetls property must have value "
 			      "\"yes\" or \"no\".");
+			free(usetls);
 			ret = -1;
 			goto out;
 		}
@@ -1221,6 +1226,7 @@ int parse_ldap_config(unsigned logopt, struct lookup_context *ctxt)
 			      MODPREFIX
 			      "The tlsrequired property must have value "
 			      "\"yes\" or \"no\".");
+			free(tlsrequired);
 			ret = -1;
 			goto out;
 		}
@@ -1252,6 +1258,7 @@ int parse_ldap_config(unsigned logopt, struct lookup_context *ctxt)
 			      MODPREFIX
 			      "The authrequired property must have value "
 			      "\"yes\", \"no\", \"autodetect\", or \"simple\".");
+			free(authrequired);
 			ret = -1;
 			goto out;
 		}
@@ -1338,6 +1345,7 @@ auth_fail:
 	(void)get_property(logopt, root, "credentialcache", &client_cc);
 
 	ctxt->auth_conf = auth_conf;
+	auth_conf = NULL;
 	ctxt->use_tls = use_tls;
 	ctxt->tls_required = tls_required;
 	ctxt->auth_required = auth_required;
@@ -1375,8 +1383,12 @@ auth_fail:
 		      user, secret ? "specified" : "unspecified",
 		      client_princ, client_cc);
 	}
+	if (authtype)
+		free(authtype);
 out:
 	xmlFreeDoc(doc);
+	if (auth_conf)
+		free(auth_conf);
 
 	if (fallback)
 		return 0;
@@ -1986,7 +1998,7 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 			}
 		} else if (count == 1) {
 			dec_len = decode_percent_hack(keyValue[0], &key);
-			if (dec_len < 0) {
+			if (dec_len <= 0) {
 				error(logopt, MODPREFIX
 				      "invalid map key %s - ignoring",
 				      *keyValue);
@@ -1994,7 +2006,7 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 			}
 		} else {
 			dec_len = decode_percent_hack(keyValue[0], &key);
-			if (dec_len < 0) {
+			if (dec_len <= 0) {
 				error(logopt, MODPREFIX
 				      "invalid map key %s - ignoring",
 				      *keyValue);
@@ -2004,7 +2016,7 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 			for (i = 1; i < count; i++) {
 				char *k;
 				dec_len = decode_percent_hack(keyValue[i], &k);
-				if (dec_len < 0) {
+				if (dec_len <= 0) {
 					error(logopt, MODPREFIX
 					      "invalid map key %s - ignoring",
 					      *keyValue);
@@ -2159,6 +2171,8 @@ static int decode_percent_hack(const char *name, char **key)
 	*key = NULL;
 
 	len = get_percent_decoded_len(name);
+	if (!len)
+		return 0;
 	new = malloc(len + 1);
 	if (!new)
 		return -1;
@@ -2997,6 +3011,9 @@ static int lookup_one(struct autofs_point *ap, struct map_source *source,
 	attrs[0] = entry;
 	attrs[1] = info;
 	attrs[2] = NULL;
+
+	enc_key1 = NULL;
+	enc_key2 = NULL;
 
 	if (*qKey == '*' && qKey_len == 1)
 		*qKey = '/';

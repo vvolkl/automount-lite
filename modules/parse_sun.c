@@ -443,8 +443,10 @@ int parse_reinit(int argc, const char *const *argv, void **context)
 
 	*new = default_context;
 
-	if (do_init(argc, argv, new))
+	if (do_init(argc, argv, new)) {
+		free(new);
 		return 1;
+	}
 
 	kill_context(ctxt);
 
@@ -1143,6 +1145,9 @@ static int mount_subtree(struct autofs_point *ap, struct mapent *me,
 			const char *root;
 			int ro_len;
 
+			myoptions = NULL;
+			ro_loc = NULL;
+
 			rv = parse_mapent(ro->mapent,
 				options, &myoptions, &ro_loc, ap->logopt);
 			if (!rv) {
@@ -1523,6 +1528,9 @@ dont_expand:
 
 			p += l;
 			p = skipspace(p);
+
+			myoptions = NULL;
+			loc = NULL;
 
 			l = parse_mapent(p, options, &myoptions, &loc, ap->logopt);
 			if (!l) {

@@ -336,8 +336,7 @@ void log_to_syslog(void)
 		exit(1);
 	}
 
-	if (nullfd > 2)
-		close(nullfd);
+	close(nullfd);
 
 	return;
 }

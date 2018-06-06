@@ -157,6 +157,8 @@ line:
 
 		trim_maptype($2);
 
+		if (path)
+			free(path);
 		path = master_strdup($1);
 		if (!path) {
 			master_error("memory allocation error");
@@ -167,6 +169,8 @@ line:
 		if ((tmp = strchr($2, ',')))
 			*tmp++ = '\0';
 
+		if (type)
+			free(type);
 		type = master_strdup($2);
 		if (!type) {
 			master_error("memory allocation error");
@@ -174,6 +178,8 @@ line:
 			YYABORT;
 		}
 		if (tmp) {
+			if (format)
+				free(format);
 			format = master_strdup(tmp);
 			if (!format) {
 				master_error("memory allocation error");
@@ -204,6 +210,8 @@ line:
 
 mapspec: map
 	{
+		if (local_argv)
+			free_argv(local_argc, (const char **) local_argv);
 		local_argc = tmp_argc;
 		local_argv = tmp_argv;
 		tmp_argc = 0;
@@ -211,6 +219,8 @@ mapspec: map
 	}
 	| map options
 	{
+		if (local_argv)
+			free_argv(local_argc, (const char **) local_argv);
 		local_argc = tmp_argc;
 		local_argv = tmp_argv;
 		tmp_argc = 0;
@@ -288,6 +298,8 @@ map:	PATH
 	}
 	| MAPHOSTS
 	{
+		if (type)
+			free(type);
 		type = master_strdup($1 + 1);
 		if (!type) {
 			local_free_vars();
@@ -302,6 +314,8 @@ map:	PATH
 	}
 	| MAPNULL
 	{
+		if (type)
+			free(type);
 		type = master_strdup($1 + 1);
 		if (!type) {
 			local_free_vars();
@@ -310,6 +324,8 @@ map:	PATH
 	}
 	| dnattrs
 	{
+		if (type)
+			free(type);
 		type = master_strdup("ldap");
 		if (!type) {
 			local_free_vars();
@@ -332,6 +348,8 @@ map:	PATH
 		if ((tmp = strchr($1, ',')))
 			*tmp++ = '\0';
 
+		if (type)
+			free(type);
 		if (strcmp($1, "exec"))
 			type = master_strdup($1);
 		else
@@ -342,6 +360,8 @@ map:	PATH
 			YYABORT;
 		}
 		if (tmp) {
+			if (format)
+				free(format);
 			format = master_strdup(tmp);
 			if (!format) {
 				master_error("memory allocation error");
@@ -366,6 +386,8 @@ map:	PATH
 		if ((tmp = strchr($1, ',')))
 			*tmp++ = '\0';
 
+		if (type)
+			free(type);
 		if (strcmp($1, "exec"))
 			type = master_strdup($1);
 		else
@@ -376,6 +398,8 @@ map:	PATH
 			YYABORT;
 		}
 		if (tmp) {
+			if (format)
+				free(format);
 			format = master_strdup(tmp);
 			if (!format) {
 				master_error("memory allocation error");
@@ -400,6 +424,8 @@ map:	PATH
 		if ((tmp = strchr($1, ',')))
 			*tmp++ = '\0';
 
+		if (type)
+			free(type);
 		if (strcmp($1, "exec"))
 			type = master_strdup($1);
 		else
@@ -410,6 +436,8 @@ map:	PATH
 			YYABORT;
 		}
 		if (tmp) {
+			if (format)
+				free(format);
 			format = master_strdup(tmp);
 			if (!format) {
 				master_error("memory allocation error");

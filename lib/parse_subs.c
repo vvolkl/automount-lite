@@ -189,6 +189,7 @@ void free_selector(struct selector *selector)
 			free(s->func.arg2);
 		s = next;
 	}
+	free(selector);
 	return;
 }
 

@@ -137,6 +137,7 @@ void macro_init(void)
 
 	macro_init_done = 1;
 	macro_unlock();
+	free(local_domain);
 	return;
 }
 

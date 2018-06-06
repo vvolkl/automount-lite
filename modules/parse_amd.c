@@ -1879,7 +1879,7 @@ struct amd_entry *make_default_entry(struct autofs_point *ap,
 	 */
 	map_type = conf_amd_get_map_type(ap->path);
 	if (map_type)
-		defaults_entry->map_type = strdup(map_type);
+		defaults_entry->map_type = map_type;
 	/* The list should now be empty .... */
 	free_amd_entry_list(&dflts);
 	return defaults_entry;
@@ -2006,7 +2006,7 @@ static struct amd_entry *get_defaults_entry(struct autofs_point *ap,
 			 */
 			char *map_type = conf_amd_get_map_type(ap->path);
 			if (map_type)
-				entry->map_type = strdup(map_type);
+				entry->map_type = map_type;
 		}
 		free(expand);
 	}
