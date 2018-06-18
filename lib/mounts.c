@@ -2029,14 +2029,16 @@ int umount_ent(struct autofs_point *ap, const char *path)
 {
 	int rv;
 
-	rv = spawn_umount(ap->logopt, path, NULL);
-	/* We are doing a forced shutcwdown down so unlink busy mounts */
-	if (rv && (ap->state == ST_SHUTDOWN_FORCE || ap->state == ST_SHUTDOWN)) {
-		if (ap->state == ST_SHUTDOWN_FORCE) {
-			info(ap->logopt, "forcing umount of %s", path);
-			rv = spawn_umount(ap->logopt, "-l", path, NULL);
-		}
+	if (ap->state != ST_SHUTDOWN_FORCE)
+		rv = spawn_umount(ap->logopt, path, NULL);
+	else {
+		/* We are doing a forced shutdown so unlink busy
+		 * mounts */
+		info(ap->logopt, "forcing umount of %s", path);
+		rv = spawn_umount(ap->logopt, "-l", path, NULL);
+	}
 
+	if (rv && (ap->state == ST_SHUTDOWN_FORCE || ap->state == ST_SHUTDOWN)) {
 		/*
 		 * Verify that we actually unmounted the thing.  This is a
 		 * belt and suspenders approach to not eating user data.
