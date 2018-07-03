@@ -2606,7 +2606,7 @@ int main(int argc, char *argv[])
 			 * we have anyway.
 			 */
 			do_master_list_reset(master_list);
-			age = time(NULL);
+			age = monotonic_time(NULL);
 			master_read_master(master_list, age, 1);
 		}
 	}
