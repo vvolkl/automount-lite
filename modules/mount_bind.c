@@ -20,6 +20,7 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mount.h>
 
 #define MODULE_MOUNT
 #include "automount.h"
@@ -183,8 +184,21 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 			debug(ap->logopt,
 			      MODPREFIX "mounted %s type %s on %s",
 			      what, fstype, fullpath);
-			return 0;
 		}
+
+		/* The bind mount has succeeded but if the target
+		 * mount is propagation shared propagation of child
+		 * mounts (autofs offset mounts for example) back to
+		 * the target of the bind mount must be avoided or
+		 * autofs trigger mounts will deadlock.
+		 */
+		err = mount(NULL, fullpath, NULL, MS_SLAVE, NULL);
+		if (err)
+			warn(ap->logopt,
+			     "failed to set propagation type for %s",
+			     fullpath);
+
+		return 0;
 	} else {
 		char *cp;
 		char basepath[PATH_MAX];
