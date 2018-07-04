@@ -389,6 +389,8 @@ MODE		(--mode{OPTWS}|--mode{OPTWS}={OPTWS})
 	-?symlink		{ return(OPT_SYMLINK); }
 	-?nobind		{ return(OPT_NOBIND); }
 	-?nobrowse		{ return(OPT_NOGHOST); }
+	-?slave			{ return(OPT_SLAVE); }
+	-?private		{ return(OPT_PRIVATE); }
 	-g|--ghost|-?browse	{ return(OPT_GHOST); }
 	-v|--verbose		{ return(OPT_VERBOSE); }
 	-d|--debug		{ return(OPT_DEBUG); }

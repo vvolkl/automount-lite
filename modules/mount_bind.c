@@ -186,17 +186,25 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 			      what, fstype, fullpath);
 		}
 
-		/* The bind mount has succeeded but if the target
-		 * mount is propagation shared propagation of child
-		 * mounts (autofs offset mounts for example) back to
-		 * the target of the bind mount must be avoided or
-		 * autofs trigger mounts will deadlock.
-		 */
-		err = mount(NULL, fullpath, NULL, MS_SLAVE, NULL);
-		if (err)
-			warn(ap->logopt,
-			     "failed to set propagation type for %s",
-			     fullpath);
+		if (ap->flags & (MOUNT_FLAG_SLAVE | MOUNT_FLAG_PRIVATE)) {
+			int flags = MS_SLAVE;
+
+			if (ap->flags & MOUNT_FLAG_PRIVATE)
+				flags = MS_PRIVATE;
+
+			/* The bind mount has succeeded but if the target
+			 * mount is propagation shared propagation of child
+			 * mounts (autofs offset mounts for example) back to
+			 * the target of the bind mount must be avoided or
+			 * autofs trigger mounts will deadlock.
+			 */
+			err = mount(NULL, fullpath, NULL, flags, NULL);
+			if (err) {
+				warn(ap->logopt,
+				     "failed to set propagation for %s",
+				     fullpath, root);
+			}
+		}
 
 		return 0;
 	} else {

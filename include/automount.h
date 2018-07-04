@@ -549,6 +549,10 @@ struct kernel_mod_version {
 /* Read amd map even if it's not to be ghosted (browsable) */
 #define MOUNT_FLAG_AMD_CACHE_ALL	0x0080
 
+/* Set mount propagation for bind mounts */
+#define MOUNT_FLAG_SLAVE		0x0100
+#define MOUNT_FLAG_PRIVATE		0x0200
+
 struct autofs_point {
 	pthread_t thid;
 	char *path;			/* Mount point name */

@@ -199,6 +199,18 @@ entries only, either in the master map (so it effects all map entries)
 or with individual map entries. The option is ignored for direct mounts
 and non-root offest mount entries.
 .TP
+.I slave \fPor\fI private
+This option allows mount propagation of bind mounts to be set to
+either \fIslave\fP or \fIprivate\fP. This option may be needed when using
+multi-mounts that have bind mounts that bind to a file system that is
+propagation shared. This is becuase the bind mount will have the same
+properties as its target which causes problems for offset mounts. When
+this happens an unwanted offset mount is propagated back to the target
+file system resulting in a deadlock when attempting to access the offset.
+This option is a an autofs pseudo mount option that can be used in the
+master map only. By default bind mounts will inherit the mount propagation
+of the target file system.
+.TP
 .I "\-r, \-\-random-multimount-selection"
 Enables the use of random selection when choosing a host from a
 list of replicated servers. This option is applied to this mount

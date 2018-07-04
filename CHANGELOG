@@ -35,6 +35,7 @@ xx/xx/2018 autofs-5.1.5
 - fix program usage message.
 - mark removed cache entry negative.
 - set bind mount as propagation slave.
+- add master map pseudo options for mount propagation.
 
 19/12/2017 autofs-5.1.4
 - fix spec file url.
