@@ -1100,6 +1100,37 @@ static enum nsswitch_status lookup_map_name(struct nss_source *this,
 	return result;
 }
 
+static struct map_source *lookup_get_map_source(struct master_mapent *entry)
+{
+	struct map_source *map = entry->maps;
+	struct stat st;
+	char *type;
+
+	if (map->type || *map->argv[0] != '/')
+		return map;
+
+	if (*(map->argv[0] + 1) == '/')
+		return map;
+
+	if (stat(map->argv[0], &st) == -1)
+		return NULL;
+
+	if (!S_ISREG(st.st_mode))
+		return NULL;
+
+	if (st.st_mode & __S_IEXEC)
+		type = "program";
+	else
+		type = "file";
+
+	/* This is a file source with a path starting with "/".
+	 * But file maps can be either plain text or executable
+	 * so they use a map instance and the actual map source
+	 * remains untouched.
+	 */
+	return master_find_source_instance(map, type, map->format, 0, NULL);
+}
+
 static void update_negative_cache(struct autofs_point *ap, struct map_source *source, const char *name)
 {
 	struct master_mapent *entry = ap->entry;
@@ -1133,11 +1164,14 @@ static void update_negative_cache(struct autofs_point *ap, struct map_source *so
 			logmsg("key \"%s\" not found in map source(s).", name);
 		}
 
-		/* Doesn't exist in any source, just add it somewhere */
+		/* Doesn't exist in any source, just add it somewhere.
+		 * Also take care to use the same map source used by
+		 * map reads and key lookups for the update.
+		 */
 		if (source)
 			map = source;
 		else
-			map = entry->maps;
+			map = lookup_get_map_source(entry);
 		if (map) {
 			time_t now = monotonic_time(NULL);
 			int rv = CHE_FAIL;
