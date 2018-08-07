@@ -1417,15 +1417,21 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 		if (valid && valid->mc == mc) {
 			 /*
 			  * We've found a map entry that has been removed from
-			  * the current cache so it isn't really valid.
+			  * the current cache so it isn't really valid. Set the
+			  * mapent negative to prevent further mount requests
+			  * using the cache entry.
 			  */
+			debug(ap->logopt, "removed map entry detected, mark negative");
+			if (valid->mapent) {
+				free(valid->mapent);
+				valid->mapent = NULL;
+			}
 			cache_unlock(valid->mc);
 			valid = NULL;
 		}
 		if (!valid &&
 		    is_mounted(_PATH_MOUNTED, path, MNTS_REAL)) {
-			debug(ap->logopt,
-			      "prune check posponed, %s mounted", path);
+			debug(ap->logopt, "prune posponed, %s mounted", path);
 			free(key);
 			free(path);
 			continue;

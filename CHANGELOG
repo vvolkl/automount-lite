@@ -33,6 +33,7 @@ xx/xx/2018 autofs-5.1.5
 - fix age setting at startup.
 - fix update_negative_cache() map source usage.
 - fix program usage message.
+- mark removed cache entry negative.
 
 19/12/2017 autofs-5.1.4
 - fix spec file url.
