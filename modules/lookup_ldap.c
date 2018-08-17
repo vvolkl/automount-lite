@@ -1383,8 +1383,6 @@ auth_fail:
 		      user, secret ? "specified" : "unspecified",
 		      client_princ, client_cc);
 	}
-	if (authtype)
-		free(authtype);
 out:
 	xmlFreeDoc(doc);
 	if (auth_conf)
