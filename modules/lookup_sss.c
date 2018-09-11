@@ -786,9 +786,9 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 	 * when we're starting up so just take the readlock in that
 	 */
 	if (ap->flags & MOUNT_FLAG_REMOUNT)
-		cache_writelock(mc);
-	else
 		cache_readlock(mc);
+	else
+		cache_writelock(mc);
 	me = cache_lookup(mc, key);
 	/* Stale mapent => check for entry in alternate source or wildcard */
 	if (me && !me->mapent) {
