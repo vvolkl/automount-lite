@@ -401,7 +401,7 @@ option_assignment: MAP_OPTION OPTION_ASSIGN FS_TYPE
 	}
 	| MNT_OPTION OPTION_ASSIGN options
 	{
-		if (!match_mnt_option_options($1, $3)) {
+		if (!match_mnt_option_options($1, opts)) {
 			amd_notify($1);
 			YYABORT;
 		}
@@ -409,7 +409,7 @@ option_assignment: MAP_OPTION OPTION_ASSIGN FS_TYPE
 	}
 	| MNT_OPTION OPTION_ASSIGN QUOTE options QUOTE
 	{
-		if (!match_mnt_option_options($1, $4)) {
+		if (!match_mnt_option_options($1, opts)) {
 			amd_notify($1);
 			YYABORT;
 		}

@@ -2136,6 +2136,7 @@ int parse_mount(struct autofs_point *ap, const char *name,
 			list_del_init(&this->list);
 			cur_defaults = this;
 			update_with_defaults(defaults_entry, cur_defaults, sv);
+			debug(ap->logopt, "merged /defaults entry with defaults");
 			continue;
 		} else if (this->flags & AMD_DEFAULTS_RESET) {
 			struct amd_entry *nd, *new;
@@ -2174,8 +2175,9 @@ int parse_mount(struct autofs_point *ap, const char *name,
 
 		at_least_one = 1;
 
-		debug(ap->logopt, "expand mount entry");
+		debug(ap->logopt, "update mount entry with defaults");
 		update_with_defaults(cur_defaults, this, sv);
+		debug(ap->logopt, "expand mount entry");
 		sv = expand_entry(ap, this, flags, sv);
 		sv = merge_entry_options(ap, this, sv);
 		normalize_sublink(ap->logopt, this, sv);

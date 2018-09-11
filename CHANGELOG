@@ -38,6 +38,7 @@ xx/xx/2018 autofs-5.1.5
 - add master map pseudo options for mount propagation.
 - fix use after free in parse_ldap_config().
 - fix incorrect locking in sss lookup.
+- fix amd parser opts option handling.
 
 19/12/2017 autofs-5.1.4
 - fix spec file url.
