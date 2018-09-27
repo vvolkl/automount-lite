@@ -39,7 +39,7 @@ BuildRequires: libtirpc-devel
 %endif
 BuildRequires: autoconf, hesiod-devel, openldap-devel, bison, flex, cyrus-sasl-devel
 Requires: chkconfig
-Requires: /bin/bash mktemp sed textutils sh-utils grep /bin/ps
+Requires: /bin/bash sed grep /bin/ps
 %if %{with_systemd}
 Requires(post): systemd-sysv
 Requires(post): systemd-units
