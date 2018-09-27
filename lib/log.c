@@ -44,6 +44,8 @@ static char *prepare_attempt_prefix(const char *msg)
 
 		snprintf(buffer, ATTEMPT_ID_SIZE, "%02lx", *attempt_id);
 		prefixed_msg = (char *) calloc(len, sizeof(char));
+		if (!prefixed_msg)
+			return NULL;
 		strcpy(prefixed_msg, buffer);
 		strcat(prefixed_msg, "|");
 		strcat(prefixed_msg, msg);
