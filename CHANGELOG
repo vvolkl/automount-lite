@@ -42,6 +42,7 @@ xx/xx/2018 autofs-5.1.5
 - fix possible NULL pointer dereference in get_defaults_entry().
 - better handle hesiod support not built in.
 - fix indent in automount(8) man page.
+- remove autofs4 module load code.
 
 19/12/2017 autofs-5.1.4
 - fix spec file url.

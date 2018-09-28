@@ -52,16 +52,9 @@
 #error Failed to locate umount(8)!
 #endif
 
-#ifndef HAVE_MODPROBE
-#error Failed to locate modprobe(8)!
-#endif
-
 #ifndef HAVE_LINUX_PROCFS
 #error Failed to verify existence of procfs filesystem!
 #endif
-
-#define FS_MODULE_NAME  "autofs4"
-int load_autofs4_module(void);
 
 /* The -s (sloppy) option to mount is good, if we have it... */
 

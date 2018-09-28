@@ -659,8 +659,6 @@ PATH_YACC
 YACC
 PATH_LEX
 LEX
-HAVE_MODPROBE
-MODPROBE
 HAVE_E4FSCK
 E4FSCK
 HAVE_E3FSCK
@@ -4153,65 +4151,6 @@ _ACEOF
   HAVE_E4FSCK=1
 else
   HAVE_E4FSCK=0
-fi
-
-for ac_prog in modprobe
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_MODPROBE+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $MODPROBE in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_MODPROBE="$MODPROBE" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $searchpath
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_MODPROBE="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-MODPROBE=$ac_cv_path_MODPROBE
-if test -n "$MODPROBE"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MODPROBE" >&5
-$as_echo "$MODPROBE" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$MODPROBE" && break
-done
-
-if test -n "$MODPROBE"; then
-
-$as_echo "#define HAVE_MODPROBE 1" >>confdefs.h
-
-
-cat >>confdefs.h <<_ACEOF
-#define PATH_MODPROBE "$MODPROBE"
-_ACEOF
-
-  HAVE_MODPROBE=1
-else
-  HAVE_MODPROBE=0
 fi
 
 

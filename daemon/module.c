@@ -19,41 +19,6 @@
 #include "automount.h"
 #include "nsswitch.h"
 
-int load_autofs4_module(void)
-{
-	FILE *fp;
-	char buf[PATH_MAX];
-	int ret;
-
-	/*
-	 * Check if module already loaded or compiled in.
-	 * If both autofs v3 and v4 are coplied in and
-	 * the v3 module registers first or the v4 module
-	 * is an older version we will catch it at mount
-	 * time.
-	 */
-	fp = open_fopen_r("/proc/filesystems");
-	if (!fp) {
-		logerr("cannot open /proc/filesystems");
-		return 0;
-	}
-
-	while (fgets(buf, sizeof(buf), fp)) {
-		if (strstr(buf, "autofs")) {
-			fclose(fp);
-			return 1;
-		}
-	}
-	fclose(fp);
-
-	ret = spawnl(LOGOPT_NONE, PATH_MODPROBE, PATH_MODPROBE,
-				"-q", FS_MODULE_NAME, NULL);
-	if (ret)
-		return 0;
-
-	return 1;
-}
-
 int open_lookup(const char *name, const char *err_prefix, const char *mapfmt,
 		int argc, const char *const *argv, struct lookup_mod **lookup)
 {

@@ -2336,14 +2336,6 @@ int main(int argc, char *argv[])
 		exit(exit_code);
 	}
 
-#if 0
-	if (!load_autofs4_module()) {
-		fprintf(stderr, "%s: can't load %s filesystem module.\n",
-			program, FS_MODULE_NAME);
-		exit(1);
-	}
-#endif
-
 	/* Don't need the kernel module just to look at the configured maps */
 	if (!dumpmaps && (!query_kproto_ver() || get_kver_major() < 5)) {
 		fprintf(stderr,

@@ -48,9 +48,6 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* define if you have MODPROBE */
-#undef HAVE_MODPROBE
-
 /* define if you have MOUNT */
 #undef HAVE_MOUNT
 
@@ -128,9 +125,6 @@
 
 /* define if you have LEX */
 #undef PATH_LEX
-
-/* define if you have MODPROBE */
-#undef PATH_MODPROBE
 
 /* define if you have MOUNT */
 #undef PATH_MOUNT
