@@ -1210,13 +1210,21 @@ static void become_daemon(unsigned int flags)
 	}
 
 	/* Detach from foreground process */
-	if (flags & DAEMON_FLAGS_FOREGROUND) {
+	if (flags & DAEMON_FLAGS_FOREGROUND &&
+	   !(flags & DAEMON_FLAGS_SYSTEMD_SERVICE)) {
 		if ((flags & DAEMON_FLAGS_CHECK_DAEMON) && !aquire_flag_file()) {
 			fprintf(stderr, "%s: program is already running.\n",
 				program);
 			exit(1);
 		}
 		log_to_stderr();
+	} else if (flags & DAEMON_FLAGS_SYSTEMD_SERVICE) {
+		if ((flags & DAEMON_FLAGS_CHECK_DAEMON) && !aquire_flag_file()) {
+			fprintf(stderr, "%s: program is already running.\n",
+				program);
+			exit(1);
+		}
+		open_log();
 	} else {
 		int nullfd;
 
@@ -1925,6 +1933,8 @@ static void usage(void)
 		"	-d --debug	log debuging info\n"
 		"	-Dvariable=value, --define variable=value\n"
 		"			define global macro variable\n"
+		"	-S --systemd-service\n"
+		"			run automounter as a systemd service\n"
 		"	-f --foreground do not fork into background\n"
 		"	-r --random-multimount-selection\n"
 		"			use ramdom replicated server selection\n"
@@ -2190,7 +2200,7 @@ int main(int argc, char *argv[])
 	time_t timeout;
 	time_t age = monotonic_time(NULL);
 	struct rlimit rlim;
-	const char *options = "+hp:t:vmdD:fVrO:l:n:CFM";
+	const char *options = "+hp:t:vmdD:SfVrO:l:n:CFM";
 	static const struct option long_options[] = {
 		{"help", 0, 0, 'h'},
 		{"pid-file", 1, 0, 'p'},
@@ -2198,6 +2208,7 @@ int main(int argc, char *argv[])
 		{"verbose", 0, 0, 'v'},
 		{"debug", 0, 0, 'd'},
 		{"define", 1, 0, 'D'},
+		{"systemd-service", 0, 0, 'S'},
 		{"foreground", 0, 0, 'f'},
 		{"random-multimount-selection", 0, 0, 'r'},
 		{"negative-timeout", 1, 0, 'n'},
@@ -2264,6 +2275,10 @@ int main(int argc, char *argv[])
 
 		case 'D':
 			macro_parse_globalvar(optarg);
+			break;
+
+		case 'S':
+			flags |= DAEMON_FLAGS_SYSTEMD_SERVICE;
 			break;
 
 		case 'f':
@@ -2653,7 +2668,8 @@ int main(int argc, char *argv[])
 	}
 
 #ifdef WITH_SYSTEMD
-	sd_notify(1, "READY=1");
+	if (flags & DAEMON_FLAGS_SYSTEMD_SERVICE)
+		sd_notify(1, "READY=1");
 #endif
 
 	state_mach_thid = pthread_self();

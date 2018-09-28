@@ -57,6 +57,10 @@ Define a global macro substitution variable. Global definitions
 are over-ridden macro definitions of the same name specified in
 mount entries.
 .TP
+.I \-S, \-\-systemd-service
+Used when running the automounter as a systemd service to ensure log entry
+format is consistent with the log entry format when running as a daemon.
+.TP
 .I "\-f, \-\-foreground"
 Run the daemon in the foreground and log to stderr instead of syslog."
 .TP

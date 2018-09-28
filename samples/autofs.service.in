@@ -6,7 +6,7 @@ Wants=network-online.target rpc-statd.service rpcbind.service
 [Service]
 Type=notify
 EnvironmentFile=-@@autofsconfdir@@/autofs
-ExecStart=@@sbindir@@/automount $OPTIONS --foreground --dont-check-daemon
+ExecStart=@@sbindir@@/automount $OPTIONS --systemd-service --dont-check-daemon
 ExecReload=/usr/bin/kill -HUP $MAINPID
 KillMode=process
 TimeoutSec=180
