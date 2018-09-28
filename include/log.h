@@ -36,7 +36,6 @@ extern void set_log_debug_ap(struct autofs_point *ap);
 extern void set_mnt_logging(unsigned global_logopt);
 
 extern void open_log(void);
-extern void log_to_syslog(void);
 extern void log_to_stderr(void);
  
 extern void log_info(unsigned int, const char* msg, ...);

@@ -1218,6 +1218,8 @@ static void become_daemon(unsigned int flags)
 		}
 		log_to_stderr();
 	} else {
+		int nullfd;
+
 		if (open_pipe(start_pipefd) < 0) {
 			fprintf(stderr, "%s: failed to create start_pipefd.\n",
 				program);
@@ -1261,7 +1263,30 @@ static void become_daemon(unsigned int flags)
 			close(start_pipefd[1]);
 			exit(*pst_stat);
 		}
-		log_to_syslog();
+
+		/* Redirect all our file descriptors to /dev/null */
+		nullfd = open("/dev/null", O_RDWR);
+		if (nullfd < 0) {
+			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+			fprintf(stderr, "cannot open /dev/null: %s", estr);
+			res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+			close(start_pipefd[1]);
+			exit(*pst_stat);
+		}
+
+		if (dup2(nullfd, STDIN_FILENO) < 0 ||
+		    dup2(nullfd, STDOUT_FILENO) < 0 ||
+		    dup2(nullfd, STDERR_FILENO) < 0) {
+			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+			fprintf(stderr,
+				"redirecting file descriptors failed: %s", estr);
+			res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+			close(start_pipefd[1]);
+			exit(*pst_stat);
+		}
+
+		open_log();
+		close(nullfd);
 	}
 
 	/* Write pid file if requested */
