@@ -922,7 +922,7 @@ void master_free_mapent(struct master_mapent *entry)
 	return;
 }
 
-struct master *master_new(const char *name, unsigned int timeout, unsigned int ghost)
+struct master *master_new(const char *name, unsigned int timeout, unsigned int flags)
 {
 	struct master *master;
 	char *tmp;
@@ -948,7 +948,7 @@ struct master *master_new(const char *name, unsigned int timeout, unsigned int g
 	master->depth = 0;
 	master->reading = 0;
 	master->read_fail = 0;
-	master->default_ghost = ghost;
+	master->default_ghost = flags & DAEMON_FLAGS_GHOST;
 	master->default_timeout = timeout;
 	master->default_logging = defaults_get_logging();
 	master->logopt = master->default_logging;
