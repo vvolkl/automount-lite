@@ -1951,6 +1951,15 @@ static void show_build_info(void)
 	}
 #endif
 
+#ifdef WITH_SYSTEMD
+	printf("WITH_SYSTEMD ");
+	count = count + 13;
+
+	if (count > 60) {
+		printf("\n  ");
+		count = 0;
+	}
+#endif
 
 #ifdef WITH_HESIOD
 	printf("WITH_HESIOD ");
