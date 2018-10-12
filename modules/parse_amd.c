@@ -1871,15 +1871,25 @@ struct amd_entry *make_default_entry(struct autofs_point *ap,
 	if (amd_parse_list(ap, defaults, &dflts, &sv))
 		return NULL;
 	defaults_entry = list_entry(dflts.next, struct amd_entry, list);
-	list_del_init(&defaults_entry->list);
 	/*
 	 * If map type isn't given try to inherit from
 	 * parent. A NULL map type is valid and means
 	 * use configured nss sources.
 	 */
 	map_type = conf_amd_get_map_type(ap->path);
-	if (map_type)
+	if (map_type) {
 		defaults_entry->map_type = map_type;
+#ifndef HAVE_HESIOD
+		if (!strcmp(map_type, "hesiod")) {
+			warn(ap->logopt, MODPREFIX
+			     "hesiod support not built in, "
+			     "defaults map entry not set");
+			defaults_entry = NULL;
+		}
+#endif
+	}
+	if (defaults_entry)
+		list_del_init(&defaults_entry->list);
 	/* The list should now be empty .... */
 	free_amd_entry_list(&dflts);
 	return defaults_entry;
@@ -2005,8 +2015,20 @@ static struct amd_entry *get_defaults_entry(struct autofs_point *ap,
 			 * use configured nss sources.
 			 */
 			char *map_type = conf_amd_get_map_type(ap->path);
-			if (map_type)
+			if (map_type) {
 				entry->map_type = map_type;
+#ifndef HAVE_HESIOD
+				if (!strcmp(map_type, "hesiod")) {
+					warn(ap->logopt, MODPREFIX
+					     "hesiod support not built in, "
+					     "attempting to use internal "
+					     "default");
+					free_amd_entry(entry);
+					free(expand);
+					goto out;
+				}
+#endif
+			}
 		}
 		free(expand);
 	}

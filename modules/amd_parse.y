@@ -574,6 +574,13 @@ static int match_map_option_map_type(char *map_option, char *type)
 	    !strcmp(map_type, "nisplus") ||
 	    !strcmp(map_type, "ldap") ||
 	    !strcmp(map_type, "hesiod")) {
+#ifndef WITH_HESIOD
+		if (!strcmp(map_type, "hesiod")) {
+			amd_msg("hesiod support not built in");
+			free(map_type);
+			return 0;
+		}
+#endif
 		amd_set_value(&entry.map_type, map_type);
 	} else if (!strcmp(map_type, "exec")) {
 		/* autofs uses "program" for "exec" map type */

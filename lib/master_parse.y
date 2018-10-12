@@ -171,7 +171,14 @@ line:
 
 		if ((tmp = strchr($2, ',')))
 			*tmp++ = '\0';
-
+#ifndef WITH_HESIOD
+		/* Map type or or map type parser is hesiod */
+		if (!strcmp($2, "hesiod") || !strcmp(tmp, "hesiod")) {
+			master_error("hesiod support not built in");
+			local_free_vars();
+			YYABORT;
+		}
+#endif
 		if (type)
 			free(type);
 		type = master_strdup($2);
@@ -352,7 +359,14 @@ map:	PATH
 
 		if ((tmp = strchr($1, ',')))
 			*tmp++ = '\0';
-
+#ifndef WITH_HESIOD
+		/* Map type or or map type parser is hesiod */
+		if (!strcmp($1, "hesiod") || !strcmp(tmp, "hesiod")) {
+			master_error("hesiod support not built in");
+			local_free_vars();
+			YYABORT;
+		}
+#endif
 		if (type)
 			free(type);
 		if (strcmp($1, "exec"))
