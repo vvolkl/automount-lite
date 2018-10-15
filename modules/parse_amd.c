@@ -1998,7 +1998,7 @@ static struct amd_entry *get_defaults_entry(struct autofs_point *ap,
 			goto out;
 		}
 		entry = select_default_entry(ap, &dflts, sv);
-		if (!entry->map_type) {
+		if (entry && !entry->map_type) {
 			/*
 			 * If map type isn't given try to inherit from
 			 * parent. A NULL map type is valid and means
