@@ -41,6 +41,10 @@ Set the default timeout for caching failed key lookups (program default
 60). If the equivalent command line option is given it will override this
 setting.
 .TP
+.B mount_verbose
+.br
+Use the verbose flag when spawning mount(8) (program default "no").
+.TP
 .B mount_wait
 .br
 Set the default time to wait for a response from a spawned mount(8)

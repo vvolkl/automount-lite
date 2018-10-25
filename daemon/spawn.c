@@ -558,12 +558,14 @@ int spawn_mount(unsigned logopt, ...)
 	char prog[] = PATH_MOUNT;
 	char arg0[] = PATH_MOUNT;
 	char argn[] = "-n";
+	char argvr[] = "-v";
 	/* In case we need to use the fake option to mount */
 	char arg_fake[] = "-f";
 	unsigned int options;
 	unsigned int retries = MTAB_LOCK_RETRIES;
 	int update_mtab = 1, ret, printed = 0;
 	unsigned int wait = defaults_get_mount_wait();
+	int verbose = defaults_get_mount_verbose();
 	char buf[PATH_MAX + 1];
 	unsigned int argv_len;
 
@@ -590,8 +592,10 @@ int spawn_mount(unsigned logopt, ...)
 		}
 	}
 
-	/* Alloc 1 extra slot in case we need to use the "-f" option */
-	argv_len = sizeof(char *) * (argc + 2);
+	/* Alloc 2 extra slots in case we need to use the "-f" or "-v" options
+	 * plus the NULL slot for end of args.
+	 */
+	argv_len = sizeof(char *) * (argc + 3);
 	argv = malloc(argv_len);
 	if (!argv) {
 		char buf[MAX_ERR_BUF];
@@ -604,12 +608,12 @@ int spawn_mount(unsigned logopt, ...)
 	argv[0] = arg0;
 
 	va_start(arg, logopt);
-	if (update_mtab)
-		p = argv + 1;
-	else {
-		argv[1] = argn;
-		p = argv + 2;
-	}
+	p = argv + 1;
+	if (!update_mtab)
+		*(p++) = argn;
+	if (verbose)
+		*(p++) = argvr;
+
 	while ((*p = va_arg(arg, char *))) {
 		if (options == SPAWN_OPT_OPEN && !strcmp(*p, "-t")) {
 			*(++p) = va_arg(arg, char *);

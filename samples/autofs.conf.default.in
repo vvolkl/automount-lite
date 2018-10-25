@@ -26,6 +26,10 @@ timeout = 300
 #
 #negative_timeout = 60
 #
+# mount_verbose - use the -v flag when calling mount(8).
+#
+#mount_verbose = no
+#
 # mount_wait - time to wait for a response from mount(8).
 # 	       Setting this timeout can cause problems when
 # 	       mount would otherwise wait for a server that

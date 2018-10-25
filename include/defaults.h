@@ -27,6 +27,7 @@
 #define DEFAULT_TIMEOUT			"600"
 #define DEFAULT_MASTER_WAIT		"10"
 #define DEFAULT_NEGATIVE_TIMEOUT	"60"
+#define DEFAULT_MOUNT_VERBOSE		"0"
 #define DEFAULT_MOUNT_WAIT		"-1"
 #define DEFAULT_UMOUNT_WAIT		"12"
 #define DEFAULT_BROWSE_MODE		"1"
@@ -166,6 +167,7 @@ unsigned int defaults_get_ldap_timeout(void);
 unsigned int defaults_get_ldap_network_timeout(void);
 unsigned int defaults_get_mount_nfs_default_proto(void);
 unsigned int defaults_get_append_options(void);
+unsigned int defaults_get_mount_verbose(void);
 unsigned int defaults_get_mount_wait(void);
 unsigned int defaults_get_umount_wait(void);
 const char *defaults_get_auth_conf_file(void);

@@ -68,6 +68,7 @@
 
 #define NAME_MOUNT_NFS_DEFAULT_PROTOCOL	"mount_nfs_default_protocol"
 #define NAME_APPEND_OPTIONS		"append_options"
+#define NAME_MOUNT_VERBOSE		"mount_verbose"
 #define NAME_MOUNT_WAIT			"mount_wait"
 #define NAME_UMOUNT_WAIT		"umount_wait"
 #define NAME_AUTH_CONF_FILE		"auth_conf_file"
@@ -325,6 +326,11 @@ static int conf_load_autofs_defaults(void)
 
 	ret = conf_update(sec, NAME_APPEND_OPTIONS,
 			  DEFAULT_APPEND_OPTIONS, CONF_ENV);
+	if (ret == CFG_FAIL)
+		goto error;
+
+	ret = conf_update(sec, NAME_MOUNT_VERBOSE,
+			  DEFAULT_MOUNT_VERBOSE, CONF_ENV);
 	if (ret == CFG_FAIL)
 		goto error;
 
@@ -1777,6 +1783,17 @@ unsigned int defaults_get_append_options(void)
 	res = conf_get_yesno(autofs_gbl_sec, NAME_APPEND_OPTIONS);
 	if (res < 0)
 		res = atoi(DEFAULT_APPEND_OPTIONS);
+
+	return res;
+}
+
+unsigned int defaults_get_mount_verbose(void)
+{
+	long res;
+
+	res = conf_get_yesno(autofs_gbl_sec, NAME_MOUNT_VERBOSE);
+	if (res < 0)
+		res = atoi(DEFAULT_MOUNT_VERBOSE);
 
 	return res;
 }
