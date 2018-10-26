@@ -47,9 +47,13 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	int err, ro = 0;
 	const char *fsck_prog;
 	int len, status, existed = 1;
+	void (*mountlog)(unsigned int, const char*, ...) = &log_debug;
 
 	if (ap->flags & MOUNT_FLAG_REMOUNT)
 		return 0;
+
+	if (defaults_get_mount_verbose())
+		mountlog = &log_info;
 
 	/* Root offset of multi-mount */
 	len = strlen(root);
@@ -121,15 +125,15 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	}
 
 	if (options) {
-		debug(ap->logopt, MODPREFIX
-		      "calling mount -t %s -o %s %s %s",
-		      fstype, options, what, fullpath);
+		mountlog(ap->logopt, MODPREFIX
+			 "calling mount -t %s -o %s %s %s",
+			 fstype, options, what, fullpath);
 		err = spawn_mount(ap->logopt, "-t", fstype,
 			          "-o", options, what, fullpath, NULL);
 	} else {
-		debug(ap->logopt,
-		      MODPREFIX "calling mount -t %s %s %s",
-		      fstype, what, fullpath);
+		mountlog(ap->logopt,
+			 MODPREFIX "calling mount -t %s %s %s",
+			 fstype, what, fullpath);
 		err = spawn_mount(ap->logopt, "-t", fstype, what, fullpath, NULL);
 	}
 

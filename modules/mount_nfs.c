@@ -77,13 +77,17 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	int port = -1;
 	int ro = 0;            /* Set if mount bind should be read-only */
 	int rdma = 0;
+	void (*mountlog)(unsigned int, const char*, ...) = &log_debug;
 
 	if (ap->flags & MOUNT_FLAG_REMOUNT)
 		return 0;
 
-	debug(ap->logopt,
-	      MODPREFIX "root=%s name=%s what=%s, fstype=%s, options=%s",
-	      root, name, what, fstype, options);
+	if (defaults_get_mount_verbose())
+		mountlog = &log_info;
+
+	mountlog(ap->logopt,
+		 MODPREFIX "root=%s name=%s what=%s, fstype=%s, options=%s",
+		 root, name, what, fstype, options);
 
 	mount_default_proto = defaults_get_mount_nfs_default_proto();
 	vers = NFS_VERS_DEFAULT | NFS_PROTO_DEFAULT;
@@ -203,9 +207,9 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 		if ((vers & NFS_PROTO_MASK) == 0)
 			vers |= NFS_PROTO_MASK;
 
-		debug(ap->logopt, MODPREFIX
-		      "nfs options=\"%s\", nobind=%d, nosymlink=%d, ro=%d",
-		      nfsoptions, nobind, nosymlink, ro);
+		mountlog(ap->logopt, MODPREFIX
+			 "nfs options=\"%s\", nobind=%d, nosymlink=%d, ro=%d",
+			 nfsoptions, nobind, nosymlink, ro);
 	}
 
 	if (!parse_location(ap->logopt, &hosts, what, flags)) {
@@ -379,17 +383,18 @@ dont_probe:
 		}
 
 		if (nfsoptions && *nfsoptions) {
-			debug(ap->logopt,
-			      MODPREFIX "calling mount -t %s " SLOPPY 
-			      "-o %s %s %s", fstype, nfsoptions, loc, fullpath);
+			mountlog(ap->logopt,
+				 MODPREFIX "calling mount -t %s " SLOPPY
+				 "-o %s %s %s", fstype, nfsoptions, loc,
+				 fullpath);
 
 			err = spawn_mount(ap->logopt,
 					  "-t", fstype, SLOPPYOPT "-o",
 					  nfsoptions, loc, fullpath, NULL);
 		} else {
-			debug(ap->logopt,
-			      MODPREFIX "calling mount -t %s %s %s",
-			      fstype, loc, fullpath);
+			mountlog(ap->logopt,
+				 MODPREFIX "calling mount -t %s %s %s",
+				 fstype, loc, fullpath);
 			err = spawn_mount(ap->logopt,
 					  "-t", fstype, loc, fullpath, NULL);
 		}

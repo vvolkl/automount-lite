@@ -37,9 +37,13 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	char dest[PATH_MAX + 1];
 	size_t r_len = strlen(root);
 	size_t d_len = r_len + name_len + 2;
+	void (*mountlog)(unsigned int, const char*, ...) = &log_debug;
 
 	if (ap->flags & MOUNT_FLAG_REMOUNT)
 		return 0;
+
+	if (defaults_get_mount_verbose())
+		mountlog = &log_info;
 
 	if (d_len > PATH_MAX)
 		return 1;
@@ -53,7 +57,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	if (dest[strlen(dest)-1] == '/')
 	    dest[strlen(dest)-1] = '\0';
 
-	debug(ap->logopt, MODPREFIX "mounting AFS %s -> %s", dest, what);
+	mountlog(ap->logopt, MODPREFIX "mounting AFS %s -> %s", dest, what);
 
 	return symlink(what, dest);	/* Try it.  If it fails, return the error. */
 }

@@ -81,9 +81,13 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	int err;
 	int i, len;
 	int symlnk = (*name != '/' && (ap->flags & MOUNT_FLAG_SYMLINK));
+	void (*mountlog)(unsigned int, const char*, ...) = &log_debug;
 
 	if (ap->flags & MOUNT_FLAG_REMOUNT)
 		return 0;
+
+	if (defaults_get_mount_verbose())
+		mountlog = &log_info;
 
 	/* Extract "symlink" pseudo-option which forces local filesystems
 	 * to be symlinked instead of bound.
@@ -164,9 +168,9 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 		if (!status)
 			existed = 0;
 
-		debug(ap->logopt, MODPREFIX
-		      "calling mount --bind -o %s %s %s",
-		      options, what, fullpath);
+		mountlog(ap->logopt, MODPREFIX
+			 "calling mount --bind -o %s %s %s",
+			  options, what, fullpath);
 
 		err = spawn_bind_mount(ap->logopt, "-o",
 				       options, what, fullpath, NULL);
