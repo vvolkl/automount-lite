@@ -758,6 +758,12 @@ static void *do_mount_indirect(void *arg)
 
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &state);
 
+	if (defaults_get_mount_verbose()) {
+		pid_t ppid = log_pidinfo(ap, mt.pid, "requestor");
+		if (ppid > 0)
+			log_pidinfo(ap, ppid, "parent");
+	}
+
 	len = ncat_path(buf, sizeof(buf), ap->path, mt.name, mt.len);
 	if (!len) {
 		crit(ap->logopt, "path to be mounted is to long");

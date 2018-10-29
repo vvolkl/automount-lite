@@ -43,7 +43,8 @@ setting.
 .TP
 .B mount_verbose
 .br
-Use the verbose flag when spawning mount(8) (program default "no").
+Use the verbose flag when spawning mount(8), and log some process info
+about the requestor and its parent (program default "no").
 .TP
 .B mount_wait
 .br

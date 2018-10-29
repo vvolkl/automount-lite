@@ -26,7 +26,9 @@ timeout = 300
 #
 #negative_timeout = 60
 #
-# mount_verbose - use the -v flag when calling mount(8).
+# mount_verbose - use the -v flag when calling mount(8) and log some
+#		  process information about the requestor and its
+#		  parent.
 #
 #mount_verbose = no
 #

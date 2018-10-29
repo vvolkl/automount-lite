@@ -325,3 +325,42 @@ void log_to_stderr(void)
 
 	return;
 }
+
+pid_t log_pidinfo(struct autofs_point *ap, pid_t pid, char *label) {
+	char buf[PATH_MAX + 1] = "";
+	FILE *statfile;
+
+	pid_t tgid, ppid;
+	int uid, euid, gid, egid;
+	char comm[64] = "";
+
+	sprintf(buf, "/proc/%d/status", pid);
+	statfile = fopen(buf, "r");
+	if (statfile == NULL) {
+		info(ap->logopt, "pidinfo %s: failed to open %s", label, buf);
+		return -1;
+	}
+
+	while (fgets(buf, sizeof(buf), statfile) != NULL) {
+	        if (strncmp(buf, "Name:", 5) == 0) {
+			sscanf(buf, "Name:\t%s", (char *) &comm);
+		} else if (strncmp(buf, "Tgid:", 5) == 0) {
+			sscanf(buf, "Tgid:\t%d", (int *) &tgid);
+		} else if (strncmp(buf, "PPid:", 5) == 0) {
+			sscanf(buf, "PPid:\t%d", (int *) &ppid);
+		} else if (strncmp(buf, "Uid:", 4) == 0) {
+			sscanf(buf,
+			      "Uid:\t%d\t%d", (int *) &uid, (int *) &euid);
+		} else if (strncmp(buf, "Gid:", 4) == 0) {
+			sscanf(buf,
+			      "Gid:\t%d\t%d", (int *) &gid, (int *) &egid);
+		}
+	}
+	fclose(statfile);
+
+	info(ap->logopt,
+	  "pidinfo %s: pid:%d comm:%s tgid:%d uid:%d euid:%d gid:%d egid:%d",
+	   label, pid, comm, tgid, uid, euid, gid, egid);
+
+	return ppid;
+}

@@ -46,6 +46,8 @@ extern void log_crit(unsigned, const char* msg, ...);
 extern void log_debug(unsigned int, const char* msg, ...);
 extern void logmsg(const char* msg, ...);
 
+extern pid_t log_pidinfo(struct autofs_point *ap, pid_t pid, char *label);
+
 #define debug(opt, msg, args...)	\
 	do { log_debug(opt, "%s: " msg,  __FUNCTION__, ##args); } while (0)
 
