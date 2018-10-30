@@ -1,4 +1,4 @@
-xx/xx/2018 autofs-5.1.5
+30/10/2018 autofs-5.1.5
 - fix flag file permission.
 - fix directory create permission.
 - fix use after free in do_master_list_reset().
