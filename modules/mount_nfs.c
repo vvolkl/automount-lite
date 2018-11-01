@@ -333,7 +333,13 @@ dont_probe:
 			socklen_t len = INET6_ADDRSTRLEN;
 			char n_buf[len + 1];
 			const char *n_addr;
+
 			n_addr = get_addr_string(this->addr, n_buf, len);
+			if (!n_addr) {
+				char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+				error(ap->logopt, "get_addr_string: %s", estr);
+				goto forced_fail;
+			}
 			loc = malloc(strlen(n_addr) + strlen(this->path) + 4);
 			if (!loc) {
 				char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
