@@ -521,22 +521,33 @@ int spawnv(unsigned logopt, const char *prog, const char *const *argv)
 int spawnl(unsigned logopt, const char *prog, ...)
 {
 	va_list arg;
-	int argc;
+	int argc, ret;
 	char **argv, **p;
+	unsigned int argv_len;
 
 	va_start(arg, prog);
 	for (argc = 1; va_arg(arg, char *); argc++);
 	va_end(arg);
 
-	if (!(argv = alloca(sizeof(char *) * argc)))
+	argv_len = sizeof(char *) * (argc + 1);
+	argv = malloc(argv_len);
+	if (!argv) {
+		char buf[MAX_ERR_BUF];
+		char *estr = strerror_r(errno, buf, sizeof(buf));
+		crit(logopt, "malloc: %s", estr);
 		return -1;
+	}
+	memset(argv, 0, argv_len);
 
 	va_start(arg, prog);
 	p = argv;
 	while ((*p++ = va_arg(arg, char *)));
 	va_end(arg);
 
-	return do_spawn(logopt, -1, SPAWN_OPT_NONE, prog, (const char **) argv);
+	ret = do_spawn(logopt, -1, SPAWN_OPT_NONE, prog, (const char **) argv);
+	free(argv);
+
+	return ret;
 }
 
 int spawn_mount(unsigned logopt, ...)
@@ -554,6 +565,7 @@ int spawn_mount(unsigned logopt, ...)
 	int update_mtab = 1, ret, printed = 0;
 	unsigned int wait = defaults_get_mount_wait();
 	char buf[PATH_MAX + 1];
+	unsigned int argv_len;
 
 	/* If we use mount locking we can't validate the location */
 #ifdef ENABLE_MOUNT_LOCKING
@@ -579,8 +591,15 @@ int spawn_mount(unsigned logopt, ...)
 	}
 
 	/* Alloc 1 extra slot in case we need to use the "-f" option */
-	if (!(argv = alloca(sizeof(char *) * (argc + 2))))
+	argv_len = sizeof(char *) * (argc + 2);
+	argv = malloc(argv_len);
+	if (!argv) {
+		char buf[MAX_ERR_BUF];
+		char *estr = strerror_r(errno, buf, sizeof(buf));
+		crit(logopt, "malloc: %s", estr);
 		return -1;
+	}
+	memset(argv, 0, argv_len);
 
 	argv[0] = arg0;
 
@@ -655,6 +674,7 @@ int spawn_mount(unsigned logopt, ...)
 		umount(argv[argc]);
 		ret = MNT_FORCE_FAIL;
 	}
+	free(argv);
 
 	return ret;
 }
@@ -683,6 +703,7 @@ int spawn_bind_mount(unsigned logopt, ...)
 	int update_mtab = 1, ret, printed = 0;
 	unsigned int wait = defaults_get_mount_wait();
 	char buf[PATH_MAX + 1];
+	unsigned int argv_len;
 
 	/* If we use mount locking we can't validate the location */
 #ifdef ENABLE_MOUNT_LOCKING
@@ -711,8 +732,15 @@ int spawn_bind_mount(unsigned logopt, ...)
 		}
 	}
 
-	if (!(argv = alloca(sizeof(char *) * (argc + 2))))
+	argv_len = sizeof(char *) * (argc + 2);
+	argv = malloc(argv_len);
+	if (!argv) {
+		char buf[MAX_ERR_BUF];
+		char *estr = strerror_r(errno, buf, sizeof(buf));
+		crit(logopt, "malloc: %s", estr);
 		return -1;
+	}
+	memset(argv, 0, argv_len);
 
 	argv[0] = arg0;
 	argv[1] = bind;
@@ -774,6 +802,7 @@ int spawn_bind_mount(unsigned logopt, ...)
 		umount(argv[argc]);
 		ret = MNT_FORCE_FAIL;
 	}
+	free(argv);
 
 	return ret;
 }
@@ -796,6 +825,7 @@ int spawn_umount(unsigned logopt, ...)
 	int update_mtab = 1, ret, printed = 0;
 	unsigned int wait = defaults_get_umount_wait();
 	char buf[PATH_MAX + 1];
+	unsigned int argv_len;
 
 #ifdef ENABLE_MOUNT_LOCKING
 	options = SPAWN_OPT_LOCK;
@@ -821,8 +851,15 @@ int spawn_umount(unsigned logopt, ...)
 	if (arg_c)
 		argc++;;
 
-	if (!(argv = alloca(sizeof(char *) * (argc + 1))))
+	argv_len = sizeof(char *) * (argc + 1);
+	argv = malloc(argv_len);
+	if (!argv) {
+		char buf[MAX_ERR_BUF];
+		char *estr = strerror_r(errno, buf, sizeof(buf));
+		crit(logopt, "malloc: %s", estr);
 		return -1;
+	}
+	memset(argv, 0, argv_len);
 
 	p = argv;
 	*p++ = arg0;
@@ -870,6 +907,7 @@ int spawn_umount(unsigned logopt, ...)
 		     "and /etc/mtab will differ");
 		ret = 0;
 	}
+	free(argv);
 
 	return ret;
 }
