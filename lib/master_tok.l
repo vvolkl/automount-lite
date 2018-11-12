@@ -391,6 +391,7 @@ MODE		(--mode{OPTWS}|--mode{OPTWS}={OPTWS})
 	-?nobrowse		{ return(OPT_NOGHOST); }
 	-?slave			{ return(OPT_SLAVE); }
 	-?private		{ return(OPT_PRIVATE); }
+	-?strictexpire		{ return(OPT_STRICTEXPIRE); }
 	-g|--ghost|-?browse	{ return(OPT_GHOST); }
 	-v|--verbose		{ return(OPT_VERBOSE); }
 	-d|--debug		{ return(OPT_DEBUG); }

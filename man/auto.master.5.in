@@ -199,6 +199,14 @@ entries only, either in the master map (so it effects all map entries)
 or with individual map entries. The option is ignored for direct mounts
 and non-root offest mount entries.
 .TP
+.I "strictexpire"
+Use a strict expire policy for this automount. Using this option means
+that last use of autofs directory entries will not be updated during
+path walks so that mounts in an automount won't be kept mounted by
+applications scanning the mount tree. Note that this doesn't completely
+resolve the problem of expired automounts being immediately re-mounted
+due to application accesses triggered by the expire itself.
+.TP
 .I slave \fPor\fI private
 This option allows mount propagation of bind mounts to be set to
 either \fIslave\fP or \fIprivate\fP. This option may be needed when using

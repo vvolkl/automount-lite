@@ -554,6 +554,9 @@ struct kernel_mod_version {
 #define MOUNT_FLAG_SLAVE		0x0100
 #define MOUNT_FLAG_PRIVATE		0x0200
 
+/* Use strict expire semantics if requested and kernel supports it */
+#define MOUNT_FLAG_STRICTEXPIRE		0x0400
+
 struct autofs_point {
 	pthread_t thid;
 	char *path;			/* Mount point name */

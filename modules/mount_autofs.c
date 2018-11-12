@@ -57,6 +57,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	int nobind = ap->flags & MOUNT_FLAG_NOBIND;
 	int ghost = ap->flags & MOUNT_FLAG_GHOST;
 	int symlnk = ap->flags & MOUNT_FLAG_SYMLINK;
+	int strictexpire = ap->flags & MOUNT_FLAG_STRICTEXPIRE;
 	time_t timeout = get_exp_timeout(ap, ap->entry->maps);
 	unsigned logopt = ap->logopt;
 	struct map_type_info *info;
@@ -131,6 +132,8 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 				ghost = 1;
 			else if (_strncmp("symlink", cp, 7) == 0)
 				symlnk = 1;
+			else if (_strncmp("strictexpire", cp, 12) == 0)
+				strictexpire = 1;
 			else if (_strncmp("hosts", cp, 5) == 0)
 				hosts = 1;
 			else if (_strncmp("timeout=", cp, 8) == 0) {
@@ -173,6 +176,8 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	nap->parent = ap;
 	if (symlnk)
 		nap->flags |= MOUNT_FLAG_SYMLINK;
+	if (strictexpire)
+		nap->flags |= MOUNT_FLAG_STRICTEXPIRE;
 
 	if (hosts)
 		argc = 0;

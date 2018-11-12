@@ -421,6 +421,16 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 		mp->options = make_options_string(ap->path, ap->kpipefd, str_direct);
 		if (!mp->options)
 			return 0;
+
+		if ((ap->flags & MOUNT_FLAG_STRICTEXPIRE) &&
+		    ((get_kver_major() == 5 && get_kver_minor() > 3) ||
+		     (get_kver_major() > 5))) {
+			char *tmp = realloc(mp->options, strlen(mp->options) + 12);
+			if (tmp) {
+				strcat(tmp, ",strictexpire");
+				mp->options = tmp;
+			}
+		}
 	}
 
 	/* In case the directory doesn't exist, try to mkdir it */
