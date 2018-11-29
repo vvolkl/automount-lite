@@ -1,5 +1,6 @@
 xx/xx/2019 autofs-5.1.6
 - support strictexpire mount option.
+- fix hesiod string check in master_parse().
 
 30/10/2018 autofs-5.1.5
 - fix flag file permission.
