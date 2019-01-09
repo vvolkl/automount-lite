@@ -142,6 +142,16 @@ static int do_mount_autofs_indirect(struct autofs_point *ap, const char *root)
 		}
 	}
 
+	if ((ap->flags & MOUNT_FLAG_IGNORE) &&
+	    ((get_kver_major() == 5 && get_kver_minor() > 4) ||
+	     (get_kver_major() > 5))) {
+		char *tmp = realloc(options, strlen(options) + 7);
+		if (tmp) {
+			strcat(tmp, ",ignore");
+			options = tmp;
+		}
+	}
+
 	/* In case the directory doesn't exist, try to mkdir it */
 	if (mkdir_path(root, mp_mode) < 0) {
 		if (errno != EEXIST && errno != EROFS) {

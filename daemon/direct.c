@@ -431,6 +431,16 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 				mp->options = tmp;
 			}
 		}
+
+		if ((ap->flags & MOUNT_FLAG_IGNORE) &&
+		    ((get_kver_major() == 5 && get_kver_minor() > 4) ||
+		     (get_kver_major() > 5))) {
+			char *tmp = realloc(mp->options, strlen(mp->options) + 7);
+			if (tmp) {
+				strcat(tmp, ",ignore");
+				mp->options = tmp;
+			}
+		}
 	}
 
 	/* In case the directory doesn't exist, try to mkdir it */

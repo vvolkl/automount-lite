@@ -557,6 +557,9 @@ struct kernel_mod_version {
 /* Use strict expire semantics if requested and kernel supports it */
 #define MOUNT_FLAG_STRICTEXPIRE		0x0400
 
+/* Indicator for applications to ignore the mount entry */
+#define MOUNT_FLAG_IGNORE		0x0800
+
 struct autofs_point {
 	pthread_t thid;
 	char *path;			/* Mount point name */

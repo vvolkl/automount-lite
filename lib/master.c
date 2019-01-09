@@ -101,9 +101,9 @@ int master_add_autofs_point(struct master_mapent *entry, unsigned logopt,
 		ap->negative_timeout = global_negative_timeout;
 	ap->exp_timeout = defaults_get_timeout();
 	ap->exp_runfreq = 0;
-	ap->flags = 0;
+	ap->flags = MOUNT_FLAG_IGNORE;
 	if (ghost)
-		ap->flags = MOUNT_FLAG_GHOST;
+		ap->flags |= MOUNT_FLAG_GHOST;
 
 	if (nobind)
 		ap->flags |= MOUNT_FLAG_NOBIND;
