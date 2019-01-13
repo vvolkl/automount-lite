@@ -497,9 +497,6 @@ static int check_address_proto(unsigned logopt,
 	if (ipv6_requested) {
 		if (host->addr_len == INET_ADDRSTRLEN)
 			ret = 0;
-	} else {
-		if (host->addr_len == INET6_ADDRSTRLEN)
-			ret = 0;
 	}
 
 	if (!ret)
