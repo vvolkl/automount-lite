@@ -1000,7 +1000,7 @@ void *expire_proc_direct(void *arg)
 	pthread_cleanup_pop(1);
 
 	if (left)
-		info(ap->logopt, "%d remaining in %s", left, ap->path);
+		debug(ap->logopt, "%d remaining in %s", left, ap->path);
 
 	ec.status = left;
 

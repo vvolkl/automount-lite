@@ -588,7 +588,7 @@ void *expire_proc_indirect(void *arg)
 	pthread_cleanup_pop(1);
 
 	if (submnts)
-		info(ap->logopt,
+		debug(ap->logopt,
 		     "%d submounts remaining in %s", submnts, ap->path);
 
 	/* 
@@ -596,7 +596,7 @@ void *expire_proc_indirect(void *arg)
 	 * words) the umounts are done by the time we reach here
 	 */
 	if (count)
-		info(ap->logopt, "%d remaining in %s", count, ap->path);
+		debug(ap->logopt, "%d remaining in %s", count, ap->path);
 
 	ec.status = left;
 

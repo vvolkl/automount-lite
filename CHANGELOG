@@ -7,6 +7,7 @@ xx/xx/2019 autofs-5.1.6
 - optionally log mount requestor process info.
 - log mount call arguments if mount_verbose is set.
 - Fix NFS mount from IPv6 addresses.
+- make expire remaining log level debug.
 
 30/10/2018 autofs-5.1.5
 - fix flag file permission.
