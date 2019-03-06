@@ -95,7 +95,7 @@ V6MASK		(12[0-8]|1[0-1][0-9]|[1-9][0-9]|[1-9])
 
 FOPT		(({QSTR}|{FSTR}|{MACRO})+)
 OPTS		({OSTR}(=({VSTR}|{MACRO})+)?)
-SOPT		(({SSTR}|{QSTR}|{MACRO})+)
+SOPT		({SSTR}|{QSTR}|{MACRO}(\.|{SSTR}|{QSTR}|{MACRO})+)
 NOPT		({SSTR}|(({IP4ADDR}(\/{V4MASK})?)|({IP6ADDR}(\/{V6MASK})?)))
 
 MAPOPT		(fs|type|maptype|pref|sublink|cache)
