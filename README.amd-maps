@@ -61,8 +61,8 @@ add it below the autofs configuration. Apart from changing the amd
 changed. However, quite a few amd configuration options don't have
 meaning within autofs. When these options are seen they are logged.
 
-Be aware that, if the an old configuration exists and the configuration
-hasn't been updated after the installation, changes to the the old
+Be aware that, if an old configuration exists and the configuration
+hasn't been updated after the installation, changes to the old
 configuration will override changes to the new configuration because
 backward compatibility takes priority over the new implementation.
 

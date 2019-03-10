@@ -72,7 +72,7 @@ RANLIB = @PATH_RANLIB@
 TIRPCLIB = @TIRPC_LIBS@
 TIRPCCFLAGS = @TIRPC_CFLAGS@
 
-# Use dmalloc for memory debuging
+# Use dmalloc for memory debugging
 DMALLOCLIB = @DMALLOCLIB@
 
 #

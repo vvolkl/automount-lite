@@ -10,6 +10,7 @@ xx/xx/2019 autofs-5.1.6
 - make expire remaining log level debug.
 - allow period following macro in selector value.
 - fix macro expansion in selector values.
+- fix typing errors.
 
 30/10/2018 autofs-5.1.5
 - fix flag file permission.
