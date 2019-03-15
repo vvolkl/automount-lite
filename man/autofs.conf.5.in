@@ -89,7 +89,7 @@ set default log level "none", "verbose" or "debug" (program default "none").
 .B force_standard_program_map_env
 .br
 override the use of a prefix with standard environment variables when a
-program map is executed. Since program maps are run as the privileded
+program map is executed. Since program maps are run as the privileged
 user setting these standard environment variables opens automount(8) to
 potential user privilege escalation when the program map is written in a
 language that can load components from, for example, a user home directory
@@ -108,16 +108,15 @@ and a direct map with 8000 entries would result in each slot
 containing an average of 8 entries, which should be acceptable.
 
 However, if excessive CPU usage is observed during automount lookups
-increasing this option can reduce the CPU overhead considerably becuase
+increasing this option can reduce the CPU overhead considerably because
 it reduces the length of the search chains.
 
 Note that the number of entries in a map doesn't necessarily relate
 to the number of entries used in the map entry cache.
 
-There are three distinct cases, direct maps and indirect maps that
-use the "browse" option must be read in their entirity at program
-start so, in these two cases the map size does retate directly to
-the map entry cache size.
+There are two distinct cases where the map hash table can make a
+significant difference, direct maps and indirect maps that use the
+"browse" option.
 
 For indirect maps that do not use the "browse" option entries are
 added to the map entry cache at lookup so the number of active cache
@@ -161,7 +160,7 @@ don't wait.
 .B use_mount_request_log_id
 .br
 Set whether to use a mount request log id so that log entries for specific
-mount requests can be easily identified in logs that have multiple conncurrent
+mount requests can be easily identified in logs that have multiple concurrent
 requests. Default is don't use mount request log ids.
 .SS LDAP Configuration
 .P
@@ -170,7 +169,7 @@ Configuration settings available are:
 .B ldap_timeout
 .br
 Set the network response timeout (default 8).
-Set timeout value for the synchronous API  calls. The default is the LDAP
+Set timeout value for the synchronous API calls. The default is the LDAP
 library default of an infinite timeout.
 .TP
 .B ldap_network_timeout
@@ -310,7 +309,7 @@ cleaned on re-load, which is done when map changes are detected
 so these configuration entries are not used by autofs. An
 exception to this is the case where the map is large. In this
 case it may be necessary to read the whole map at startup even if
-browsing is is not enabled. Adding the cache:=all option to
+browsing is not enabled. Adding the cache:=all option to
 map_options can be used to for this.
 .TP
 .B localhost_address
@@ -377,14 +376,14 @@ and that will be done.
 Allow map keys to be shown in directory listings. This option
 can have values of "yes" or "no". The default is "no". A variation
 of this option, "browsable", can be used as a pseudo mount option
-in type "auto" map entries to provide provide browsing funtionality
+in type "auto" map entries to provide browsing functionality
 in sub-mounts. The amd "browsable_dirs = full" option cannot be
 implemented within the current autofs framework and is not supported.
 .TP
 .B exec_map_timeout
 .br
-A timeout is not currently used for for program maps, might be
-implemented.
+A timeout is not currently used for program maps but this might be
+implemented in the future.
 .TP
 .B tag
 .br
@@ -460,7 +459,7 @@ its official host name.
 .TP
 .B domain_strip
 .br
-If set to "yes" the domain name part of the host is strippped
+If set to "yes" the domain name part of the host is stripped
 when normalizing hostnames. This can be useful when using of
 the same maps in a multiple domain environment.
 .TP
@@ -484,8 +483,8 @@ that is used for queries if ldap is to be used as a map source.
 .B ldap_hostports
 .br
 This option has no default value set. It must be set to the URI
-of the LDAP server to be used for lookups wheni ldap is used a
-map source. It may contain a comma or space separated list of
+of the LDAP server to be used for lookups when ldap is used as
+a map source. It may contain a comma or space separated list of
 LDAP URIs.
 .TP
 .B hesiod_base

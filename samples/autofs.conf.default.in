@@ -75,7 +75,7 @@ browse_mode = no
 #			are run as the privileged user this opens
 #			automount(8) to potential user privilege
 #			escalation when the program map is written
-#			in a language that  can load components from,
+#			in a language that can load components from,
 #			for example, a user home directory.
 #
 # force_standard_program_map_env = no
@@ -83,7 +83,7 @@ browse_mode = no
 # use_mount_request_log_id - Set whether to use a mount request log
 #			id so that log entries for specific mount
 #			requests can be easily identified in logs
-#			that have multiple conncurrent requests.
+#			that have multiple concurrent requests.
 #
 #use_mount_request_log_id = no
 #
@@ -411,6 +411,6 @@ dismount_interval = 300
 # master map entry and the format will be inherited for type
 # "auto" mounts.
 #
-# [ /expamle/mount ]
-# dismount_interval = 60
-# map_type = nis
+#[ /example/mount ]
+#dismount_interval = 60
+#map_type = nis

@@ -14,6 +14,7 @@ xx/xx/2019 autofs-5.1.6
 - Explain /etc/auto.master.d usage.
 - plus map includes are only allowed in file sources.
 - Update README.
+- fix additional typing errors.
 
 30/10/2018 autofs-5.1.5
 - fix flag file permission.

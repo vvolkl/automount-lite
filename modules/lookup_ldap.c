@@ -1320,11 +1320,11 @@ auth_fail:
 		ret |= get_property(logopt, root, "external_key",  &extern_key);
 		/*
 		 * For EXTERNAL auth to function we need a client certificate
-		 * and and certificate key. The ca certificate used to verify
+		 * and certificate key. The ca certificate used to verify
 		 * the server certificate must also be set correctly in the
 		 * global configuration as the connection must be encrypted
 		 * and the server and client certificates must have been
-		 * verified for the EXTERNAL method to be offerred by the
+		 * verified for the EXTERNAL method to be offered by the
 		 * server. If the cert and key have not been set in the autofs
 		 * configuration they must be set in the ldap rc file.
 		 */

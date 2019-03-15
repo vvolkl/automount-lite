@@ -34,7 +34,7 @@ the following selection rules.
      - PROXIMITY_OTHER, host is on a network not directlty
        reachable through a local interface.
   
-2) NFS version and protocol is selected by caclculating the largest
+2) NFS version and protocol is selected by calculating the largest
    number of hosts supporting an NFS version and protocol that
    have the closest proximity. These hosts are added to the list
    in response time order. Hosts may have a corresponding weight

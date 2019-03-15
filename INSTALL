@@ -119,7 +119,7 @@ For example, Fedora Core 4 kernel package 2.6.11-1.369_FC4
 would use the 2.6.12 patch because it applies the 2.6.12 release
 candidate revision 6 patch. But the autofs patch doesn't apply
 because the rpm also applies a patch somewhere that changes one
-area the the patch also changes but this change is not present
+area the patch also changes but this change is not present
 in the 2.6.12 release kernel.
 
 On the other hand, Fedora Core 3 kernel 2.6.12-1.1381_FC3

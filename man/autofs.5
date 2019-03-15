@@ -64,7 +64,6 @@ can't be mounted.
 .br
 is used to make the weight the sole factor in selecting a server when multiple
 servers are present in a map entry.
-and
 .TP
 .B \-no-use-weight-only
 .br
@@ -192,7 +191,7 @@ SHOST	Short hostname (domain part removed if present)
 .sp
 If a program map is used these standard environment variables will have
 a prefix of "AUTOFS_" to prevent interpreted languages like python from
-being able to load and execute arbitray code from a user home directory.
+being able to load and execute arbitrary code from a user home directory.
 .RE
 .sp
 Additional entries can be defined with the \-Dvariable=Value map-option to
@@ -293,10 +292,10 @@ may be negated with the \fB!\fP.
 For a \fBlocation\fP to be selected for a mount attempt all of its \fBselectors\fP
 must evaluate to true. If a \fBlocation\fP is selected for a mount attempt
 and succeeds the lookup is completed and returns success. If the mount
-attempt fails the proceedure continues with the next \fBlocation\fP until
+attempt fails the procedure continues with the next \fBlocation\fP until
 they have all been tried.
 
-In addition some \fBselectors\fP take no argumenets, some one argument
+In addition, some \fBselectors\fP take no arguments, some one argument
 and others optionally take two arguments.
 
 The \fBselectors\fP that take no arguments are:
@@ -584,7 +583,7 @@ In the first line we have an NFS remote mount of the exported directory
 another nfs mount for the exported directory /work/util from host zeus.
 This would be mounted on /test/util.
 
-Finally we have an example of the use of the \fBsublink\fP option. In
+Finally, we have an example of the use of the \fBsublink\fP option. In
 this case the filesystem bilbo:/shared would be mounted on a path
 external the automount directory (under the direcory given by
 configuration option auto_dir) and the path /test/local either

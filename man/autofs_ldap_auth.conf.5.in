@@ -56,7 +56,7 @@ required in order to perform ldap queries. If the flag is set to yes, only
 sasl authenticated connections will be allowed. If it is set to no then
 authentication is not needed for ldap server connections. If it is set to
 autodetect then the ldap server will be queried to establish a suitable sasl
-authentication  mechanism. If no suitable mechanism can be found, connections
+authentication mechanism. If no suitable mechanism can be found, connections
 to the ldap server are made without authentication. Finally, if it is set to
 simple, then simple authentication will be used instead of SASL.
 .TP
