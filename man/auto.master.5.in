@@ -391,6 +391,20 @@ All accesses to paths in the map
 will trigger mounts when they are accessed and the Name Service Switch
 configuration will be used to locate the source of the map
 .IR auto.data .
+.sp
+To avoid making edits to @@autofsmapdir@@/auto.master,
+@@autofsmapdir@@/auto.master.d may be used.
+Files in that directory must have a ".autofs" suffix, e.g.
+.IR @@autofsmapdir@@/auto.master.d/extra.autofs.
+Such files contain lines of the same format as the auto.master file, e.g.
+.sp
+.RS +.2i
+.ta 1.0i
+.nf
+/foo    /etc/auto.foo
+/baz    yp:baz.map
+.fi
+.RE
 .SH "SEE ALSO"
 .BR automount (8),
 .BR autofs (5),
