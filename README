@@ -1,28 +1,23 @@
--*- text -*-
 
-autofs is a kernel-based automounter for Linux.  It performs a job
-similar to amd(8) but relies on a small stub of kernel code instead of
-pretending to be an NFS server.  The result is simpler code, better
-reliability, and much faster operation in the common case (everything
-already mounted.)
-
-An AMD/AutoFS HOWTO is available at:
-
-http://www.Linux-Consulting.com/Amd_AutoFS/autofs.html
-
-... as well as from your favourite HOWTO archive.
+autofs is a kernel-based automounter for Linux. autofs is used to
+automatically mount filesystems on demand. After a period of inactivity
+set by a predefined timeout value, the auto-mounts will be unmounted.
+autofs allows one to provide centrally-managed, consistent file path
+names for users and applications, even in large, frequently changing
+installations.
 
 To build autofs, please run:
 
 	./configure
 
-to configure the system.  See README.options for options that you can
-give configure.
+To discover available configure options, please run:
+
+	./configure --help
 
 After configuring, you can:
 
-	make			... make the daemon and modules
-	make install		... install the daemon and modules
+	make		... make the daemon and modules
+	make install	... install the daemon and modules
 
 Development kernels 2.3.41 and onwards contain the autofs4 as
 standard.  If you're using 2.2, you can apply the patch in
@@ -34,11 +29,8 @@ for a description of the kernel patches.
 If you use autofs as a module, you need to add "alias autofs4 autofs"
 to your modules config file (/etc/modules.conf or /etc/conf.modules).
 
-Limited direct mount functionality has been implemented and a
-describtion of what can be done can be found in README.direct.
-
 autofs was written by H. Peter Anvin of Transmeta Corporation, please
-read the COPYRIGHT file.  autofs 4 is the result of Jeremy
+read the COPYRIGHT file. autofs 4 is the result of Jeremy
 Fitzhardinge's <jeremy@goop.org> work on autofs 3. Further enhancements
 have been made by Ian Kent <raven@themaw.net>.
 
@@ -54,9 +46,3 @@ With the body text:
 Once subscribed you can send patches to:
 
 	autofs@vger.kernel.org
-
-The autofs mailing list archive can be viewed on gmane:
-
-	http://news.gmane.org/gmane.linux.kernel.autofs
-	http://blog.gmane.org/gmane.linux.kernel.autofs
-
