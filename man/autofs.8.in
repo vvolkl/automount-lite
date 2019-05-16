@@ -56,6 +56,11 @@ map is modified then the
 .B autofs
 service control reload action must be rerun to activate the changes.
 .P
+However, if a map entry has offsets and is currently in use the offset
+mounts cannot be updated due to potential mount dependencies. In this
+case the map entry offsets will not be updated until after the map
+entry has expired.
+.P
 .B @@initdir@@/autofs status
 or
 .B systemctl autofs.service status
