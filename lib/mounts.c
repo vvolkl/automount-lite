@@ -1539,7 +1539,7 @@ void set_tsd_user_vars(unsigned int logopt, uid_t uid, gid_t gid)
 		status = getgrgid_r(gid, pgr, gr_tmp, tmplen, ppgr);
 		if (status != ERANGE)
 			break;
-		tmplen += grplen;
+		tmplen *= 2;
 
 		/* Don't tempt glibc to alloca() larger than is (likely)
 		 * available on the stack if limit-getgrgid-size is enabled.
