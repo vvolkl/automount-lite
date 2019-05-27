@@ -884,6 +884,7 @@ static struct mnt_list *mnts_alloc_mount(const char *mp)
 
 	this->ref = 1;
 	INIT_HLIST_NODE(&this->hash);
+	INIT_LIST_HEAD(&this->mount);
 	INIT_LIST_HEAD(&this->submount);
 	INIT_LIST_HEAD(&this->submount_work);
 	INIT_LIST_HEAD(&this->amdmount);
@@ -1147,6 +1148,90 @@ void mnts_remove_amdmount(const char *mp)
 	__mnts_put_mount(this);
 done:
 	mnts_hash_mutex_unlock();
+}
+
+struct mnt_list *mnts_add_mount(struct autofs_point *ap,
+				const char *name, unsigned int flags)
+{
+	struct mnt_list *this;
+	char *mp;
+
+	if (*name == '/') {
+		mp = strdup(name);
+		if (!mp)
+			goto fail;
+	} else {
+		int len = strlen(ap->path) + strlen(name) + 2;
+
+		mp = malloc(len);
+		if (!mp)
+			goto fail;
+		strcpy(mp, ap->path);
+		strcat(mp, "/");
+		strcat(mp, name);
+	}
+
+	mnts_hash_mutex_lock();
+	this = mnts_get_mount(mp);
+	if (this) {
+		this->flags |= flags;
+		if (list_empty(&this->mount))
+			list_add(&this->mount, &ap->mounts);
+	}
+	mnts_hash_mutex_unlock();
+	free(mp);
+
+	return this;
+fail:
+	if (mp)
+		free(mp);
+	return NULL;
+}
+
+void mnts_remove_mount(const char *mp, unsigned int flags)
+{
+	struct mnt_list *this;
+
+	mnts_hash_mutex_lock();
+	this = mnts_lookup(mp);
+	if (this && this->flags & flags) {
+		this->flags &= ~flags;
+		if (!(this->flags & (MNTS_OFFSET|MNTS_MOUNTED)))
+			list_del_init(&this->mount);
+		__mnts_put_mount(this);
+	}
+	mnts_hash_mutex_unlock();
+}
+
+void mnts_set_mounted_mount(struct autofs_point *ap, const char *name)
+{
+	struct mnt_list *mnt;
+
+	mnt = mnts_add_mount(ap, name, MNTS_MOUNTED);
+	if (!mnt) {
+		error(ap->logopt,
+		      "failed to add mount %s to mounted list", name);
+		return;
+	}
+
+	/* Offset mount failed but non-strict returns success */
+	if (mnt->flags & MNTS_OFFSET &&
+	    !is_mounted(mnt->mp, MNTS_REAL)) {
+		mnt->flags &= ~MNTS_MOUNTED;
+		mnts_put_mount(mnt);
+	}
+
+	/* Housekeeping.
+	 * Set the base type of the mounted mount.
+	 * MNTS_AUTOFS and MNTS_OFFSET are set at mount time and
+	 * are used during expire.
+	 */
+	if (!(mnt->flags & (MNTS_AUTOFS|MNTS_OFFSET))) {
+		if (ap->type == LKP_INDIRECT)
+			mnt->flags |= MNTS_INDIRECT;
+		else
+			mnt->flags |= MNTS_DIRECT;
+	}
 }
 
 /* From glibc decode_name() */
@@ -1962,7 +2047,8 @@ void notify_mount_result(struct autofs_point *ap,
 	return;
 }
 
-static int do_remount_direct(struct autofs_point *ap, int fd, const char *path)
+static int do_remount_direct(struct autofs_point *ap,
+			     const unsigned int type, int fd, const char *path)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
 	int status = REMOUNT_SUCCESS;
@@ -1975,9 +2061,21 @@ static int do_remount_direct(struct autofs_point *ap, int fd, const char *path)
 		set_tsd_user_vars(ap->logopt, uid, gid);
 
 	ret = lookup_nss_mount(ap, NULL, path, strlen(path));
-	if (ret)
+	if (ret) {
+		struct mnt_list *mnt;
+
+		/* If it's an offset mount add a mount reference */
+		if (type == t_offset) {
+			mnt = mnts_add_mount(ap, path, MNTS_OFFSET);
+			if (!mnt)
+				error(ap->logopt,
+				      "failed to add mount %s to mounted list", path);
+		}
+
+		mnts_set_mounted_mount(ap, path);
+
 		info(ap->logopt, "re-connected to %s", path);
-	else {
+	} else {
 		status = REMOUNT_FAIL;
 		info(ap->logopt, "failed to re-connect %s", path);
 	}
@@ -1985,7 +2083,7 @@ static int do_remount_direct(struct autofs_point *ap, int fd, const char *path)
 	return status;
 }
 
-static int do_remount_indirect(struct autofs_point *ap, int fd, const char *path)
+static int do_remount_indirect(struct autofs_point *ap, const unsigned int type, int fd, const char *path)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
 	int status = REMOUNT_SUCCESS;
@@ -2046,9 +2144,11 @@ static int do_remount_indirect(struct autofs_point *ap, int fd, const char *path
 		len = strlen(de[n]->d_name);
 
 		ret = lookup_nss_mount(ap, NULL, de[n]->d_name, len);
-		if (ret)
+		if (ret) {
+			mnts_set_mounted_mount(ap, buf);
+
 			info(ap->logopt, "re-connected to %s", buf);
-		else {
+		} else {
 			status = REMOUNT_FAIL;
 			info(ap->logopt, "failed to re-connect %s", buf);
 		}
@@ -2149,9 +2249,9 @@ static int remount_active_mount(struct autofs_point *ap,
 		 * following will be broken?
 		 */
 		if (type == t_indirect)
-			do_remount_indirect(ap, fd, path);
+			do_remount_indirect(ap, type, fd, path);
 		else
-			do_remount_direct(ap, fd, path);
+			do_remount_direct(ap, type, fd, path);
 	}
 
 	debug(ap->logopt, "re-connected to mount %s", path);
@@ -2391,7 +2491,7 @@ int umount_ent(struct autofs_point *ap, const char *path)
 		 * so that we do not try to call rmdir_path on the
 		 * directory.
 		 */
-		if (!rv && is_mounted(path, MNTS_REAL)) {
+		if (is_mounted(path, MNTS_REAL)) {
 			crit(ap->logopt,
 			     "the umount binary reported that %s was "
 			     "unmounted, but there is still something "
@@ -2399,6 +2499,10 @@ int umount_ent(struct autofs_point *ap, const char *path)
 			rv = -1;
 		}
 	}
+
+	/* On success, check for mounted mount and remove it if found */
+	if (!rv)
+		mnts_remove_mount(path, MNTS_MOUNTED);
 
 	return rv;
 }
@@ -2692,6 +2796,9 @@ int umount_multi_triggers(struct autofs_point *ap, struct mapent *me, char *root
 		status = cache_delete_offset_list(mc, me->key);
 		if (status != CHE_OK)
 			warn(ap->logopt, "couldn't delete offset list");
+
+	       /* check for mounted mount entry and remove it if found */
+               mnts_remove_mount(root, MNTS_MOUNTED);
 	}
 
 	return left;

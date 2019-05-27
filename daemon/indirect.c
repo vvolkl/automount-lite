@@ -751,7 +751,10 @@ static void *do_mount_indirect(void *arg)
 	if (status) {
 		ops->send_ready(ap->logopt,
 				ap->ioctlfd, mt.wait_queue_token);
+
 		info(ap->logopt, "mounted %s", buf);
+
+		mnts_set_mounted_mount(ap, mt.name);
 	} else {
 		/* TODO: get mount return status from lookup_nss_mount */
 		ops->send_fail(ap->logopt,

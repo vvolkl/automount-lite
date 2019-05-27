@@ -678,6 +678,9 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 			mnts_put_mount(mnt);
 		}
 
+		/* Check for mounted mount and remove it if found */
+		mnts_remove_mount(path, MNTS_MOUNTED);
+
 		return 0;
 	}
 
@@ -1720,6 +1723,8 @@ static void handle_mounts_cleanup(void *arg)
 
 		/* Submount at ap->path belongs to parent submount list. */
 		mnts_remove_submount(ap->path);
+		/* Also remove from parent mounted list */
+		mnts_remove_mount(ap->path, MNTS_MOUNTED);
 		mnt = mnts_find_amdmount(ap->path);
 		if (mnt) {
 			mnts_remove_amdmount(ap->path);

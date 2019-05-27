@@ -606,6 +606,9 @@ force_umount:
 	} else
 		info(ap->logopt, "umounted offset mount %s", me->key);
 
+	if (!rv)
+		mnts_remove_mount(me->key, MNTS_OFFSET);
+
 	return rv;
 }
 
@@ -622,6 +625,7 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *
 	const char *map_name = hosts_map_name;
 	const char *type;
 	char mountpoint[PATH_MAX];
+	struct mnt_list *mnt;
 
 	if (ops->version && ap->flags & MOUNT_FLAG_REMOUNT) {
 		ret = try_remount(ap, me, t_offset);
@@ -635,6 +639,11 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *
 			if (ap->state != ST_READMAP)
 				warn(ap->logopt,
 				     "trigger %s already mounted", me->key);
+			mnt = mnts_add_mount(ap, me->key, MNTS_OFFSET);
+			if (!mnt)
+				error(ap->logopt,
+				      "failed to add offset mount %s to mounted list",
+				      me->key);
 			return MOUNT_OFFSET_OK;
 		}
 
@@ -757,6 +766,12 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *
 		notify_mount_result(ap, me->key, timeout, str_offset);
 	ops->close(ap->logopt, ioctlfd);
 
+	mnt = mnts_add_mount(ap, mountpoint, MNTS_OFFSET);
+	if (!mnt)
+		error(ap->logopt,
+		      "failed to add offset mount %s to mounted list",
+		      mountpoint);
+
 	debug(ap->logopt, "mounted trigger %s at %s", me->key, mountpoint);
 
 	return MOUNT_OFFSET_OK;
@@ -877,6 +892,7 @@ void *expire_proc_direct(void *arg)
 				ops->close(ap->logopt, me->ioctlfd);
 				me->ioctlfd = -1;
 				cache_unlock(me->mc);
+				mnts_remove_mount(next->mp, MNTS_MOUNTED);
 				pthread_setcancelstate(cur_state, NULL);
 				continue;
 			}
@@ -1238,7 +1254,10 @@ static void *do_mount_direct(void *arg)
 		cache_unlock(mt.mc);
 		if (close_fd)
 			ops->close(ap->logopt, mt.ioctlfd);
+
 		info(ap->logopt, "mounted %s", mt.name);
+
+		mnts_set_mounted_mount(ap, mt.name);
 	} else {
 		/* TODO: get mount return status from lookup_nss_mount */
 		ops->send_fail(ap->logopt,
