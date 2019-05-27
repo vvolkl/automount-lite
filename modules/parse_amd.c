@@ -1136,7 +1136,7 @@ symlink:
 
 	if (entry->sublink) {
 		/* failed to complete sublink mount */
-		umount_amd_ext_mount(ap, entry);
+		umount_amd_ext_mount(ap, entry->fs);
 	}
 out:
 	return ret;
@@ -1183,8 +1183,8 @@ static int do_generic_mount(struct autofs_point *ap, const char *name,
 				goto out;
 			umount = 1;
 		}
-		/* We have an external mount */
-		if (!ext_mount_add(&entry->ext_mount, entry->fs, umount)) {
+		/* If we have an external mount add it to the list */
+		if (umount && !ext_mount_add(entry->fs, entry->umount)) {
 			umount_ent(ap, entry->fs);
 			error(ap->logopt, MODPREFIX
 			      "error: could not add external mount %s",
@@ -1235,7 +1235,7 @@ static int do_nfs_mount(struct autofs_point *ap, const char *name,
 			umount = 1;
 		}
 		/* We might be using an external mount */
-		if (!ext_mount_add(&entry->ext_mount, entry->fs, umount)) {
+		if (umount && !ext_mount_add(entry->fs, entry->umount)) {
 			umount_ent(ap, entry->fs);
 			error(ap->logopt, MODPREFIX
 			      "error: could not add external mount %s", entry->fs);
@@ -1429,7 +1429,7 @@ static int do_program_mount(struct autofs_point *ap,
 		/* An external mount with path entry->fs exists
 		 * so ext_mount_add() won't fail.
 		 */
-		ext_mount_add(&entry->ext_mount, entry->fs, 1);
+		ext_mount_add(entry->fs, entry->umount);
 	} else {
 		rv = mkdir_path(entry->fs, mp_mode);
 		if (rv && errno != EEXIST) {
@@ -1445,7 +1445,7 @@ static int do_program_mount(struct autofs_point *ap,
 
 		rv = spawnv(ap->logopt, prog, (const char * const *) argv);
 		if (WIFEXITED(rv) && !WEXITSTATUS(rv)) {
-			if (ext_mount_add(&entry->ext_mount, entry->fs, 1)) {
+			if (ext_mount_add(entry->fs, entry->umount)) {
 				rv = 0;
 				debug(ap->logopt, MODPREFIX
 				     "%s: mounted %s", entry->type, entry->fs);
@@ -1470,7 +1470,7 @@ do_free:
 	if (!rv)
 		goto out;
 
-	if (umount_amd_ext_mount(ap, entry)) {
+	if (umount_amd_ext_mount(ap, entry->fs)) {
 		if (!ext_mount_inuse(entry->fs))
 			rmdir_path(ap, entry->fs, ap->dev);
 		debug(ap->logopt, MODPREFIX

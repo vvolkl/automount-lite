@@ -613,7 +613,7 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 		}
 		list_del(&entry->entries);
 		mounts_mutex_unlock(ap);
-		umount_amd_ext_mount(ap, entry);
+		umount_amd_ext_mount(ap, entry->fs);
 		free_amd_entry(entry);
 	}
 done:
@@ -679,7 +679,7 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 		}
 		list_del(&entry->entries);
 		mounts_mutex_unlock(ap);
-		umount_amd_ext_mount(ap, entry);
+		umount_amd_ext_mount(ap, entry->fs);
 		free_amd_entry(entry);
 		return 0;
 	}

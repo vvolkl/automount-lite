@@ -54,10 +54,10 @@ static size_t maxgrpbuf = 0;
 #define EXT_MOUNTS_HASH_SIZE    50
 
 struct ext_mount {
+	unsigned int ref;
 	char *mp;
-	unsigned int umount;
+	char *umount;
 	struct list_head mount;
-	struct list_head mounts;
 };
 static struct list_head ext_mounts_hash[EXT_MOUNTS_HASH_SIZE];
 static unsigned int ext_mounts_hash_init_done = 0;
@@ -542,7 +542,6 @@ struct amd_entry *new_amd_entry(const struct substvar *sv)
 	new->path = path;
 	INIT_LIST_HEAD(&new->list);
 	INIT_LIST_HEAD(&new->entries);
-	INIT_LIST_HEAD(&new->ext_mount);
 
 	return new;
 }
@@ -763,7 +762,7 @@ static struct ext_mount *ext_mount_lookup(const char *mp)
 	return NULL;
 }
 
-int ext_mount_add(struct list_head *entry, const char *path, unsigned int umount)
+int ext_mount_add(const char *path, const char *umount)
 {
 	struct ext_mount *em;
 	u_int32_t hval;
@@ -773,13 +772,7 @@ int ext_mount_add(struct list_head *entry, const char *path, unsigned int umount
 
 	em = ext_mount_lookup(path);
 	if (em) {
-		struct list_head *p, *head;
-		head = &em->mounts;
-		list_for_each(p, head) {
-			if (p == entry)
-				goto done;
-		}
-		list_add_tail(entry, &em->mounts);
+		em->ref++;
 		ret = 1;
 		goto done;
 	}
@@ -787,20 +780,26 @@ int ext_mount_add(struct list_head *entry, const char *path, unsigned int umount
 	em = malloc(sizeof(struct ext_mount));
 	if (!em)
 		goto done;
+	memset(em, 0, sizeof(*em));
 
 	em->mp = strdup(path);
 	if (!em->mp) {
 		free(em);
 		goto done;
 	}
-	em->umount = umount;
+	if (umount) {
+		em->umount = strdup(umount);
+		if (!em->umount) {
+			free(em->mp);
+			free(em);
+			goto done;
+		}
+	}
+	em->ref = 1;
 	INIT_LIST_HEAD(&em->mount);
-	INIT_LIST_HEAD(&em->mounts);
 
 	hval = hash(path, EXT_MOUNTS_HASH_SIZE);
 	list_add_tail(&em->mount, &ext_mounts_hash[hval]);
-
-	list_add_tail(entry, &em->mounts);
 
 	ret = 1;
 done:
@@ -808,7 +807,7 @@ done:
 	return ret;
 }
 
-int ext_mount_remove(struct list_head *entry, const char *path)
+int ext_mount_remove(const char *path)
 {
 	struct ext_mount *em;
 	int ret = 0;
@@ -819,18 +818,18 @@ int ext_mount_remove(struct list_head *entry, const char *path)
 	if (!em)
 		goto done;
 
-	list_del_init(entry);
-
-	if (!list_empty(&em->mounts))
+	em->ref--;
+	if (em->ref)
 		goto done;
 	else {
 		list_del_init(&em->mount);
-		if (em->umount)
-			ret = 1;
 		if (list_empty(&em->mount)) {
 			free(em->mp);
+			if (em->umount)
+				free(em->umount);
 			free(em);
 		}
+		ret = 1;
 	}
 done:
 	pthread_mutex_unlock(&ext_mount_hash_mutex);
@@ -846,9 +845,7 @@ int ext_mount_inuse(const char *path)
 	em = ext_mount_lookup(path);
 	if (!em)
 		goto done;
-
-	if (!list_empty(&em->mounts))
-		ret = 1;
+	ret = em->ref;
 done:
 	pthread_mutex_unlock(&ext_mount_hash_mutex);
 	return ret;
@@ -2094,29 +2091,49 @@ int umount_ent(struct autofs_point *ap, const char *path)
 	return rv;
 }
 
-int umount_amd_ext_mount(struct autofs_point *ap, struct amd_entry *entry)
+int umount_amd_ext_mount(struct autofs_point *ap, const char *path)
 {
+	struct ext_mount *em;
+	char *umount = NULL;
+	char *mp;
 	int rv = 1;
 
-	if (entry->umount) {
-		char *prog, *str;
+	pthread_mutex_lock(&ext_mount_hash_mutex);
+
+	em = ext_mount_lookup(path);
+	if (!em) {
+		pthread_mutex_unlock(&ext_mount_hash_mutex);
+		goto out;
+	}
+	mp = strdup(em->mp);
+	if (!mp) {
+		pthread_mutex_unlock(&ext_mount_hash_mutex);
+		goto out;
+	}
+	if (em->umount) {
+		umount = strdup(em->umount);
+		if (!umount) {
+			pthread_mutex_unlock(&ext_mount_hash_mutex);
+			free(mp);
+			goto out;
+		}
+	}
+
+	pthread_mutex_unlock(&ext_mount_hash_mutex);
+
+	if (umount) {
+		char *prog;
 		char **argv;
 		int argc = -1;
-
-		str = strdup(entry->umount);
-		if (!str)
-			goto out;
 
 		prog = NULL;
 		argv = NULL;
 
-		argc = construct_argv(str, &prog, &argv);
-		if (argc == -1) {
-			free(str);
-			goto out;
-		}
+		argc = construct_argv(umount, &prog, &argv);
+		if (argc == -1)
+			goto done;
 
-		if (!ext_mount_remove(&entry->ext_mount, entry->fs)) {
+		if (!ext_mount_remove(mp)) {
 			rv =0;
 			goto out_free;
 		}
@@ -2124,29 +2141,30 @@ int umount_amd_ext_mount(struct autofs_point *ap, struct amd_entry *entry)
 		rv = spawnv(ap->logopt, prog, (const char * const *) argv);
 		if (rv == -1 || (WIFEXITED(rv) && WEXITSTATUS(rv)))
 			error(ap->logopt,
-			     "failed to umount program mount at %s", entry->fs);
+			     "failed to umount program mount at %s", mp);
 		else {
 			rv = 0;
-			debug(ap->logopt,
-			      "umounted program mount at %s", entry->fs);
-			rmdir_path(ap, entry->fs, ap->dev);
+			debug(ap->logopt, "umounted program mount at %s", mp);
+			rmdir_path(ap, mp, ap->dev);
 		}
 out_free:
 		free_argv(argc, (const char **) argv);
-		free(str);
 
-		goto out;
+		goto done;
 	}
 
-	if (ext_mount_remove(&entry->ext_mount, entry->fs)) {
-		rv = umount_ent(ap, entry->fs);
+	if (ext_mount_remove(mp)) {
+		rv = umount_ent(ap, mp);
 		if (rv)
 			error(ap->logopt,
-			      "failed to umount external mount %s", entry->fs);
+			      "failed to umount external mount %s", mp);
 		else
-			debug(ap->logopt,
-			      "umounted external mount %s", entry->fs);
+			debug(ap->logopt, "umounted external mount %s", mp);
 	}
+done:
+	if (umount)
+		free(umount);
+	free(mp);
 out:
 	return rv;
 }
