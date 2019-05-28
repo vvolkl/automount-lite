@@ -155,7 +155,7 @@ void master_free_autofs_point(struct autofs_point *ap)
 			ext_mount_remove(&entry->ext_mount, entry->fs);
 		if (!list_empty(&entry->entries))
 			list_del(&entry->entries);
-		free(entry);
+		free_amd_entry(entry);
 	}
 	mounts_mutex_unlock(ap);
 
