@@ -35,6 +35,9 @@
 #define MNTS_ALL	0x0001
 #define MNTS_REAL	0x0002
 #define MNTS_AUTOFS	0x0004
+#define MNTS_INDIRECT	0x0008
+#define MNTS_DIRECT	0x0010
+#define MNTS_OFFSET	0x0020
 
 #define REMOUNT_SUCCESS		0x0000
 #define REMOUNT_FAIL		0x0001
@@ -50,9 +53,7 @@ struct mapent;
 
 struct mnt_list {
 	char *path;
-	char *fs_name;
-	char *fs_type;
-	char *opts;
+	unsigned int flags;
 	/*
 	 * List operations ie. get_mnt_list.
 	 */

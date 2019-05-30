@@ -48,10 +48,10 @@ static int unlink_mount_tree(struct autofs_point *ap, struct mnt_list *mnts)
 	ret = 1;
 	this = mnts;
 	while (this) {
-		if (strcmp(this->fs_type, "autofs"))
-			rv = spawn_umount(ap->logopt, "-l", this->path, NULL);
-		else
+		if (this->flags & MNTS_AUTOFS)
 			rv = umount2(this->path, MNT_DETACH);
+		else
+			rv = spawn_umount(ap->logopt, "-l", this->path, NULL);
 		if (rv == -1) {
 			debug(ap->logopt,
 			      "can't unlink %s from mount tree", this->path);
@@ -439,15 +439,15 @@ void *expire_proc_indirect(void *arg)
 		char *ind_key;
 		int ret;
 
-		if (!strcmp(next->fs_type, "autofs")) {
+		if (next->flags & MNTS_AUTOFS) {
 			/*
 			 * If we have submounts check if this path lives below
 			 * one of them and pass on the state change.
 			 */
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-			if (strstr(next->opts, "indirect"))
+			if (next->flags & MNTS_INDIRECT)
 				master_notify_submount(ap, next->path, ap->state);
-			else if (strstr(next->opts, "offset")) {
+			else if (next->flags & MNTS_OFFSET) {
 				struct map_source *map;
 				struct mapent_cache *mc = NULL;
 				struct mapent *me = NULL;
@@ -567,10 +567,10 @@ void *expire_proc_indirect(void *arg)
 	pthread_cleanup_push(mnts_cleanup, mnts);
 	/* Are there any real mounts left */
 	for (next = mnts; next; next = next->next) {
-		if (strcmp(next->fs_type, "autofs"))
+		if (!(next->flags & MNTS_AUTOFS))
 			count++;
 		else {
-			if (strstr(next->opts, "indirect"))
+			if (next->flags & MNTS_INDIRECT)
 				submnts++;
 			else
 				offsets++;

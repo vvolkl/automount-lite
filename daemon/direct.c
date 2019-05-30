@@ -271,10 +271,10 @@ static int unlink_mount_tree(struct autofs_point *ap, struct list_head *list)
 
 		mnt = list_entry(p, struct mnt_list, list);
 
-		if (strcmp(mnt->fs_type, "autofs"))
-			rv = spawn_umount(ap->logopt, "-l", mnt->path, NULL);
-		else
+		if (mnt->flags & MNTS_AUTOFS)
 			rv = umount2(mnt->path, MNT_DETACH);
+		else
+			rv = spawn_umount(ap->logopt, "-l", mnt->path, NULL);
 		if (rv == -1) {
 			debug(ap->logopt,
 			      "can't unlink %s from mount tree", mnt->path);
@@ -925,7 +925,7 @@ void *expire_proc_direct(void *arg)
 		if (!me)
 			continue;
 
-		if (!strcmp(next->fs_type, "autofs")) {
+		if (next->flags & MNTS_AUTOFS) {
 			struct stat st;
 			int ioctlfd;
 
@@ -936,7 +936,7 @@ void *expire_proc_direct(void *arg)
 			 * one of them and pass on state change.
 			 */
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-			if (strstr(next->opts, "indirect")) {
+			if (next->flags & MNTS_INDIRECT) {
 				master_notify_submount(ap, next->path, ap->state);
 				pthread_setcancelstate(cur_state, NULL);
 				continue;

@@ -855,29 +855,17 @@ struct mnt_list *get_mnt_list(const char *table, const char *path, int include)
 		}
 		strcpy(ent->path, mnt->mnt_dir);
 
-		ent->fs_name = malloc(strlen(mnt->mnt_fsname) + 1);
-		if (!ent->fs_name) {
-			endmntent(tab);
-			free_mnt_list(list);
-			return NULL;
-		}
-		strcpy(ent->fs_name, mnt->mnt_fsname);
+		if (!strcmp(mnt->mnt_type, "autofs"))
+			ent->flags |= MNTS_AUTOFS;
 
-		ent->fs_type = malloc(strlen(mnt->mnt_type) + 1);
-		if (!ent->fs_type) {
-			endmntent(tab);
-			free_mnt_list(list);
-			return NULL;
+		if (ent->flags & MNTS_AUTOFS) {
+			if (strstr(mnt->mnt_opts, "indirect"))
+				ent->flags |= MNTS_INDIRECT;
+			else if (strstr(mnt->mnt_opts, "direct"))
+				ent->flags |= MNTS_DIRECT;
+			else if (strstr(mnt->mnt_opts, "offset"))
+				ent->flags |= MNTS_OFFSET;
 		}
-		strcpy(ent->fs_type, mnt->mnt_type);
-
-		ent->opts = malloc(strlen(mnt->mnt_opts) + 1);
-		if (!ent->opts) {
-			endmntent(tab);
-			free_mnt_list(list);
-			return NULL;
-		}
-		strcpy(ent->opts, mnt->mnt_opts);
 	}
 	endmntent(tab);
 
@@ -899,15 +887,6 @@ void free_mnt_list(struct mnt_list *list)
 
 		if (this->path)
 			free(this->path);
-
-		if (this->fs_name)
-			free(this->fs_name);
-
-		if (this->fs_type)
-			free(this->fs_type);
-
-		if (this->opts)
-			free(this->opts);
 
 		free(this);
 	}
@@ -1028,22 +1007,11 @@ void tree_free_mnt_tree(struct mnt_list *tree)
 		list_del(&this->self);
 
 		free(this->path);
-		free(this->fs_name);
-		free(this->fs_type);
-
-		if (this->opts)
-			free(this->opts);
 
 		free(this);
 	}
 
 	free(tree->path);
-	free(tree->fs_name);
-	free(tree->fs_type);
-
-	if (tree->opts)
-		free(tree->opts);
-
 	free(tree);
 }
 
@@ -1103,38 +1071,17 @@ struct mnt_list *tree_make_mnt_tree(const char *table, const char *path)
 		}
 		strcpy(ent->path, mnt->mnt_dir);
 
-		ent->fs_name = malloc(strlen(mnt->mnt_fsname) + 1);
-		if (!ent->fs_name) {
-			free(ent->path);
-			free(ent);
-			endmntent(tab);
-			tree_free_mnt_tree(tree);
-			return NULL;
-		}
-		strcpy(ent->fs_name, mnt->mnt_fsname);
+		if (!strcmp(mnt->mnt_type, "autofs"))
+			ent->flags |= MNTS_AUTOFS;
 
-		ent->fs_type = malloc(strlen(mnt->mnt_type) + 1);
-		if (!ent->fs_type) {
-			free(ent->fs_name);
-			free(ent->path);
-			free(ent);
-			endmntent(tab);
-			tree_free_mnt_tree(tree);
-			return NULL;
+		if (ent->flags & MNTS_AUTOFS) {
+			if (strstr(mnt->mnt_opts, "indirect"))
+				ent->flags |= MNTS_INDIRECT;
+			else if (strstr(mnt->mnt_opts, "direct"))
+				ent->flags |= MNTS_DIRECT;
+			else if (strstr(mnt->mnt_opts, "offset"))
+				ent->flags |= MNTS_OFFSET;
 		}
-		strcpy(ent->fs_type, mnt->mnt_type);
-
-		ent->opts = malloc(strlen(mnt->mnt_opts) + 1);
-		if (!ent->opts) {
-			free(ent->fs_type);
-			free(ent->fs_name);
-			free(ent->path);
-			free(ent);
-			endmntent(tab);
-			tree_free_mnt_tree(tree);
-			return NULL;
-		}
-		strcpy(ent->opts, mnt->mnt_opts);
 
 		mptr = tree;
 		while (mptr) {
@@ -1347,17 +1294,13 @@ int tree_is_mounted(struct mnt_list *mnts, const char *path, unsigned int type)
 		mptr = list_entry(p, struct mnt_list, entries);
 
 		if (type) {
-			unsigned int autofs_fs;
-
-			autofs_fs = !strcmp(mptr->fs_type, "autofs");
-
 			if (type & MNTS_REAL) {
-				if (!autofs_fs) {
+				if (mptr->flags & MNTS_AUTOFS) {
 					mounted = 1;
 					break;
 				}
 			} else if (type & MNTS_AUTOFS) {
-				if (autofs_fs) {
+				if (mptr->flags & MNTS_AUTOFS) {
 					mounted = 1;
 					break;
 				}
