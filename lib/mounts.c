@@ -817,8 +817,8 @@ struct mnt_list *get_mnt_list(const char *table, const char *path, int include)
 	  	     strncmp(mnt->mnt_dir, path, pathlen) != 0)
 			continue;
 
-		/* Not a subdirectory of requested path ? */
-		/* pathlen == 1 => everything is subdir    */
+		/* Not a subdirectory of requested mp? */
+		/* mp_len == 1 => everything is subdir    */
 		if (pathlen > 1 && len > pathlen &&
 				mnt->mnt_dir[pathlen] != '/')
 			continue;
@@ -834,7 +834,7 @@ struct mnt_list *get_mnt_list(const char *table, const char *path, int include)
 		mptr = list;
 		last = NULL;
 		while (mptr) {
-			if (len >= strlen(mptr->path))
+			if (len >= strlen(mptr->mp))
 				break;
 			last = mptr;
 			mptr = mptr->next;
@@ -847,13 +847,13 @@ struct mnt_list *get_mnt_list(const char *table, const char *path, int include)
 
 		ent->next = mptr;
 
-		ent->path = malloc(len + 1);
-		if (!ent->path) {
+		ent->mp = malloc(len + 1);
+		if (!ent->mp) {
 			endmntent(tab);
 			free_mnt_list(list);
 			return NULL;
 		}
-		strcpy(ent->path, mnt->mnt_dir);
+		strcpy(ent->mp, mnt->mnt_dir);
 
 		if (!strcmp(mnt->mnt_type, "autofs"))
 			ent->flags |= MNTS_AUTOFS;
@@ -885,23 +885,23 @@ void free_mnt_list(struct mnt_list *list)
 
 		next = this->next;
 
-		if (this->path)
-			free(this->path);
+		if (this->mp)
+			free(this->mp);
 
 		free(this);
 	}
 }
 
-static int table_is_mounted(const char *table, const char *path, unsigned int type)
+static int table_is_mounted(const char *table, const char *mp, unsigned int type)
 {
 	struct mntent *mnt;
 	struct mntent mnt_wrk;
 	char buf[PATH_MAX * 3];
-	size_t pathlen = strlen(path);
+	size_t mp_len = strlen(mp);
 	FILE *tab;
 	int ret = 0;
 
-	if (!path || !pathlen || pathlen >= PATH_MAX)
+	if (!mp || !mp_len || mp_len >= PATH_MAX)
 		return 0;
 
 	tab = open_setmntent_r(table);
@@ -928,7 +928,7 @@ static int table_is_mounted(const char *table, const char *path, unsigned int ty
 					continue;
 		}
 
-		if (pathlen == len && !strncmp(path, mnt->mnt_dir, pathlen)) {
+		if (mp_len == len && !strncmp(mp, mnt->mnt_dir, mp_len)) {
 			ret = 1;
 			break;
 		}
@@ -938,7 +938,7 @@ static int table_is_mounted(const char *table, const char *path, unsigned int ty
 	return ret;
 }
 
-static int ioctl_is_mounted(const char *table, const char *path, unsigned int type)
+static int ioctl_is_mounted(const char *table, const char *mp, unsigned int type)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
 	unsigned int mounted;
@@ -947,9 +947,9 @@ static int ioctl_is_mounted(const char *table, const char *path, unsigned int ty
 	/* If the ioctl fails fall back to the potentially resource
 	 * intensive mount table check.
 	 */
-	ret = ops->ismountpoint(LOGOPT_NONE, -1, path, &mounted);
+	ret = ops->ismountpoint(LOGOPT_NONE, -1, mp, &mounted);
 	if (ret == -1)
-		return table_is_mounted(table, path, type);
+		return table_is_mounted(table, mp, type);
 
 	if (mounted) {
 		switch (type) {
@@ -964,14 +964,14 @@ static int ioctl_is_mounted(const char *table, const char *path, unsigned int ty
 	return 0;
 }
 
-int is_mounted(const char *table, const char *path, unsigned int type)
+int is_mounted(const char *table, const char *mp, unsigned int type)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
 
 	if (ops->ismountpoint)
-		return ioctl_is_mounted(table, path, type);
+		return ioctl_is_mounted(table, mp, type);
 	else
-		return table_is_mounted(table, path, type);
+		return table_is_mounted(table, mp, type);
 }
 
 /*
@@ -1006,12 +1006,12 @@ void tree_free_mnt_tree(struct mnt_list *tree)
 
 		list_del(&this->self);
 
-		free(this->path);
+		free(this->mp);
 
 		free(this);
 	}
 
-	free(tree->path);
+	free(tree->mp);
 	free(tree);
 }
 
@@ -1062,14 +1062,14 @@ struct mnt_list *tree_make_mnt_tree(const char *table, const char *path)
 		INIT_LIST_HEAD(&ent->entries);
 		INIT_LIST_HEAD(&ent->sublist);
 
-		ent->path = malloc(len + 1);
-		if (!ent->path) {
+		ent->mp = malloc(len + 1);
+		if (!ent->mp) {
 			endmntent(tab);
 			free(ent);
 			tree_free_mnt_tree(tree);
 			return NULL;
 		}
-		strcpy(ent->path, mnt->mnt_dir);
+		strcpy(ent->mp, mnt->mnt_dir);
 
 		if (!strcmp(mnt->mnt_type, "autofs"))
 			ent->flags |= MNTS_AUTOFS;
@@ -1085,8 +1085,8 @@ struct mnt_list *tree_make_mnt_tree(const char *table, const char *path)
 
 		mptr = tree;
 		while (mptr) {
-			int elen = strlen(ent->path);
-			int mlen = strlen(mptr->path);
+			int elen = strlen(ent->mp);
+			int mlen = strlen(mptr->mp);
 
 			if (elen < mlen) {
 				if (mptr->left) {
@@ -1106,7 +1106,7 @@ struct mnt_list *tree_make_mnt_tree(const char *table, const char *path)
 				}
 			}
 
-			eq = strcmp(ent->path, mptr->path);
+			eq = strcmp(ent->mp, mptr->mp);
 			if (eq < 0) {
 				if (mptr->left)
 					mptr = mptr->left;
@@ -1146,7 +1146,7 @@ int tree_get_mnt_list(struct mnt_list *mnts, struct list_head *list, const char 
 		return 0;
 
 	plen = strlen(path);
-	mlen = strlen(mnts->path);
+	mlen = strlen(mnts->mp);
 	if (mlen < plen)
 		return tree_get_mnt_list(mnts->right, list, path, include);
 	else {
@@ -1155,10 +1155,10 @@ int tree_get_mnt_list(struct mnt_list *mnts, struct list_head *list, const char 
 		tree_get_mnt_list(mnts->left, list, path, include);
 
 		if ((!include && mlen <= plen) ||
-				strncmp(mnts->path, path, plen))
+				strncmp(mnts->mp, path, plen))
 			goto skip;
 
-		if (plen > 1 && mlen > plen && mnts->path[plen] != '/')
+		if (plen > 1 && mlen > plen && mnts->mp[plen] != '/')
 			goto skip;
 
 		INIT_LIST_HEAD(&mnts->list);
@@ -1193,7 +1193,7 @@ int tree_get_mnt_sublist(struct mnt_list *mnts, struct list_head *list, const ch
 		return 0;
 
 	plen = strlen(path);
-	mlen = strlen(mnts->path);
+	mlen = strlen(mnts->mp);
 	if (mlen < plen)
 		return tree_get_mnt_sublist(mnts->right, list, path, include);
 	else {
@@ -1202,10 +1202,10 @@ int tree_get_mnt_sublist(struct mnt_list *mnts, struct list_head *list, const ch
 		tree_get_mnt_sublist(mnts->left, list, path, include);
 
 		if ((!include && mlen <= plen) ||
-				strncmp(mnts->path, path, plen))
+				strncmp(mnts->mp, path, plen))
 			goto skip;
 
-		if (plen > 1 && mlen > plen && mnts->path[plen] != '/')
+		if (plen > 1 && mlen > plen && mnts->mp[plen] != '/')
 			goto skip;
 
 		INIT_LIST_HEAD(&mnts->sublist);
@@ -1237,7 +1237,7 @@ int tree_find_mnt_ents(struct mnt_list *mnts, struct list_head *list, const char
 		return 0;
 
 	plen = strlen(path);
-	mlen = strlen(mnts->path);
+	mlen = strlen(mnts->mp);
 	if (mlen < plen)
 		return tree_find_mnt_ents(mnts->right, list, path);
 	else if (mlen > plen)
@@ -1247,7 +1247,7 @@ int tree_find_mnt_ents(struct mnt_list *mnts, struct list_head *list, const char
 
 		tree_find_mnt_ents(mnts->left, list, path);
 
-		if (!strcmp(mnts->path, path)) {
+		if (!strcmp(mnts->mp, path)) {
 			INIT_LIST_HEAD(&mnts->entries);
 			list_add(&mnts->entries, list);
 		}
@@ -1258,7 +1258,7 @@ int tree_find_mnt_ents(struct mnt_list *mnts, struct list_head *list, const char
 
 			this = list_entry(p, struct mnt_list, self);
 
-			if (!strcmp(this->path, path)) {
+			if (!strcmp(this->mp, path)) {
 				INIT_LIST_HEAD(&this->entries);
 				list_add(&this->entries, list);
 			}

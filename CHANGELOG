@@ -26,6 +26,7 @@ xx/xx/2019 autofs-5.1.6
 - use ignore option for offset mounts as well.
 - add config option for "ignore" mount option
 - use bit flags for autofs mount types in mnt_list.
+- use mp instead of path in mnt_list entries.
 
 30/10/2018 autofs-5.1.5
 - fix flag file permission.

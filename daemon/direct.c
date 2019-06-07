@@ -272,12 +272,12 @@ static int unlink_mount_tree(struct autofs_point *ap, struct list_head *list)
 		mnt = list_entry(p, struct mnt_list, list);
 
 		if (mnt->flags & MNTS_AUTOFS)
-			rv = umount2(mnt->path, MNT_DETACH);
+			rv = umount2(mnt->mp, MNT_DETACH);
 		else
-			rv = spawn_umount(ap->logopt, "-l", mnt->path, NULL);
+			rv = spawn_umount(ap->logopt, "-l", mnt->mp, NULL);
 		if (rv == -1) {
 			debug(ap->logopt,
-			      "can't unlink %s from mount tree", mnt->path);
+			      "can't unlink %s from mount tree", mnt->mp);
 
 			switch (errno) {
 			case EINVAL:
@@ -920,7 +920,7 @@ void *expire_proc_direct(void *arg)
 		 */
 		pthread_cleanup_push(master_source_lock_cleanup, ap->entry);
 		master_source_readlock(ap->entry);
-		me = lookup_source_mapent(ap, next->path, LKP_DISTINCT);
+		me = lookup_source_mapent(ap, next->mp, LKP_DISTINCT);
 		pthread_cleanup_pop(1);
 		if (!me)
 			continue;
@@ -937,7 +937,7 @@ void *expire_proc_direct(void *arg)
 			 */
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
 			if (next->flags & MNTS_INDIRECT) {
-				master_notify_submount(ap, next->path, ap->state);
+				master_notify_submount(ap, next->mp, ap->state);
 				pthread_setcancelstate(cur_state, NULL);
 				continue;
 			}
@@ -968,7 +968,7 @@ void *expire_proc_direct(void *arg)
 			cache_writelock(me->mc);
 			if (me->ioctlfd != -1 && 
 			    fstat(me->ioctlfd, &st) != -1 &&
-			    !count_mounts(ap, next->path, st.st_dev)) {
+			    !count_mounts(ap, next->mp, st.st_dev)) {
 				ops->close(ap->logopt, me->ioctlfd);
 				me->ioctlfd = -1;
 				cache_unlock(me->mc);
@@ -979,7 +979,7 @@ void *expire_proc_direct(void *arg)
 
 			ioctlfd = me->ioctlfd;
 
-			ret = ops->expire(ap->logopt, ioctlfd, next->path, how);
+			ret = ops->expire(ap->logopt, ioctlfd, next->mp, how);
 			if (ret) {
 				left++;
 				pthread_setcancelstate(cur_state, NULL);
@@ -1002,10 +1002,10 @@ void *expire_proc_direct(void *arg)
 		if (ap->state == ST_EXPIRE || ap->state == ST_PRUNE)
 			pthread_testcancel();
 
-		debug(ap->logopt, "send expire to trigger %s", next->path);
+		debug(ap->logopt, "send expire to trigger %s", next->mp);
 
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-		ret = ops->expire(ap->logopt, ioctlfd, next->path, how);
+		ret = ops->expire(ap->logopt, ioctlfd, next->mp, how);
 		if (ret)
 			left++;
 		pthread_setcancelstate(cur_state, NULL);

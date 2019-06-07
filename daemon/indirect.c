@@ -49,12 +49,12 @@ static int unlink_mount_tree(struct autofs_point *ap, struct mnt_list *mnts)
 	this = mnts;
 	while (this) {
 		if (this->flags & MNTS_AUTOFS)
-			rv = umount2(this->path, MNT_DETACH);
+			rv = umount2(this->mp, MNT_DETACH);
 		else
-			rv = spawn_umount(ap->logopt, "-l", this->path, NULL);
+			rv = spawn_umount(ap->logopt, "-l", this->mp, NULL);
 		if (rv == -1) {
 			debug(ap->logopt,
-			      "can't unlink %s from mount tree", this->path);
+			      "can't unlink %s from mount tree", this->mp);
 
 			switch (errno) {
 			case EINVAL:
@@ -446,7 +446,7 @@ void *expire_proc_indirect(void *arg)
 			 */
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
 			if (next->flags & MNTS_INDIRECT)
-				master_notify_submount(ap, next->path, ap->state);
+				master_notify_submount(ap, next->mp, ap->state);
 			else if (next->flags & MNTS_OFFSET) {
 				struct map_source *map;
 				struct mapent_cache *mc = NULL;
@@ -454,13 +454,13 @@ void *expire_proc_indirect(void *arg)
 				struct stat st;
 
 				/* It's got a mount, deal with in the outer loop */
-				if (is_mounted(_PATH_MOUNTED, next->path, MNTS_REAL)) {
+				if (is_mounted(_PATH_MOUNTED, next->mp, MNTS_REAL)) {
 					pthread_setcancelstate(cur_state, NULL);
 					continue;
 				}
 
 				/* Don't touch submounts */
-				if (master_find_submount(ap, next->path)) {
+				if (master_find_submount(ap, next->mp)) {
 					pthread_setcancelstate(cur_state, NULL);
 					continue;
 				}
@@ -471,7 +471,7 @@ void *expire_proc_indirect(void *arg)
 				while (map) {
 					mc = map->mc;
 					cache_writelock(mc);
-					me = cache_lookup_distinct(mc, next->path);
+					me = cache_lookup_distinct(mc, next->mp);
 					if (me)
 						break;
 					cache_unlock(mc);
@@ -513,7 +513,7 @@ void *expire_proc_indirect(void *arg)
 		 * If the mount corresponds to an offset trigger then
 		 * the key is the path, otherwise it's the last component.
 		 */
-		ind_key = strrchr(next->path, '/');
+		ind_key = strrchr(next->mp, '/');
 		if (ind_key)
 			ind_key++;
 
@@ -526,7 +526,7 @@ void *expire_proc_indirect(void *arg)
 		 */
 		pthread_cleanup_push(master_source_lock_cleanup, ap->entry);
 		master_source_readlock(ap->entry);
-		me = lookup_source_mapent(ap, next->path, LKP_DISTINCT);
+		me = lookup_source_mapent(ap, next->mp, LKP_DISTINCT);
 		if (!me && ind_key)
 			me = lookup_source_mapent(ap, ind_key, LKP_NORMAL);
 		pthread_cleanup_pop(1);
@@ -538,10 +538,10 @@ void *expire_proc_indirect(void *arg)
 			cache_unlock(me->mc);
 		}
 
-		debug(ap->logopt, "expire %s", next->path);
+		debug(ap->logopt, "expire %s", next->mp);
 
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-		ret = ops->expire(ap->logopt, ioctlfd, next->path, how);
+		ret = ops->expire(ap->logopt, ioctlfd, next->mp, how);
 		if (ret)
 			left++;
 		pthread_setcancelstate(cur_state, NULL);
