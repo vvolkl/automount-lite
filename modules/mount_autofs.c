@@ -65,6 +65,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	struct master_mapent *entry;
 	struct map_source *source;
 	struct autofs_point *nap;
+	struct mnt_list *mnt;
 	char buf[MAX_ERR_BUF];
 	char *options, *p;
 	int len, ret;
@@ -307,6 +308,18 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 		return 1;
 	}
 
+	mnt = mnts_add_submount(nap);
+	if (!mnt) {
+		crit(ap->logopt,
+		     MODPREFIX "failed to allocate mount %s", realpath);
+		handle_mounts_startup_cond_destroy(&suc);
+		mounts_mutex_unlock(ap);
+		master_free_map_source(source, 1);
+		master_free_mapent(entry);
+		return 1;
+	}
+
+
 	suc.ap = nap;
 	suc.root = mountpoint;
 	suc.done = 0;
@@ -318,6 +331,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 		     "failed to create mount handler thread for %s",
 		     realpath);
 		handle_mounts_startup_cond_destroy(&suc);
+		mnts_remove_submount(nap->path);
 		mounts_mutex_unlock(ap);
 		master_free_map_source(source, 1);
 		master_free_mapent(entry);
@@ -328,6 +342,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 		status = pthread_cond_wait(&suc.cond, &suc.mutex);
 		if (status) {
 			handle_mounts_startup_cond_destroy(&suc);
+			mnts_remove_submount(nap->path);
 			mounts_mutex_unlock(ap);
 			master_free_map_source(source, 1);
 			master_free_mapent(entry);
@@ -339,6 +354,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 		crit(ap->logopt,
 		     MODPREFIX "failed to create submount for %s", realpath);
 		handle_mounts_startup_cond_destroy(&suc);
+		mnts_remove_submount(nap->path);
 		mounts_mutex_unlock(ap);
 		master_free_map_source(source, 1);
 		master_free_mapent(entry);
@@ -347,7 +363,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	nap->thid = thid;
 
 	ap->submnt_count++;
-	list_add(&nap->mounts, &ap->submounts);
 
 	handle_mounts_startup_cond_destroy(&suc);
 	mounts_mutex_unlock(ap);

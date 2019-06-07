@@ -59,6 +59,11 @@ struct mnt_list {
 	struct hlist_node hash;
 	unsigned int ref;
 
+	/* List of sub-mounts of an autofs_point */
+	struct autofs_point *ap;
+	struct list_head submount;
+	struct list_head submount_work;
+
 	/*
 	 * List operations ie. get_mnt_list.
 	 */
@@ -108,6 +113,11 @@ int ext_mount_remove(const char *);
 int ext_mount_inuse(const char *);
 struct mnt_list *mnts_lookup_mount(const char *mp);
 void mnts_put_mount(struct mnt_list *mnt);
+struct mnt_list *mnts_find_submount(const char *path);
+struct mnt_list *mnts_add_submount(struct autofs_point *ap);
+void mnts_remove_submount(const char *mp);
+void mnts_get_submount_list(struct list_head *mnts, struct autofs_point *ap);
+void mnts_put_submount_list(struct list_head *mnts);
 struct mnt_list *get_mnt_list(const char *path, int include);
 int unlink_mount_tree(struct autofs_point *ap, const char *mp);
 void free_mnt_list(struct mnt_list *list);

@@ -56,6 +56,7 @@ xx/xx/2020 autofs-5.1.7
 - make external mounts independent of amd_entry.
 - make external mounts use simpler hashtable.
 - add a hash index to mnt_list.
+- use mnt_list for submounts.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

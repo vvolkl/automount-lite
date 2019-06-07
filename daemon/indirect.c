@@ -401,6 +401,7 @@ void *expire_proc_indirect(void *arg)
 			if (next->flags & MNTS_INDIRECT)
 				master_notify_submount(ap, next->mp, ap->state);
 			else if (next->flags & MNTS_OFFSET) {
+				struct mnt_list *sbmnt;
 				struct map_source *map;
 				struct mapent_cache *mc = NULL;
 				struct mapent *me = NULL;
@@ -413,7 +414,9 @@ void *expire_proc_indirect(void *arg)
 				}
 
 				/* Don't touch submounts */
-				if (master_find_submount(ap, next->mp)) {
+				sbmnt = mnts_find_submount(next->mp);
+				if (sbmnt) {
+					mnts_put_mount(sbmnt);
 					pthread_setcancelstate(cur_state, NULL);
 					continue;
 				}

@@ -624,6 +624,7 @@ done:
    it also tries to umount path itself */
 int umount_multi(struct autofs_point *ap, const char *path, int incl)
 {
+	struct mnt_list *sbmnt;
 	int is_autofs_fs;
 	struct stat st;
 	int left;
@@ -685,8 +686,11 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 	}
 
 	is_autofs_fs = 0;
-	if (master_find_submount(ap, path))
+	sbmnt = mnts_find_submount(path);
+	if (sbmnt) {
 		is_autofs_fs = 1;
+		mnts_put_mount(sbmnt);
+	}
 
 	left = 0;
 
@@ -1717,9 +1721,12 @@ static void handle_mounts_cleanup(void *arg)
 
 	if (submount) {
 		struct amd_entry *am;
+
 		/* We are finishing up */
 		ap->parent->submnt_count--;
-		list_del_init(&ap->mounts);
+
+		/* Submount at ap->path belongs to parent submount list. */
+		mnts_remove_submount(ap->path);
 		am = __master_find_amdmount(ap->parent, ap->path);
 		if (am) {
 			list_del_init(&am->entries);

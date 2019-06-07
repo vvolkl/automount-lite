@@ -885,6 +885,8 @@ static struct mnt_list *mnts_alloc_mount(const char *mp)
 
 	this->ref = 1;
 	INIT_HLIST_NODE(&this->hash);
+	INIT_LIST_HEAD(&this->submount);
+	INIT_LIST_HEAD(&this->submount_work);
 done:
 	return this;
 }
@@ -964,6 +966,85 @@ void mnts_put_mount(struct mnt_list *mnt)
 		return;
 	mnts_hash_mutex_lock();
 	__mnts_put_mount(mnt);
+	mnts_hash_mutex_unlock();
+}
+
+struct mnt_list *mnts_find_submount(const char *path)
+{
+	struct mnt_list *mnt;
+
+	mnt = mnts_lookup_mount(path);
+	if (mnt && mnt->flags & MNTS_AUTOFS)
+		return mnt;
+	mnts_put_mount(mnt);
+	return NULL;
+}
+
+struct mnt_list *mnts_add_submount(struct autofs_point *ap)
+{
+	struct mnt_list *this;
+
+	mnts_hash_mutex_lock();
+	this = mnts_get_mount(ap->path);
+	if (this) {
+		if (!this->ap)
+			this->ap = ap;
+		else if (this->ap != ap ||
+			 this->ap->parent != ap->parent) {
+			__mnts_put_mount(this);
+			mnts_hash_mutex_unlock();
+			error(ap->logopt,
+			      "conflict with submount owner: %s", ap->path);
+			goto fail;
+		}
+		this->flags |= MNTS_AUTOFS;
+		if (list_empty(&this->submount))
+			list_add_tail(&this->submount, &ap->parent->submounts);
+	}
+	mnts_hash_mutex_unlock();
+fail:
+	return this;
+}
+
+void mnts_remove_submount(const char *mp)
+{
+	struct mnt_list *this;
+
+	mnts_hash_mutex_lock();
+	this = mnts_lookup(mp);
+	if (this && this->flags & MNTS_AUTOFS) {
+		this->flags &= ~MNTS_AUTOFS;
+		this->ap = NULL;
+		list_del_init(&this->submount);
+		__mnts_put_mount(this);
+	}
+	mnts_hash_mutex_unlock();
+}
+
+void mnts_get_submount_list(struct list_head *mnts, struct autofs_point *ap)
+{
+	struct mnt_list *mnt;
+
+	mnts_hash_mutex_lock();
+	if (list_empty(&ap->submounts))
+		goto done;
+	list_for_each_entry(mnt, &ap->submounts, submount) {
+		__mnts_get_mount(mnt);
+		list_add(&mnt->submount_work, mnts);
+	}
+done:
+	mnts_hash_mutex_unlock();
+}
+
+void mnts_put_submount_list(struct list_head *mnts)
+{
+	struct mnt_list *mnt, *tmp;
+
+	mnts_hash_mutex_lock();
+	list_for_each_entry_safe(mnt, tmp, mnts, submount_work) {
+		list_del_init(&mnt->submount_work);
+		__mnts_put_mount(mnt);
+	}
 	mnts_hash_mutex_unlock();
 }
 

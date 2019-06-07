@@ -571,9 +571,9 @@ struct autofs_point {
 	struct list_head mounts;	/* List of autofs mounts at current level */
 	struct list_head amdmounts;	/* List of non submount amd mounts */
 	unsigned int submount;		/* Is this a submount */
-	unsigned int shutdown;		/* Shutdown notification */
 	unsigned int submnt_count;	/* Number of submounts */
 	struct list_head submounts;	/* List of child submounts */
+	unsigned int shutdown;		/* Shutdown notification */
 };
 
 #define UNLINK_AND_CONT		0x01

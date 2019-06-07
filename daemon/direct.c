@@ -1211,14 +1211,17 @@ static void *do_mount_direct(void *arg)
 	 */
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &state);
 	if (status) {
+		struct mnt_list *sbmnt;
 		struct mapent *me;
 		struct statfs fs;
 		unsigned int close_fd = 0;
 
+		sbmnt = mnts_find_submount(mt.name);
 		if (statfs(mt.name, &fs) == -1 ||
-		   (fs.f_type == AUTOFS_SUPER_MAGIC &&
-		    !master_find_submount(ap, mt.name)))
+		   (fs.f_type == AUTOFS_SUPER_MAGIC && !sbmnt))
 			close_fd = 1;
+		if (sbmnt)
+			mnts_put_mount(sbmnt);
 		cache_writelock(mt.mc);
 		if ((me = cache_lookup_distinct(mt.mc, mt.name))) {
 			/*

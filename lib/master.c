@@ -761,34 +761,6 @@ unsigned int master_partial_match_mapent(struct master *master, const char *path
 	return ret;
 }
 
-struct autofs_point *__master_find_submount(struct autofs_point *ap, const char *path)
-{
-	struct list_head *head, *p;
-
-	head = &ap->submounts;
-	list_for_each(p, head) {
-		struct autofs_point *submount;
-
-		submount = list_entry(p, struct autofs_point, mounts);
-
-		if (!strcmp(submount->path, path))
-			return submount;
-	}
-
-	return NULL;
-}
-
-struct autofs_point *master_find_submount(struct autofs_point *ap, const char *path)
-{
-	struct autofs_point *submount;
-
-	mounts_mutex_lock(ap);
-	submount = __master_find_submount(ap, path);
-	mounts_mutex_unlock(ap);
-
-	return submount;
-}
-
 struct amd_entry *__master_find_amdmount(struct autofs_point *ap, const char *path)
 {
 	struct list_head *head, *p;
@@ -1190,85 +1162,80 @@ int master_submount_list_empty(struct autofs_point *ap)
 
 int master_notify_submount(struct autofs_point *ap, const char *path, enum states state)
 {
-	struct list_head *head, *p;
-	struct autofs_point *this = NULL;
+	struct mnt_list *this, *sbmnt;
+	LIST_HEAD(sbmnts);
 	int ret = 1;
 
-	mounts_mutex_lock(ap);
+	mnts_get_submount_list(&sbmnts, ap);
+	if (list_empty(&sbmnts))
+		return 1;
 
-	head = &ap->submounts;
-	p = head->prev;
-	while (p != head) {
-		this = list_entry(p, struct autofs_point, mounts);
-		p = p->prev;
-
-		/* path not the same */
-		if (strcmp(this->path, path))
+	list_for_each_entry(this, &sbmnts, submount_work) {
+		/* Not a submount */
+		if (!(this->flags & MNTS_AUTOFS))
 			continue;
 
-		if (!master_submount_list_empty(this)) {
-			char *this_path = strdup(this->path);
-			if (this_path) {
-				mounts_mutex_unlock(ap);
-				master_notify_submount(this, path, state);
-				mounts_mutex_lock(ap);
-				if (!__master_find_submount(ap, this_path)) {
-					free(this_path);
-					continue;
-				}
-				free(this_path);
-			}
+		/* path not the same */
+		if (strcmp(this->mp, path))
+			continue;
+
+		if (!master_submount_list_empty(this->ap)) {
+			struct mnt_list *sm;
+
+			master_notify_submount(this->ap, path, state);
+			sm = mnts_find_submount(path);
+			if (!sm)
+				continue;
+			mnts_put_mount(sm);
 		}
 
 		/* Now we have found the submount we want to expire */
 
 		st_mutex_lock();
 
-		if (this->state == ST_SHUTDOWN) {
+		if (this->ap->state == ST_SHUTDOWN) {
 			this = NULL;
 			st_mutex_unlock();
 			break;
 		}
 
-		this->shutdown = ap->shutdown;
+		this->ap->shutdown = ap->shutdown;
 
-		__st_add_task(this, state);
+		__st_add_task(this->ap, state);
 
 		st_mutex_unlock();
-		mounts_mutex_unlock(ap);
 
-		st_wait_task(this, state, 0);
+		st_wait_task(this->ap, state, 0);
 
 		/*
 		 * If our submount gets to state ST_SHUTDOWN, ST_SHUTDOWN_PENDING or
 		 * ST_SHUTDOWN_FORCE we need to wait until it goes away or changes
 		 * to ST_READY.
 		 */
-		mounts_mutex_lock(ap);
 		st_mutex_lock();
-		while ((this = __master_find_submount(ap, path))) {
+		while ((sbmnt = mnts_find_submount(path))) {
 			struct timespec t = { 0, 300000000 };
 			struct timespec r;
 
-			if (this->state != ST_SHUTDOWN &&
-			    this->state != ST_SHUTDOWN_PENDING &&
-			    this->state != ST_SHUTDOWN_FORCE) {
+			if (sbmnt->ap->state != ST_SHUTDOWN &&
+			    sbmnt->ap->state != ST_SHUTDOWN_PENDING &&
+			    sbmnt->ap->state != ST_SHUTDOWN_FORCE) {
 				ret = 0;
+				mnts_put_mount(sbmnt);
 				break;
 			}
+			mnts_put_mount(sbmnt);
 
 			st_mutex_unlock();
-			mounts_mutex_unlock(ap);
 			while (nanosleep(&t, &r) == -1 && errno == EINTR)
 				memcpy(&t, &r, sizeof(struct timespec));
-			mounts_mutex_lock(ap);
 			st_mutex_lock();
 		}
 		st_mutex_unlock();
 		break;
 	}
 
-	mounts_mutex_unlock(ap);
+	mnts_put_submount_list(&sbmnts);
 
 	return ret;
 }
