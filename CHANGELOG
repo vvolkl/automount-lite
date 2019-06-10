@@ -52,6 +52,7 @@ xx/xx/2020 autofs-5.1.7
 - fix incorrect systemctl command syntax in autofs(8).
 - update list.h.
 - add hashtable implementation.
+- change mountpoint to mp in struct ext_mount.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.
