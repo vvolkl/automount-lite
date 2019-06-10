@@ -51,6 +51,7 @@ xx/xx/2020 autofs-5.1.7
 - cleanup stale logpri fifo pipes on unlink and exit.
 - fix incorrect systemctl command syntax in autofs(8).
 - update list.h.
+- add hashtable implementation.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.
