@@ -29,6 +29,7 @@
 #include <libgen.h>
 
 #include "automount.h"
+#include "hashtable.h"
 
 #define MAX_OPTIONS_LEN		80
 #define MAX_MNT_NAME_LEN	30
@@ -51,16 +52,15 @@ static const char kver_options_template[]  = "fd=%d,pgrp=%u,minproto=3,maxproto=
 extern size_t detached_thread_stack_size;
 static size_t maxgrpbuf = 0;
 
-#define EXT_MOUNTS_HASH_SIZE    50
+#define EXT_MOUNTS_HASH_BITS	6
 
 struct ext_mount {
 	unsigned int ref;
 	char *mp;
 	char *umount;
-	struct list_head mount;
+	struct hlist_node mount;
 };
-static struct list_head ext_mounts_hash[EXT_MOUNTS_HASH_SIZE];
-static unsigned int ext_mounts_hash_init_done = 0;
+static DEFINE_HASHTABLE(ext_mounts_hash, EXT_MOUNTS_HASH_BITS);
 static pthread_mutex_t ext_mount_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 unsigned int linux_version_code(void)
@@ -734,38 +734,22 @@ char *make_mnt_name_string(char *path)
 	return mnt_name;
 }
 
-static void ext_mounts_hash_init(void)
-{
-	int i;
-	for (i = 0; i < EXT_MOUNTS_HASH_SIZE; i++)
-		INIT_LIST_HEAD(&ext_mounts_hash[i]);
-	ext_mounts_hash_init_done = 1;
-}
-
 static struct ext_mount *ext_mount_lookup(const char *mp)
 {
-	u_int32_t hval = hash(mp, EXT_MOUNTS_HASH_SIZE);
-	struct list_head *p, *head;
+	uint32_t hval = hash(mp, HASH_SIZE(ext_mounts_hash));
+	struct ext_mount *this;
 
-	if (!ext_mounts_hash_init_done)
-		ext_mounts_hash_init();
-
-	if (list_empty(&ext_mounts_hash[hval]))
-		return NULL;
-
-	head = &ext_mounts_hash[hval];
-	list_for_each(p, head) {
-		struct ext_mount *this = list_entry(p, struct ext_mount, mount);
+	hlist_for_each_entry(this, &ext_mounts_hash[hval], mount) {
 		if (!strcmp(this->mp, mp))
 			return this;
 	}
+
 	return NULL;
 }
 
 int ext_mount_add(const char *path, const char *umount)
 {
 	struct ext_mount *em;
-	u_int32_t hval;
 	int ret = 0;
 
 	pthread_mutex_lock(&ext_mount_hash_mutex);
@@ -796,10 +780,9 @@ int ext_mount_add(const char *path, const char *umount)
 		}
 	}
 	em->ref = 1;
-	INIT_LIST_HEAD(&em->mount);
+	INIT_HLIST_NODE(&em->mount);
 
-	hval = hash(path, EXT_MOUNTS_HASH_SIZE);
-	list_add_tail(&em->mount, &ext_mounts_hash[hval]);
+	hash_add_str(ext_mounts_hash, &em->mount, em->mp);
 
 	ret = 1;
 done:
@@ -822,13 +805,11 @@ int ext_mount_remove(const char *path)
 	if (em->ref)
 		goto done;
 	else {
-		list_del_init(&em->mount);
-		if (list_empty(&em->mount)) {
-			free(em->mp);
-			if (em->umount)
-				free(em->umount);
-			free(em);
-		}
+		hlist_del_init(&em->mount);
+		free(em->mp);
+		if (em->umount)
+			free(em->umount);
+		free(em);
 		ret = 1;
 	}
 done:
