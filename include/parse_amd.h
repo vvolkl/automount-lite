@@ -65,7 +65,6 @@ struct amd_entry {
 	char *umount;
 	struct selector *selector;
 	struct list_head list;
-	struct list_head entries;
 };
 
 int amd_parse_list(struct autofs_point *,

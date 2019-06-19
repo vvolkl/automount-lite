@@ -152,12 +152,10 @@ void master_free_autofs_point(struct autofs_point *ap)
 	head = &ap->amdmounts;
 	p = head->next;
 	while (p != head) {
-		struct amd_entry *entry = list_entry(p, struct amd_entry, entries);
+		struct mnt_list *mnt = list_entry(p, struct mnt_list, amdmount);
 		p = p->next;
-		if (!list_empty(&entry->entries))
-			list_del(&entry->entries);
-		ext_mount_remove(entry->fs);
-		free_amd_entry(entry);
+		ext_mount_remove(mnt->ext_mp);
+		mnts_remove_amdmount(mnt->mp);
 	}
 	mounts_mutex_unlock(ap);
 
@@ -759,34 +757,6 @@ unsigned int master_partial_match_mapent(struct master *master, const char *path
 	}
 
 	return ret;
-}
-
-struct amd_entry *__master_find_amdmount(struct autofs_point *ap, const char *path)
-{
-	struct list_head *head, *p;
-
-	head = &ap->amdmounts;
-	list_for_each(p, head) {
-		struct amd_entry *entry;
-
-		entry = list_entry(p, struct amd_entry, entries);
-
-		if (!strcmp(entry->path, path))
-			return entry;
-	}
-
-	return NULL;
-}
-
-struct amd_entry *master_find_amdmount(struct autofs_point *ap, const char *path)
-{
-	struct amd_entry *entry;
-
-	mounts_mutex_lock(ap);
-	entry = __master_find_amdmount(ap, path);
-	mounts_mutex_unlock(ap);
-
-	return entry;
 }
 
 struct master_mapent *master_new_mapent(struct master *master, const char *path, time_t age)

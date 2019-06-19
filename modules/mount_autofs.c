@@ -286,16 +286,19 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	mounts_mutex_lock(ap);
 
 	if (source->flags & MAP_FLAG_FORMAT_AMD) {
-		struct amd_entry *am_entry = __master_find_amdmount(ap, entry->path);
+		struct mnt_list *mnt;
 
-		if (am_entry) {
-			if (am_entry->pref) {
-				nap->pref = am_entry->pref;
-				am_entry->pref = NULL;
+		mnt = mnts_find_amdmount(entry->path);
+		if (mnt) {
+			if (mnt->amd_pref) {
+				nap->pref = mnt->amd_pref;
+				mnt->amd_pref = NULL;
 			}
 
-			if (am_entry->cache_opts & AMD_CACHE_OPTION_ALL)
+			if (mnt->amd_cache_opts & AMD_CACHE_OPTION_ALL)
 				nap->flags |= MOUNT_FLAG_AMD_CACHE_ALL;
+
+			mnts_put_mount(mnt);
 		}
 	}
 

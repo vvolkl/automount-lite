@@ -595,7 +595,8 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 	 * it already to ensure it's ok to remove any offset triggers.
 	 */
 	if (!is_mm_root && is_mounted(path, MNTS_REAL)) {
-		struct amd_entry *entry;
+		struct mnt_list *mnt;
+
 		debug(ap->logopt, "unmounting dir = %s", path);
 		if (umount_ent(ap, path) &&
 		    is_mounted(path, MNTS_REAL)) {
@@ -605,16 +606,12 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 		}
 
 		/* Check for an external mount and umount if possible */
-		mounts_mutex_lock(ap);
-		entry = __master_find_amdmount(ap, path);
-		if (!entry) {
-			mounts_mutex_unlock(ap);
-			goto done;
+		mnt = mnts_find_amdmount(path);
+		if (mnt) {
+			umount_amd_ext_mount(ap, mnt->ext_mp);
+			mnts_remove_amdmount(path);
+			mnts_put_mount(mnt);
 		}
-		list_del(&entry->entries);
-		mounts_mutex_unlock(ap);
-		umount_amd_ext_mount(ap, entry->fs);
-		free_amd_entry(entry);
 	}
 done:
 	return left;
@@ -639,7 +636,8 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 
 	/* if this is a symlink we can handle it now */
 	if (S_ISLNK(st.st_mode)) {
-		struct amd_entry *entry;
+		struct mnt_list *mnt;
+
 		if (st.st_dev != ap->dev) {
 			crit(ap->logopt,
 			     "symlink %s has the wrong device, "
@@ -652,6 +650,7 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 			      "failed to remove symlink %s", path);
 			return 1;
 		}
+
 		/* Check if the autofs mount has browse mode enabled.
 		 * If so re-create the directory entry.
 		 */
@@ -671,17 +670,15 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 				     "mkdir_path %s failed: %s", path, estr);
 			}
 		}
+
 		/* Check for an external mount and attempt umount if needed */
-		mounts_mutex_lock(ap);
-		entry = __master_find_amdmount(ap, path);
-		if (!entry) {
-			mounts_mutex_unlock(ap);
-			return 0;
+		mnt = mnts_find_amdmount(path);
+		if (mnt) {
+			umount_amd_ext_mount(ap, mnt->ext_mp);
+			mnts_remove_amdmount(path);
+			mnts_put_mount(mnt);
 		}
-		list_del(&entry->entries);
-		mounts_mutex_unlock(ap);
-		umount_amd_ext_mount(ap, entry->fs);
-		free_amd_entry(entry);
+
 		return 0;
 	}
 
@@ -1720,17 +1717,17 @@ static void handle_mounts_cleanup(void *arg)
 		clean = 1;
 
 	if (submount) {
-		struct amd_entry *am;
+		struct mnt_list *mnt;
 
 		/* We are finishing up */
 		ap->parent->submnt_count--;
 
 		/* Submount at ap->path belongs to parent submount list. */
 		mnts_remove_submount(ap->path);
-		am = __master_find_amdmount(ap->parent, ap->path);
-		if (am) {
-			list_del_init(&am->entries);
-			free_amd_entry(am);
+		mnt = mnts_find_amdmount(ap->path);
+		if (mnt) {
+			mnts_remove_amdmount(ap->path);
+			mnts_put_mount(mnt);
 		}
 	}
 

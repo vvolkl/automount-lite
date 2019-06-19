@@ -546,7 +546,6 @@ struct amd_entry *new_amd_entry(const struct substvar *sv)
 	memset(new, 0, sizeof(*new));
 	new->path = path;
 	INIT_LIST_HEAD(&new->list);
-	INIT_LIST_HEAD(&new->entries);
 
 	return new;
 }
@@ -887,6 +886,7 @@ static struct mnt_list *mnts_alloc_mount(const char *mp)
 	INIT_HLIST_NODE(&this->hash);
 	INIT_LIST_HEAD(&this->submount);
 	INIT_LIST_HEAD(&this->submount_work);
+	INIT_LIST_HEAD(&this->amdmount);
 done:
 	return this;
 }
@@ -1045,6 +1045,107 @@ void mnts_put_submount_list(struct list_head *mnts)
 		list_del_init(&mnt->submount_work);
 		__mnts_put_mount(mnt);
 	}
+	mnts_hash_mutex_unlock();
+}
+
+struct mnt_list *mnts_find_amdmount(const char *path)
+{
+	struct mnt_list *mnt;
+
+	mnt = mnts_lookup_mount(path);
+	if (mnt && mnt->flags & MNTS_AMD_MOUNT)
+		return mnt;
+	mnts_put_mount(mnt);
+	return NULL;
+}
+
+struct mnt_list *mnts_add_amdmount(struct autofs_point *ap, struct amd_entry *entry)
+{
+	struct mnt_list *this;
+	char *type, *ext_mp, *pref, *opts;
+
+	ext_mp = pref = type = opts = NULL;
+
+	if (entry->fs) {
+		ext_mp = strdup(entry->fs);
+		if (!ext_mp)
+			goto fail;
+	}
+
+	if (entry->pref) {
+		pref = strdup(entry->pref);
+		if (!pref)
+			goto fail;
+	}
+
+	if (entry->type) {
+		type = strdup(entry->type);
+		if (!type)
+			goto fail;
+	}
+
+	if (entry->opts) {
+		opts = strdup(entry->opts);
+		if (!opts)
+			goto fail;
+	}
+
+	mnts_hash_mutex_lock();
+	this = mnts_get_mount(entry->path);
+	if (this) {
+		this->ext_mp = ext_mp;
+		this->amd_pref = pref;
+		this->amd_type = type;
+		this->amd_opts = opts;
+		this->amd_cache_opts = entry->cache_opts;
+		this->flags |= MNTS_AMD_MOUNT;
+		if (list_empty(&this->amdmount))
+			list_add_tail(&this->amdmount, &ap->amdmounts);
+	}
+	mnts_hash_mutex_unlock();
+
+	return this;
+fail:
+	if (ext_mp)
+		free(ext_mp);
+	if (pref)
+		free(pref);
+	if (type)
+		free(type);
+	if (opts)
+		free(opts);
+	return NULL;
+}
+
+void mnts_remove_amdmount(const char *mp)
+{
+	struct mnt_list *this;
+
+	mnts_hash_mutex_lock();
+	this = mnts_lookup(mp);
+	if (!(this && this->flags & MNTS_AMD_MOUNT))
+		goto done;
+	this->flags &= ~MNTS_AMD_MOUNT;
+	list_del_init(&this->submount);
+	if (this->ext_mp) {
+		free(this->ext_mp);
+		this->ext_mp = NULL;
+	}
+	if (this->amd_type) {
+		free(this->amd_type);
+		this->amd_type = NULL;
+	}
+	if (this->amd_pref) {
+		free(this->amd_pref);
+		this->amd_pref = NULL;
+	}
+	if (this->amd_opts) {
+		free(this->amd_opts);
+		this->amd_opts = NULL;
+	}
+	this->amd_cache_opts = 0;
+	__mnts_put_mount(this);
+done:
 	mnts_hash_mutex_unlock();
 }
 

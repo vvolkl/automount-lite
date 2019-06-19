@@ -830,7 +830,7 @@ static int lookup_amd_instance(struct autofs_point *ap,
 			       const char *name, int name_len)
 {
 	struct map_source *instance;
-	struct amd_entry *entry;
+	struct mnt_list *mnt;
 	const char *argv[2];
 	const char **pargv = NULL;
 	int argc = 0;
@@ -853,21 +853,23 @@ static int lookup_amd_instance(struct autofs_point *ap,
 	strcpy(m_key, ap->path);
 	strcat(m_key, "/");
 	strcat(m_key, me->multi->key);
-	entry = master_find_amdmount(ap, m_key);
+
+	mnt = mnts_find_amdmount(m_key);
 	free(m_key);
 
-	if (!entry) {
+	if (!mnt) {
 		error(ap->logopt, "expected amd mount entry not found");
 		return NSS_STATUS_UNKNOWN;
 	}
 
-	if (strcmp(entry->type, "host")) {
-		error(ap->logopt, "unexpected map type %s", entry->type);
+	if (strcmp(mnt->amd_type, "host")) {
+		error(ap->logopt, "unexpected map type %s", mnt->amd_type);
+		mnts_put_mount(mnt);
 		return NSS_STATUS_UNKNOWN;
 	}
 
-	if (entry->opts && *entry->opts) {
-		argv[0] = entry->opts;
+	if (mnt->amd_opts && *mnt->amd_opts) {
+		argv[0] = mnt->amd_opts;
 		argv[1] = NULL;
 		pargv = argv;
 		argc = 1;
@@ -886,9 +888,11 @@ static int lookup_amd_instance(struct autofs_point *ap,
 		}
 	}
 	if (!instance) {
+		mnts_put_mount(mnt);
 		error(ap->logopt, "expected hosts map instance not found");
 		return NSS_STATUS_UNKNOWN;
 	}
+	mnts_put_mount(mnt);
 
 	return do_lookup_mount(ap, instance, name, name_len);
 }

@@ -1300,6 +1300,7 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 {
 	struct lookup_mod *lookup;
 	struct map_source *instance;
+	struct mnt_list *mnt = NULL;
 	struct mapent *me;
 	const char *argv[2];
 	const char **pargv = NULL;
@@ -1316,7 +1317,9 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 	 */
 	if (strcmp(name, entry->rhost)) {
 		char *target;
-		size_t len = strlen(ap->path) + strlen(entry->rhost) + 2;
+		size_t len;
+
+		len = strlen(ap->path) + strlen(entry->rhost) + 2;
 		target = malloc(len);
 		if (!target) {
 			warn(ap->logopt, MODPREFIX
@@ -1329,6 +1332,15 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 		if (entry->path)
 			free(entry->path);
 		entry->path = target;
+
+		/* Add an mnt_list entry for the updated path. */
+		mnt = mnts_add_amdmount(ap, entry);
+		if (!mnt) {
+			error(ap->logopt, MODPREFIX
+			      "failed to update mount mnt_list entry");
+			goto out;
+		}
+
 		/*
 		 * Wait for any expire before racing to mount the
 		 * export tree or bail out if we're shutting down.
@@ -1388,6 +1400,8 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 		warn(ap->logopt, MODPREFIX
 		     "failed to create symlink to hosts mount base");
 out:
+	if (ret && mnt)
+		mnts_remove_amdmount(mnt->mp);
 	return ret;
 }
 
@@ -2204,6 +2218,7 @@ int parse_mount(struct autofs_point *ap, const char *name,
 	struct list_head entries, *p, *head;
 	struct amd_entry *defaults_entry;
 	struct amd_entry *cur_defaults;
+	struct mnt_list *mnt;
 	int rv = 1;
 	int cur_state;
 	int ret;
@@ -2313,21 +2328,27 @@ int parse_mount(struct autofs_point *ap, const char *name,
 		 * add parsed entry to parent amd mount list and remove
 		 * on mount fail.
 		 */
-		mounts_mutex_lock(ap);
-		list_add_tail(&this->entries, &ap->amdmounts);
-		mounts_mutex_unlock(ap);
-
-		rv = amd_mount(ap, name, this, source, sv, flags, ctxt);
-		mounts_mutex_lock(ap);
-		if (!rv) {
-			/* Mounted, remove entry from parsed list */
-			list_del_init(&this->list);
-			mounts_mutex_unlock(ap);
+		mnt = mnts_add_amdmount(ap, this);
+		if (!mnt) {
+			error(ap->logopt, MODPREFIX
+			      "failed to add mount to mnt_list");
 			break;
 		}
-		/* Not mounted, remove entry from the parent list */
-		list_del_init(&this->entries);
-		mounts_mutex_unlock(ap);
+
+		rv = amd_mount(ap, name, this, source, sv, flags, ctxt);
+		if (!rv) {
+			/*
+			 * If entry->path doesn't match the mnt->mp then
+			 * the mount point path has changed and a new
+			 * mnt_list entry added for it, so remove the
+			 * original.
+			 */
+			if (strcmp(this->path, mnt->mp))
+				mnts_remove_amdmount(this->path);
+			break;
+		}
+		/* Not mounted, remove the mnt_list entry from amdmount list */
+		mnts_remove_amdmount(this->path);
 	}
 	free_amd_entry(cur_defaults);
 

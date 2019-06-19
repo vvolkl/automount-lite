@@ -109,8 +109,6 @@ void master_source_current_wait(struct master_mapent *);
 void master_source_current_signal(struct master_mapent *);
 struct master_mapent *master_find_mapent(struct master *, const char *);
 unsigned int master_partial_match_mapent(struct master *, const char *);
-struct amd_entry *__master_find_amdmount(struct autofs_point *, const char *);
-struct amd_entry *master_find_amdmount(struct autofs_point *, const char *);
 struct master_mapent *master_new_mapent(struct master *, const char *, time_t);
 void master_add_mapent(struct master *, struct master_mapent *);
 void master_remove_mapent(struct master_mapent *);

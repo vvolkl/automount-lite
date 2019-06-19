@@ -38,6 +38,7 @@
 #define MNTS_INDIRECT	0x0008
 #define MNTS_DIRECT	0x0010
 #define MNTS_OFFSET	0x0020
+#define MNTS_AMD_MOUNT	0x0040
 
 #define REMOUNT_SUCCESS		0x0000
 #define REMOUNT_FAIL		0x0001
@@ -63,6 +64,14 @@ struct mnt_list {
 	struct autofs_point *ap;
 	struct list_head submount;
 	struct list_head submount_work;
+
+	/* List of amd-mounts of an autofs_point */
+	char *ext_mp;
+	char *amd_pref;
+	char *amd_type;
+	char *amd_opts;
+	unsigned int amd_cache_opts;
+	struct list_head amdmount;
 
 	/*
 	 * List operations ie. get_mnt_list.
@@ -118,6 +127,9 @@ struct mnt_list *mnts_add_submount(struct autofs_point *ap);
 void mnts_remove_submount(const char *mp);
 void mnts_get_submount_list(struct list_head *mnts, struct autofs_point *ap);
 void mnts_put_submount_list(struct list_head *mnts);
+struct mnt_list *mnts_find_amdmount(const char *path);
+struct mnt_list *mnts_add_amdmount(struct autofs_point *ap, struct amd_entry *entry);
+void mnts_remove_amdmount(const char *mp);
 struct mnt_list *get_mnt_list(const char *path, int include);
 int unlink_mount_tree(struct autofs_point *ap, const char *mp);
 void free_mnt_list(struct mnt_list *list);
