@@ -49,8 +49,6 @@ pthread_key_t key_mnt_direct_params;
 pthread_key_t key_mnt_offset_params;
 pthread_once_t key_mnt_params_once = PTHREAD_ONCE_INIT;
 
-int unlink_mount_tree(struct autofs_point *ap, struct mnt_list *mnts);
-
 static void key_mnt_params_destroy(void *arg)
 {
 	struct mnt_params *mp;

@@ -881,6 +881,41 @@ local_getmntent_r(FILE *tab, struct mntent *mnt, char *buf, int size)
 	return mnt;
 }
 
+int unlink_mount_tree(struct autofs_point *ap, struct mnt_list *mnts)
+{
+	struct mnt_list *this;
+	int rv, ret;
+
+	ret = 1;
+	this = mnts;
+	while (this) {
+		if (this->flags & MNTS_AUTOFS)
+			rv = umount2(this->mp, MNT_DETACH);
+		else
+			rv = spawn_umount(ap->logopt, "-l", this->mp, NULL);
+		if (rv == -1) {
+			debug(ap->logopt,
+			      "can't unlink %s from mount tree", this->mp);
+
+			switch (errno) {
+			case EINVAL:
+				warn(ap->logopt,
+				      "bad superblock or not mounted");
+				break;
+
+			case ENOENT:
+			case EFAULT:
+				ret = 0;
+				warn(ap->logopt, "bad path for mount");
+				break;
+			}
+		}
+		this = this->next;
+	}
+
+	return ret;
+}
+
 /*
  * Get list of mounts under path in longest->shortest order
  */

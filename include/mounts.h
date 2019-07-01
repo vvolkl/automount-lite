@@ -100,6 +100,7 @@ int ext_mount_add(struct list_head *, const char *, unsigned int);
 int ext_mount_remove(struct list_head *, const char *);
 int ext_mount_inuse(const char *);
 struct mnt_list *get_mnt_list(const char *path, int include);
+int unlink_mount_tree(struct autofs_point *ap, struct mnt_list *mnts);
 void free_mnt_list(struct mnt_list *list);
 int is_mounted(const char *mp, unsigned int type);
 void tree_free_mnt_tree(struct mnt_list *tree);

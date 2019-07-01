@@ -40,40 +40,6 @@
 /* Attribute to create detached thread */
 extern pthread_attr_t th_attr_detached;
 
-int unlink_mount_tree(struct autofs_point *ap, struct mnt_list *mnts)
-{
-	struct mnt_list *this;
-	int rv, ret;
-
-	ret = 1;
-	this = mnts;
-	while (this) {
-		if (this->flags & MNTS_AUTOFS)
-			rv = umount2(this->mp, MNT_DETACH);
-		else
-			rv = spawn_umount(ap->logopt, "-l", this->mp, NULL);
-		if (rv == -1) {
-			debug(ap->logopt,
-			      "can't unlink %s from mount tree", this->mp);
-
-			switch (errno) {
-			case EINVAL:
-				warn(ap->logopt,
-				      "bad superblock or not mounted");
-				break;
-
-			case ENOENT:
-			case EFAULT:
-				ret = 0;
-				warn(ap->logopt, "bad path for mount");
-				break;
-			}
-		}
-		this = this->next;
-	}
-	return ret;
-}
-
 static int do_mount_autofs_indirect(struct autofs_point *ap, const char *root)
 {
 	const char *str_indirect = mount_type_str(t_indirect);
