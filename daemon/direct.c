@@ -82,7 +82,7 @@ static void mnts_cleanup(void *arg)
 	return;
 }
 
-int do_umount_autofs_direct(struct autofs_point *ap, struct mnt_list *mnts, struct mapent *me)
+int do_umount_autofs_direct(struct autofs_point *ap, struct mapent *me)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
 	char buf[MAX_ERR_BUF];
@@ -98,7 +98,7 @@ int do_umount_autofs_direct(struct autofs_point *ap, struct mnt_list *mnts, stru
 
 	if (me->ioctlfd != -1) {
 		if (ap->state == ST_READMAP &&
-		    tree_is_mounted(mnts, me->key, MNTS_REAL)) {
+		    is_mounted(me->key, MNTS_REAL)) {
 			error(ap->logopt,
 			      "attempt to umount busy direct mount %s",
 			      me->key);
@@ -204,11 +204,8 @@ int umount_autofs_direct(struct autofs_point *ap)
 {
 	struct map_source *map;
 	struct mapent_cache *nc, *mc;
-	struct mnt_list *mnts;
 	struct mapent *me, *ne;
 
-	mnts = tree_make_mnt_tree("/");
-	pthread_cleanup_push(mnts_cleanup, mnts);
 	nc = ap->entry->master->nc;
 	cache_readlock(nc);
 	pthread_cleanup_push(cache_lock_cleanup, nc);
@@ -233,7 +230,7 @@ int umount_autofs_direct(struct autofs_point *ap)
 			 * catatonic regardless of the reason for the
 			 * failed umount.
 			 */
-			error = do_umount_autofs_direct(ap, mnts, me);
+			error = do_umount_autofs_direct(ap, me);
 			if (!error)
 				goto done;
 
@@ -245,7 +242,6 @@ done:
 		pthread_cleanup_pop(1);
 		map = map->next;
 	}
-	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
 
 	close(ap->state_pipe[0]);
@@ -947,7 +943,7 @@ void *expire_proc_direct(void *arg)
 			}
 
 			/* It's got a mount, deal with in the outer loop */
-			if (tree_is_mounted(mnts, me->key, MNTS_REAL)) {
+			if (is_mounted(me->key, MNTS_REAL)) {
 				pthread_setcancelstate(cur_state, NULL);
 				continue;
 			}

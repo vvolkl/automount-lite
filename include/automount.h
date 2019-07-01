@@ -614,7 +614,7 @@ void submount_signal_parent(struct autofs_point *ap, unsigned int success);
 void close_mount_fds(struct autofs_point *ap);
 int umount_autofs(struct autofs_point *ap, const char *root, int force);
 int umount_autofs_indirect(struct autofs_point *ap, const char *root);
-int do_umount_autofs_direct(struct autofs_point *ap, struct mnt_list *mnts, struct mapent *me);
+int do_umount_autofs_direct(struct autofs_point *ap, struct mapent *me);
 int umount_autofs_direct(struct autofs_point *ap);
 int umount_autofs_offset(struct autofs_point *ap, struct mapent *me);
 int handle_packet_expire_indirect(struct autofs_point *ap, autofs_packet_expire_indirect_t *pkt);

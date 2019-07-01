@@ -1368,46 +1368,6 @@ int tree_find_mnt_ents(struct mnt_list *mnts, struct list_head *list, const char
 	return 0;
 }
 
-int tree_is_mounted(struct mnt_list *mnts, const char *path, unsigned int type)
-{
-	struct ioctl_ops *ops = get_ioctl_ops();
-	struct list_head *p;
-	struct list_head list;
-	int mounted = 0;
-
-	if (ops->ismountpoint)
-		return ioctl_is_mounted(path, type);
-
-	INIT_LIST_HEAD(&list);
-
-	if (!tree_find_mnt_ents(mnts, &list, path))
-		return 0;
-
-	list_for_each(p, &list) {
-		struct mnt_list *mptr;
-
-		mptr = list_entry(p, struct mnt_list, entries);
-
-		if (type) {
-			if (type & MNTS_REAL) {
-				if (mptr->flags & MNTS_AUTOFS) {
-					mounted = 1;
-					break;
-				}
-			} else if (type & MNTS_AUTOFS) {
-				if (mptr->flags & MNTS_AUTOFS) {
-					mounted = 1;
-					break;
-				}
-			} else {
-				mounted = 1;
-				break;
-			}
-		}
-	}
-	return mounted;
-}
-
 void set_tsd_user_vars(unsigned int logopt, uid_t uid, gid_t gid)
 {
 	struct thread_stdenv_vars *tsv;

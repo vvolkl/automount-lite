@@ -414,8 +414,8 @@ static void do_readmap_mount(struct autofs_point *ap, struct mnt_list *mnts,
 				else
 					ap->exp_runfreq = runfreq;
 			}
-		} else if (!tree_is_mounted(mnts, me->key, MNTS_REAL))
-			do_umount_autofs_direct(ap, mnts, me);
+		} else if (!is_mounted(me->key, MNTS_REAL))
+			do_umount_autofs_direct(ap, me);
 		else
 			debug(ap->logopt,
 			      "%s is mounted", me->key);

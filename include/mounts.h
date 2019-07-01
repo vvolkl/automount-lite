@@ -107,7 +107,6 @@ struct mnt_list *tree_make_mnt_tree(const char *path);
 int tree_get_mnt_list(struct mnt_list *mnts, struct list_head *list, const char *path, int include);
 int tree_get_mnt_sublist(struct mnt_list *mnts, struct list_head *list, const char *path, int include);
 int tree_find_mnt_ents(struct mnt_list *mnts, struct list_head *list, const char *path);
-int tree_is_mounted(struct mnt_list *mnts, const char *path, unsigned int type);
 void set_tsd_user_vars(unsigned int, uid_t, gid_t);
 const char *mount_type_str(unsigned int);
 void set_exp_timeout(struct autofs_point *ap, struct map_source *source, time_t timeout);
