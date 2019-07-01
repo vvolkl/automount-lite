@@ -789,7 +789,7 @@ done:
 /*
  * Get list of mounts under path in longest->shortest order
  */
-struct mnt_list *get_mnt_list(const char *table, const char *path, int include)
+struct mnt_list *get_mnt_list(const char *path, int include)
 {
 	FILE *tab;
 	size_t pathlen = strlen(path);
@@ -803,7 +803,7 @@ struct mnt_list *get_mnt_list(const char *table, const char *path, int include)
 	if (!path || !pathlen || pathlen > PATH_MAX)
 		return NULL;
 
-	tab = open_setmntent_r(table);
+	tab = open_setmntent_r(_PROC_MOUNTS);
 	if (!tab) {
 		char *estr = strerror_r(errno, buf, PATH_MAX - 1);
 		logerr("setmntent: %s", estr);
@@ -892,7 +892,7 @@ void free_mnt_list(struct mnt_list *list)
 	}
 }
 
-static int table_is_mounted(const char *table, const char *mp, unsigned int type)
+static int table_is_mounted(const char *mp, unsigned int type)
 {
 	struct mntent *mnt;
 	struct mntent mnt_wrk;
@@ -904,7 +904,7 @@ static int table_is_mounted(const char *table, const char *mp, unsigned int type
 	if (!mp || !mp_len || mp_len >= PATH_MAX)
 		return 0;
 
-	tab = open_setmntent_r(table);
+	tab = open_setmntent_r(_PROC_MOUNTS);
 	if (!tab) {
 		char *estr = strerror_r(errno, buf, PATH_MAX - 1);
 		logerr("setmntent: %s", estr);
@@ -938,7 +938,7 @@ static int table_is_mounted(const char *table, const char *mp, unsigned int type
 	return ret;
 }
 
-static int ioctl_is_mounted(const char *table, const char *mp, unsigned int type)
+static int ioctl_is_mounted(const char *mp, unsigned int type)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
 	unsigned int mounted;
@@ -949,7 +949,7 @@ static int ioctl_is_mounted(const char *table, const char *mp, unsigned int type
 	 */
 	ret = ops->ismountpoint(LOGOPT_NONE, -1, mp, &mounted);
 	if (ret == -1)
-		return table_is_mounted(table, mp, type);
+		return table_is_mounted(mp, type);
 
 	if (mounted) {
 		switch (type) {
@@ -964,14 +964,14 @@ static int ioctl_is_mounted(const char *table, const char *mp, unsigned int type
 	return 0;
 }
 
-int is_mounted(const char *table, const char *mp, unsigned int type)
+int is_mounted(const char *mp, unsigned int type)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
 
 	if (ops->ismountpoint)
-		return ioctl_is_mounted(table, mp, type);
+		return ioctl_is_mounted(mp, type);
 	else
-		return table_is_mounted(table, mp, type);
+		return table_is_mounted(mp, type);
 }
 
 /*
@@ -1018,7 +1018,7 @@ void tree_free_mnt_tree(struct mnt_list *tree)
 /*
  * Make tree of system mounts in /proc/mounts.
  */
-struct mnt_list *tree_make_mnt_tree(const char *table, const char *path)
+struct mnt_list *tree_make_mnt_tree(const char *path)
 {
 	FILE *tab;
 	struct mntent mnt_wrk;
@@ -1029,7 +1029,7 @@ struct mnt_list *tree_make_mnt_tree(const char *table, const char *path)
 	size_t plen;
 	int eq;
 
-	tab = open_setmntent_r(table);
+	tab = open_setmntent_r(_PROC_MOUNTS);
 	if (!tab) {
 		char *estr = strerror_r(errno, buf, PATH_MAX - 1);
 		logerr("setmntent: %s", estr);
@@ -1281,7 +1281,7 @@ int tree_is_mounted(struct mnt_list *mnts, const char *path, unsigned int type)
 	int mounted = 0;
 
 	if (ops->ismountpoint)
-		return ioctl_is_mounted(_PROC_MOUNTS, path, type);
+		return ioctl_is_mounted(path, type);
 
 	INIT_LIST_HEAD(&list);
 
@@ -1856,7 +1856,7 @@ void set_indirect_mount_tree_catatonic(struct autofs_point *ap)
 	struct mapent_cache *mc;
 	struct mapent *me;
 
-	if (!is_mounted(_PROC_MOUNTS, ap->path, MNTS_AUTOFS))
+	if (!is_mounted(ap->path, MNTS_AUTOFS))
 		return;
 
 	map = entry->maps;
@@ -1922,7 +1922,7 @@ int umount_ent(struct autofs_point *ap, const char *path)
 		 * so that we do not try to call rmdir_path on the
 		 * directory.
 		 */
-		if (!rv && is_mounted(_PATH_MOUNTED, path, MNTS_REAL)) {
+		if (!rv && is_mounted(path, MNTS_REAL)) {
 			crit(ap->logopt,
 			     "the umount binary reported that %s was "
 			     "unmounted, but there is still something "
@@ -2055,7 +2055,7 @@ int mount_multi_triggers(struct autofs_point *ap, struct mapent *me,
 		 */
 		if (ap->state == ST_READMAP && ap->flags & MOUNT_FLAG_REMOUNT) {
 			if (oe->ioctlfd != -1 ||
-			    is_mounted(_PROC_MOUNTS, oe->key, MNTS_REAL)) {
+			    is_mounted(oe->key, MNTS_REAL)) {
 				char oe_root[PATH_MAX + 1];
 				strcpy(oe_root, root);
 				strcat(oe_root, offset); 
@@ -2144,7 +2144,7 @@ int umount_multi_triggers(struct autofs_point *ap, struct mapent *me, char *root
 		left += umount_multi_triggers(ap, oe, root, oe_base);
 
 		if (oe->ioctlfd != -1 ||
-		    is_mounted(_PROC_MOUNTS, oe->key, MNTS_REAL)) {
+		    is_mounted(oe->key, MNTS_REAL)) {
 			left++;
 			continue;
 		}
@@ -2187,10 +2187,10 @@ int umount_multi_triggers(struct autofs_point *ap, struct mapent *me, char *root
 		 * delete the offsets from the cache and we need to put
 		 * the offset triggers back.
 		 */
-		if (is_mounted(_PATH_MOUNTED, root, MNTS_REAL)) {
+		if (is_mounted(root, MNTS_REAL)) {
 			info(ap->logopt, "unmounting dir = %s", root);
 			if (umount_ent(ap, root) &&
-			    is_mounted(_PATH_MOUNTED, root, MNTS_REAL)) {
+			    is_mounted(root, MNTS_REAL)) {
 				if (mount_multi_triggers(ap, me, root, strlen(root), "/") < 0)
 					warn(ap->logopt,
 					     "failed to remount offset triggers");
@@ -2290,9 +2290,9 @@ int clean_stale_multi_triggers(struct autofs_point *ap,
 		 * ESTALE errors when attempting list the directory.
 		 */
 		if (oe->ioctlfd != -1 ||
-		    is_mounted(_PROC_MOUNTS, oe->key, MNTS_REAL)) {
+		    is_mounted(oe->key, MNTS_REAL)) {
 			if (umount_ent(ap, oe->key) &&
-			    is_mounted(_PROC_MOUNTS, oe->key, MNTS_REAL)) {
+			    is_mounted(oe->key, MNTS_REAL)) {
 				debug(ap->logopt,
 				      "offset %s has active mount, invalidate",
 				      oe->key);

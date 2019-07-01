@@ -1425,7 +1425,7 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 			valid = NULL;
 		}
 		if (!valid &&
-		    is_mounted(_PATH_MOUNTED, path, MNTS_REAL)) {
+		    is_mounted(path, MNTS_REAL)) {
 			debug(ap->logopt, "prune posponed, %s mounted", path);
 			free(key);
 			free(path);
@@ -1448,7 +1448,7 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 
 		if (valid)
 			cache_delete(mc, key);
-		else if (!is_mounted(_PROC_MOUNTS, path, MNTS_AUTOFS)) {
+		else if (!is_mounted(path, MNTS_AUTOFS)) {
 			dev_t devid = ap->dev;
 			status = CHE_FAIL;
 			if (ap->type == LKP_DIRECT)

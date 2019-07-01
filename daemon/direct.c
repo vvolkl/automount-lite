@@ -207,7 +207,7 @@ int umount_autofs_direct(struct autofs_point *ap)
 	struct mnt_list *mnts;
 	struct mapent *me, *ne;
 
-	mnts = tree_make_mnt_tree(_PROC_MOUNTS, "/");
+	mnts = tree_make_mnt_tree("/");
 	pthread_cleanup_push(mnts_cleanup, mnts);
 	nc = ap->entry->master->nc;
 	cache_readlock(nc);
@@ -515,7 +515,7 @@ int mount_autofs_direct(struct autofs_point *ap)
 		return -1;
 	}
 
-	mnts = tree_make_mnt_tree(_PROC_MOUNTS, "/");
+	mnts = tree_make_mnt_tree("/");
 	pthread_cleanup_push(mnts_cleanup, mnts);
 	pthread_cleanup_push(master_source_lock_cleanup, ap->entry);
 	master_source_readlock(ap->entry);
@@ -583,7 +583,7 @@ int umount_autofs_offset(struct autofs_point *ap, struct mapent *me)
 	int opened = 0;
 
 	if (me->ioctlfd != -1) {
-		if (is_mounted(_PATH_MOUNTED, me->key, MNTS_REAL)) {
+		if (is_mounted(me->key, MNTS_REAL)) {
 			error(ap->logopt,
 			      "attempt to umount busy offset %s", me->key);
 			return 1;
@@ -591,7 +591,7 @@ int umount_autofs_offset(struct autofs_point *ap, struct mapent *me)
 		ioctlfd = me->ioctlfd;
 	} else {
 		/* offset isn't mounted, return success and try to recover */
-		if (!is_mounted(_PROC_MOUNTS, me->key, MNTS_AUTOFS)) {
+		if (!is_mounted(me->key, MNTS_AUTOFS)) {
 			debug(ap->logopt,
 			      "offset %s not mounted",
 			      me->key);
@@ -707,7 +707,7 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *
 		if (!(ret == -1 && errno == ENOENT))
 			return MOUNT_OFFSET_FAIL;
 	} else {
-		if (is_mounted(_PROC_MOUNTS, me->key, MNTS_AUTOFS)) {
+		if (is_mounted(me->key, MNTS_AUTOFS)) {
 			if (ap->state != ST_READMAP)
 				warn(ap->logopt,
 				     "trigger %s already mounted", me->key);
@@ -781,7 +781,7 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *
 			 * the kernel NFS client.
 			 */
 			if (me->multi != me &&
-			    is_mounted(_PROC_MOUNTS, mountpoint, MNTS_REAL))
+			    is_mounted(mountpoint, MNTS_REAL))
 				return MOUNT_OFFSET_IGNORE;
 
 			/* 
@@ -901,7 +901,7 @@ void *expire_proc_direct(void *arg)
 
 	left = 0;
 
-	mnts = tree_make_mnt_tree(_PROC_MOUNTS, "/");
+	mnts = tree_make_mnt_tree("/");
 	pthread_cleanup_push(mnts_cleanup, mnts);
 
 	/* Get a list of mounts select real ones and expire them if possible */

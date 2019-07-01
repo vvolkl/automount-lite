@@ -475,7 +475,7 @@ static void *do_readmap(void *arg)
 		struct mapent *me;
 		unsigned int append_alarm = !ap->exp_runfreq;
 
-		mnts = tree_make_mnt_tree(_PROC_MOUNTS, "/");
+		mnts = tree_make_mnt_tree("/");
 		pthread_cleanup_push(tree_mnts_cleanup, mnts);
 		nc = ap->entry->master->nc;
 		cache_readlock(nc);

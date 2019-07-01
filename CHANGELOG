@@ -27,6 +27,7 @@ xx/xx/2019 autofs-5.1.6
 - add config option for "ignore" mount option
 - use bit flags for autofs mount types in mnt_list.
 - use mp instead of path in mnt_list entries.
+- always use PROC_MOUNTS to make mount lists.
 
 30/10/2018 autofs-5.1.5
 - fix flag file permission.

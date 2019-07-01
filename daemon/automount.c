@@ -333,7 +333,7 @@ static int walk_tree(const char *base, int (*fn) (struct autofs_point *ap,
 	struct stat st, *pst = &st;
 	int ret;
 
-	if (!is_mounted(_PATH_MOUNTED, base, MNTS_REAL))
+	if (!is_mounted(base, MNTS_REAL))
 		ret = lstat(base, pst);
 	else {
 		pst = NULL;
@@ -593,11 +593,11 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 	 * If this is the root of a multi-mount we've had to umount
 	 * it already to ensure it's ok to remove any offset triggers.
 	 */
-	if (!is_mm_root && is_mounted(_PATH_MOUNTED, path, MNTS_REAL)) {
+	if (!is_mm_root && is_mounted(path, MNTS_REAL)) {
 		struct amd_entry *entry;
 		debug(ap->logopt, "unmounting dir = %s", path);
 		if (umount_ent(ap, path) &&
-		    is_mounted(_PATH_MOUNTED, path, MNTS_REAL)) {
+		    is_mounted(path, MNTS_REAL)) {
 			warn(ap->logopt, "could not umount dir %s", path);
 			left++;
 			goto done;

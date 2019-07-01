@@ -427,7 +427,7 @@ static int do_spawn(unsigned logopt, unsigned int wait,
 			if (!is_bind)
 				goto done;
 
-			if (is_mounted(_PROC_MOUNTS, argv[loc], MNTS_AUTOFS)) {
+			if (is_mounted(argv[loc], MNTS_AUTOFS)) {
 				fprintf(stderr,
 				     "error: can't bind to an autofs mount\n");
 				close(STDOUT_FILENO);

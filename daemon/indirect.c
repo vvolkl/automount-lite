@@ -104,7 +104,7 @@ static int do_mount_autofs_indirect(struct autofs_point *ap, const char *root)
 		if (ret == 0)
 			return -1;
 	} else {
-		mnts = get_mnt_list(_PROC_MOUNTS, ap->path, 1);
+		mnts = get_mnt_list(ap->path, 1);
 		if (mnts) {
 			ret = unlink_mount_tree(ap, mnts);
 			free_mnt_list(mnts);
@@ -433,7 +433,7 @@ void *expire_proc_indirect(void *arg)
 	left = 0;
 
 	/* Get a list of real mounts and expire them if possible */
-	mnts = get_mnt_list(_PROC_MOUNTS, ap->path, 0);
+	mnts = get_mnt_list(ap->path, 0);
 	pthread_cleanup_push(mnts_cleanup, mnts);
 	for (next = mnts; next; next = next->next) {
 		char *ind_key;
@@ -454,7 +454,7 @@ void *expire_proc_indirect(void *arg)
 				struct stat st;
 
 				/* It's got a mount, deal with in the outer loop */
-				if (is_mounted(_PATH_MOUNTED, next->mp, MNTS_REAL)) {
+				if (is_mounted(next->mp, MNTS_REAL)) {
 					pthread_setcancelstate(cur_state, NULL);
 					continue;
 				}
@@ -563,7 +563,7 @@ void *expire_proc_indirect(void *arg)
 	pthread_cleanup_pop(1);
 
 	count = offsets = submnts = 0;
-	mnts = get_mnt_list(_PROC_MOUNTS, ap->path, 0);
+	mnts = get_mnt_list(ap->path, 0);
 	pthread_cleanup_push(mnts_cleanup, mnts);
 	/* Are there any real mounts left */
 	for (next = mnts; next; next = next->next) {
