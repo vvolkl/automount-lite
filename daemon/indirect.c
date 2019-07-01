@@ -40,7 +40,7 @@
 /* Attribute to create detached thread */
 extern pthread_attr_t th_attr_detached;
 
-static int unlink_mount_tree(struct autofs_point *ap, struct mnt_list *mnts)
+int unlink_mount_tree(struct autofs_point *ap, struct mnt_list *mnts)
 {
 	struct mnt_list *this;
 	int rv, ret;

@@ -326,14 +326,7 @@ static void do_readmap_cleanup(void *arg)
 	return;
 }
 
-static void tree_mnts_cleanup(void *arg)
-{
-	struct mnt_list *mnts = (struct mnt_list *) arg;
-	tree_free_mnt_tree(mnts);
-	return;
-}
-
-static void do_readmap_mount(struct autofs_point *ap, struct mnt_list *mnts,
+static void do_readmap_mount(struct autofs_point *ap,
 			     struct map_source *map, struct mapent *me, time_t now)
 {
 	struct mapent_cache *nc;
@@ -420,7 +413,7 @@ static void do_readmap_mount(struct autofs_point *ap, struct mnt_list *mnts,
 			debug(ap->logopt,
 			      "%s is mounted", me->key);
 	} else
-		do_mount_autofs_direct(ap, mnts, me, get_exp_timeout(ap, map));
+		do_mount_autofs_direct(ap, me, get_exp_timeout(ap, map));
 
 	return;
 }
@@ -431,7 +424,6 @@ static void *do_readmap(void *arg)
 	struct map_source *map;
 	struct mapent_cache *nc, *mc;
 	struct readmap_args *ra;
-	struct mnt_list *mnts;
 	int status;
 	time_t now;
 
@@ -475,8 +467,6 @@ static void *do_readmap(void *arg)
 		struct mapent *me;
 		unsigned int append_alarm = !ap->exp_runfreq;
 
-		mnts = tree_make_mnt_tree("/");
-		pthread_cleanup_push(tree_mnts_cleanup, mnts);
 		nc = ap->entry->master->nc;
 		cache_readlock(nc);
 		pthread_cleanup_push(cache_lock_cleanup, nc);
@@ -494,7 +484,7 @@ static void *do_readmap(void *arg)
 			cache_readlock(mc);
 			me = cache_enumerate(mc, NULL);
 			while (me) {
-				do_readmap_mount(ap, mnts, map, me, now);
+				do_readmap_mount(ap, map, me, now);
 				me = cache_enumerate(mc, me);
 			}
 			lookup_prune_one_cache(ap, map->mc, now);
@@ -512,7 +502,6 @@ static void *do_readmap(void *arg)
 			alarm_add(ap, ap->exp_runfreq +
 				  rand() % ap->exp_runfreq);
 
-		pthread_cleanup_pop(1);
 		pthread_cleanup_pop(1);
 		pthread_cleanup_pop(1);
 	}

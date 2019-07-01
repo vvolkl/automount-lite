@@ -49,6 +49,8 @@ pthread_key_t key_mnt_direct_params;
 pthread_key_t key_mnt_offset_params;
 pthread_once_t key_mnt_params_once = PTHREAD_ONCE_INIT;
 
+int unlink_mount_tree(struct autofs_point *ap, struct mnt_list *mnts);
+
 static void key_mnt_params_destroy(void *arg)
 {
 	struct mnt_params *mp;
@@ -256,64 +258,8 @@ done:
 	return 0;
 }
 
-static int unlink_mount_tree(struct autofs_point *ap, struct list_head *list)
-{
-	struct list_head *p;
-	int rv, ret;
-
-	ret = 1;
-	list_for_each(p, list) {
-		struct mnt_list *mnt;
-
-		mnt = list_entry(p, struct mnt_list, list);
-
-		if (mnt->flags & MNTS_AUTOFS)
-			rv = umount2(mnt->mp, MNT_DETACH);
-		else
-			rv = spawn_umount(ap->logopt, "-l", mnt->mp, NULL);
-		if (rv == -1) {
-			debug(ap->logopt,
-			      "can't unlink %s from mount tree", mnt->mp);
-
-			switch (errno) {
-			case EINVAL:
-				warn(ap->logopt,
-				      "bad superblock or not mounted");
-				break;
-
-			case ENOENT:
-			case EFAULT:
-				ret = 0;
-				warn(ap->logopt, "bad path for mount");
-				break;
-			}
-		}
-	}
-	return ret;
-}
-
-static int unlink_active_mounts(struct autofs_point *ap, struct mnt_list *mnts, struct mapent *me)
-{
-	struct list_head list;
-
-	INIT_LIST_HEAD(&list);
-
-	if (!tree_get_mnt_list(mnts, &list, me->key, 1))
-		return 1;
-
-	if (!unlink_mount_tree(ap, &list)) {
-		debug(ap->logopt,
-		      "already mounted as other than autofs "
-		      "or failed to unlink entry in tree");
-		return 0;
-	}
-
-	return 1;
-}
-
 int do_mount_autofs_direct(struct autofs_point *ap,
-			   struct mnt_list *mnts, struct mapent *me,
-			   time_t timeout)
+			   struct mapent *me, time_t timeout)
 {
 	const char *str_direct = mount_type_str(t_direct);
 	struct ioctl_ops *ops = get_ioctl_ops();
@@ -342,6 +288,8 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 		if (ret == 0)
 			return -1;
 	} else {
+		struct mnt_list *mnts;
+
 		if (ap->state == ST_READMAP && is_mounted(me->key, MNTS_ALL)) {
 			time_t tout = get_exp_timeout(ap, me->source);
 			int save_ioctlfd, ioctlfd;
@@ -367,15 +315,23 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 			return 0;
 		}
 
-		/*
-		 * A return of 1 indicates we successfully unlinked
-		 * the mount tree if there was one. A return of 0
-		 * indicates we failed to unlink the mount tree so
-		 * we have to return a failure.
-		 */
-		ret = unlink_active_mounts(ap, mnts, me);
-		if (!ret)
-			return -1;
+		mnts = get_mnt_list(me->key, 1);
+		if (mnts) {
+			/*
+			 * A return of 1 indicates we successfully unlinked
+			 * the mount tree if there was one. A return of 0
+			 * indicates we failed to unlink the mount tree so
+			 * we have to return a failure.
+			 */
+			ret = unlink_mount_tree(ap, mnts);
+			free_mnt_list(mnts);
+			if (!ret) {
+				error(ap->logopt,
+				      "already mounted as other than autofs "
+				      "or failed to unlink entry in tree");
+				return -1;
+			}
+		}
 
 		if (me->ioctlfd != -1) {
 			error(ap->logopt, "active direct mount %s", me->key);
@@ -494,7 +450,6 @@ int mount_autofs_direct(struct autofs_point *ap)
 	struct map_source *map;
 	struct mapent_cache *nc, *mc;
 	struct mapent *me, *ne, *nested;
-	struct mnt_list *mnts;
 	time_t now = monotonic_time(NULL);
 
 	if (strcmp(ap->path, "/-")) {
@@ -510,8 +465,6 @@ int mount_autofs_direct(struct autofs_point *ap)
 		return -1;
 	}
 
-	mnts = tree_make_mnt_tree("/");
-	pthread_cleanup_push(mnts_cleanup, mnts);
 	pthread_cleanup_push(master_source_lock_cleanup, ap->entry);
 	master_source_readlock(ap->entry);
 	nc = ap->entry->master->nc;
@@ -539,7 +492,7 @@ int mount_autofs_direct(struct autofs_point *ap)
 			if (ne) {
 				if (map->master_line < ne->age) {
 					/* TODO: check return, locking me */
-					do_mount_autofs_direct(ap, mnts, me, timeout);
+					do_mount_autofs_direct(ap, me, timeout);
 				}
 				me = cache_enumerate(mc, me);
 				continue;
@@ -556,14 +509,13 @@ int mount_autofs_direct(struct autofs_point *ap)
 			}
 
 			/* TODO: check return, locking me */
-			do_mount_autofs_direct(ap, mnts, me, timeout);
+			do_mount_autofs_direct(ap, me, timeout);
 
 			me = cache_enumerate(mc, me);
 		}
 		pthread_cleanup_pop(1);
 		map = map->next;
 	}
-	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
 
