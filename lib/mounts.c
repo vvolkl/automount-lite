@@ -63,6 +63,11 @@ struct ext_mount {
 static DEFINE_HASHTABLE(ext_mounts_hash, EXT_MOUNTS_HASH_BITS);
 static pthread_mutex_t ext_mount_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+#define MNTS_HASH_BITS	7
+
+static DEFINE_HASHTABLE(mnts_hash, MNTS_HASH_BITS);
+static pthread_mutex_t mnts_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 unsigned int linux_version_code(void)
 {
 	struct utsname my_utsname;
@@ -830,6 +835,136 @@ int ext_mount_inuse(const char *path)
 done:
 	pthread_mutex_unlock(&ext_mount_hash_mutex);
 	return ret;
+}
+
+static void mnts_hash_mutex_lock(void)
+{
+	int status = pthread_mutex_lock(&mnts_hash_mutex);
+	if (status)
+		fatal(status);
+}
+
+static void mnts_hash_mutex_unlock(void)
+{
+	int status = pthread_mutex_unlock(&mnts_hash_mutex);
+	if (status)
+		fatal(status);
+}
+
+static struct mnt_list *mnts_lookup(const char *mp)
+{
+	uint32_t hval = hash(mp, HASH_SIZE(mnts_hash));
+	struct mnt_list *this;
+
+	if (hlist_empty(&mnts_hash[hval]))
+		return NULL;
+
+	hlist_for_each_entry(this, &mnts_hash[hval], hash) {
+		if (!strcmp(this->mp, mp) && this->ref)
+			return this;
+	}
+
+	return NULL;
+}
+
+static struct mnt_list *mnts_alloc_mount(const char *mp)
+{
+	struct mnt_list *this;
+
+	this = malloc(sizeof(*this));
+	if (!this)
+		goto done;
+	memset(this, 0, sizeof(*this));
+
+	this->mp = strdup(mp);
+	if (!this->mp) {
+		free(this);
+		this = NULL;
+		goto done;
+	}
+
+	this->ref = 1;
+	INIT_HLIST_NODE(&this->hash);
+done:
+	return this;
+}
+
+static void __mnts_get_mount(struct mnt_list *mnt)
+{
+	mnt->ref++;
+}
+
+static void __mnts_put_mount(struct mnt_list *mnt)
+{
+	mnt->ref--;
+	if (!mnt->ref) {
+		hash_del(&mnt->hash);
+		free(mnt->mp);
+		free(mnt);
+	}
+}
+
+static struct mnt_list *mnts_new_mount(const char *mp)
+{
+	struct mnt_list *this;
+
+	this = mnts_lookup(mp);
+	if (this) {
+		__mnts_get_mount(this);
+		goto done;
+	}
+
+	this = mnts_alloc_mount(mp);
+	if (!this)
+		goto done;
+
+	hash_add_str(mnts_hash, &this->hash, this->mp);
+done:
+	return this;
+}
+
+static struct mnt_list *mnts_get_mount(const char *mp)
+{
+	struct mnt_list *this;
+
+	this = mnts_lookup(mp);
+	if (this) {
+		__mnts_get_mount(this);
+		return this;
+	}
+
+	return mnts_new_mount(mp);
+}
+
+static struct mnt_list *__mnts_lookup_mount(const char *mp)
+{
+	struct mnt_list *this;
+
+	this = mnts_lookup(mp);
+	if (this)
+		__mnts_get_mount(this);
+
+	return this;
+}
+
+struct mnt_list *mnts_lookup_mount(const char *mp)
+{
+	struct mnt_list *this;
+
+	mnts_hash_mutex_lock();
+	this = __mnts_lookup_mount(mp);
+	mnts_hash_mutex_unlock();
+
+	return this;
+}
+
+void mnts_put_mount(struct mnt_list *mnt)
+{
+	if (!mnt)
+		return;
+	mnts_hash_mutex_lock();
+	__mnts_put_mount(mnt);
+	mnts_hash_mutex_unlock();
 }
 
 /* From glibc decode_name() */

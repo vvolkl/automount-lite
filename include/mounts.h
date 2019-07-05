@@ -54,10 +54,16 @@ struct mapent;
 struct mnt_list {
 	char *mp;
 	unsigned int flags;
+
+	/* Hash of all mounts */
+	struct hlist_node hash;
+	unsigned int ref;
+
 	/*
 	 * List operations ie. get_mnt_list.
 	 */
 	struct mnt_list *next;
+
 	/*
 	 * Tree operations ie. tree_make_tree,
 	 * tree_get_mnt_list etc.
@@ -100,6 +106,8 @@ char *make_mnt_name_string(char *path);
 int ext_mount_add(const char *, const char *);
 int ext_mount_remove(const char *);
 int ext_mount_inuse(const char *);
+struct mnt_list *mnts_lookup_mount(const char *mp);
+void mnts_put_mount(struct mnt_list *mnt);
 struct mnt_list *get_mnt_list(const char *path, int include);
 int unlink_mount_tree(struct autofs_point *ap, const char *mp);
 void free_mnt_list(struct mnt_list *list);
