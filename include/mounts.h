@@ -63,6 +63,8 @@ struct mnt_list {
 
 	/* List of mounts of an autofs_point */
 	struct list_head mount;
+	/* Mounted mounts list for expire */
+	struct list_head expire;
 
 	/* List of sub-mounts of an autofs_point */
 	struct autofs_point *ap;
@@ -129,15 +131,12 @@ void mnts_put_mount(struct mnt_list *mnt);
 struct mnt_list *mnts_find_submount(const char *path);
 struct mnt_list *mnts_add_submount(struct autofs_point *ap);
 void mnts_remove_submount(const char *mp);
-void mnts_get_submount_list(struct list_head *mnts, struct autofs_point *ap);
-void mnts_put_submount_list(struct list_head *mnts);
 struct mnt_list *mnts_find_amdmount(const char *path);
 struct mnt_list *mnts_add_amdmount(struct autofs_point *ap, struct amd_entry *entry);
 void mnts_remove_amdmount(const char *mp);
 struct mnt_list *mnts_add_mount(struct autofs_point *ap, const char *name, unsigned int flags);
 void mnts_remove_mount(const char *mp, unsigned int flags);
 struct mnt_list *get_mnt_list(const char *path, int include);
-unsigned int mnts_has_mounted_mounts(struct autofs_point *ap);
 void mnts_get_expire_list(struct list_head *mnts, struct autofs_point *ap);
 void mnts_put_expire_list(struct list_head *mnts);
 void mnts_set_mounted_mount(struct autofs_point *ap, const char *name);

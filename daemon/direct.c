@@ -77,9 +77,8 @@ static void key_mnt_params_init(void)
 
 static void mnts_cleanup(void *arg)
 {
-	struct mnt_list *mnts = (struct mnt_list *) arg;
-	tree_free_mnt_tree(mnts);
-	return;
+	struct list_head *mnts = (struct list_head *) arg;
+	mnts_put_expire_list(mnts);
 }
 
 int do_umount_autofs_direct(struct autofs_point *ap, struct mapent *me)
@@ -788,8 +787,8 @@ out_err:
 void *expire_proc_direct(void *arg)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
-	struct mnt_list *mnts = NULL, *next;
-	struct list_head list, *p;
+	struct mnt_list *mnt;
+	LIST_HEAD(mnts);
 	struct expire_args *ea;
 	struct expire_args ec;
 	struct autofs_point *ap;
@@ -821,31 +820,24 @@ void *expire_proc_direct(void *arg)
 
 	left = 0;
 
-	mnts = tree_make_mnt_tree("/");
-	pthread_cleanup_push(mnts_cleanup, mnts);
-
-	/* Get a list of mounts select real ones and expire them if possible */
-	INIT_LIST_HEAD(&list);
-	if (!tree_get_mnt_list(mnts, &list, "/", 0)) {
-		ec.status = 0;
-		return NULL;
-	}
-
-	list_for_each(p, &list) {
-		next = list_entry(p, struct mnt_list, list);
-
+	/* Get the list of real mounts and expire them if possible */
+	mnts_get_expire_list(&mnts, ap);
+	if (list_empty(&mnts))
+		goto done;
+	pthread_cleanup_push(mnts_cleanup, &mnts);
+	list_for_each_entry(mnt, &mnts, expire) {
 		/*
 		 * All direct mounts must be present in the map
 		 * entry cache.
 		 */
 		pthread_cleanup_push(master_source_lock_cleanup, ap->entry);
 		master_source_readlock(ap->entry);
-		me = lookup_source_mapent(ap, next->mp, LKP_DISTINCT);
+		me = lookup_source_mapent(ap, mnt->mp, LKP_DISTINCT);
 		pthread_cleanup_pop(1);
 		if (!me)
 			continue;
 
-		if (next->flags & MNTS_AUTOFS) {
+		if (mnt->flags & (MNTS_AUTOFS|MNTS_OFFSET)) {
 			struct stat st;
 			int ioctlfd;
 
@@ -856,22 +848,17 @@ void *expire_proc_direct(void *arg)
 			 * one of them and pass on state change.
 			 */
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-			if (next->flags & MNTS_INDIRECT) {
-				master_notify_submount(ap, next->mp, ap->state);
-				pthread_setcancelstate(cur_state, NULL);
-				continue;
-			}
+			if (mnt->flags & MNTS_AUTOFS)
+				master_notify_submount(ap, mnt->mp, ap->state);
 
 			if (me->ioctlfd == -1) {
 				pthread_setcancelstate(cur_state, NULL);
 				continue;
 			}
 
-			/* It's got a mount, deal with in the outer loop */
-			if (is_mounted(me->key, MNTS_REAL)) {
-				pthread_setcancelstate(cur_state, NULL);
-				continue;
-			}
+			/* It's got a mount, just send the expire. */
+			if (is_mounted(me->key, MNTS_REAL))
+				goto cont;
 
 			/*
 			 * Maybe a manual umount, repair.
@@ -888,19 +875,19 @@ void *expire_proc_direct(void *arg)
 			cache_writelock(me->mc);
 			if (me->ioctlfd != -1 && 
 			    fstat(me->ioctlfd, &st) != -1 &&
-			    !count_mounts(ap, next->mp, st.st_dev)) {
+			    !count_mounts(ap, mnt->mp, st.st_dev)) {
 				ops->close(ap->logopt, me->ioctlfd);
 				me->ioctlfd = -1;
 				cache_unlock(me->mc);
-				mnts_remove_mount(next->mp, MNTS_MOUNTED);
+				mnts_remove_mount(mnt->mp, MNTS_MOUNTED);
 				pthread_setcancelstate(cur_state, NULL);
 				continue;
 			}
 			cache_unlock(me->mc);
-
+cont:
 			ioctlfd = me->ioctlfd;
 
-			ret = ops->expire(ap->logopt, ioctlfd, next->mp, how);
+			ret = ops->expire(ap->logopt, ioctlfd, mnt->mp, how);
 			if (ret) {
 				left++;
 				pthread_setcancelstate(cur_state, NULL);
@@ -923,10 +910,10 @@ void *expire_proc_direct(void *arg)
 		if (ap->state == ST_EXPIRE || ap->state == ST_PRUNE)
 			pthread_testcancel();
 
-		debug(ap->logopt, "send expire to trigger %s", next->mp);
+		debug(ap->logopt, "send expire to trigger %s", mnt->mp);
 
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-		ret = ops->expire(ap->logopt, ioctlfd, next->mp, how);
+		ret = ops->expire(ap->logopt, ioctlfd, mnt->mp, how);
 		if (ret)
 			left++;
 		pthread_setcancelstate(cur_state, NULL);
@@ -935,7 +922,7 @@ void *expire_proc_direct(void *arg)
 
 	if (left)
 		debug(ap->logopt, "%d remaining in %s", left, ap->path);
-
+done:
 	ec.status = left;
 
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);

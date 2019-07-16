@@ -1133,40 +1133,17 @@ int master_submount_list_empty(struct autofs_point *ap)
 int master_notify_submount(struct autofs_point *ap, const char *path, enum states state)
 {
 	struct mnt_list *this, *sbmnt;
-	LIST_HEAD(sbmnts);
 	int ret = 1;
 
-	mnts_get_submount_list(&sbmnts, ap);
-	if (list_empty(&sbmnts))
-		return 1;
-
-	list_for_each_entry(this, &sbmnts, submount_work) {
-		/* Not a submount */
-		if (!(this->flags & MNTS_AUTOFS))
-			continue;
-
-		/* path not the same */
-		if (strcmp(this->mp, path))
-			continue;
-
-		if (!master_submount_list_empty(this->ap)) {
-			struct mnt_list *sm;
-
-			master_notify_submount(this->ap, path, state);
-			sm = mnts_find_submount(path);
-			if (!sm)
-				continue;
-			mnts_put_mount(sm);
-		}
-
-		/* Now we have found the submount we want to expire */
-
+	this = mnts_find_submount(path);
+	if (this) {
+		/* We have found a submount to expire */
 		st_mutex_lock();
 
 		if (this->ap->state == ST_SHUTDOWN) {
 			this = NULL;
 			st_mutex_unlock();
-			break;
+			goto done;
 		}
 
 		this->ap->shutdown = ap->shutdown;
@@ -1202,10 +1179,9 @@ int master_notify_submount(struct autofs_point *ap, const char *path, enum state
 			st_mutex_lock();
 		}
 		st_mutex_unlock();
-		break;
+done:
+		mnts_put_mount(this);
 	}
-
-	mnts_put_submount_list(&sbmnts);
 
 	return ret;
 }

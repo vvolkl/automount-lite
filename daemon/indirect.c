@@ -343,17 +343,17 @@ force_umount:
 
 static void mnts_cleanup(void *arg)
 {
-	struct mnt_list *mnts = (struct mnt_list *) arg;
-	free_mnt_list(mnts);
-	return;
+	struct list_head *mnts = (struct list_head *) arg;
+	mnts_put_expire_list(mnts);
 }
 
 void *expire_proc_indirect(void *arg)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
 	struct autofs_point *ap;
-	struct mapent *me = NULL;
-	struct mnt_list *mnts = NULL, *next;
+	struct mnt_list *mnt;
+	LIST_HEAD(mnts);
+	struct mapent *me;
 	struct expire_args *ea;
 	struct expire_args ec;
 	unsigned int how;
@@ -385,36 +385,34 @@ void *expire_proc_indirect(void *arg)
 
 	left = 0;
 
-	/* Get a list of real mounts and expire them if possible */
-	mnts = get_mnt_list(ap->path, 0);
-	pthread_cleanup_push(mnts_cleanup, mnts);
-	for (next = mnts; next; next = next->next) {
+	/* Get the list of real mounts and expire them if possible */
+	mnts_get_expire_list(&mnts, ap);
+	if (list_empty(&mnts))
+		goto done;
+	pthread_cleanup_push(mnts_cleanup, &mnts);
+	list_for_each_entry(mnt, &mnts, expire) {
 		char *ind_key;
 		int ret;
 
-		if (next->flags & MNTS_AUTOFS) {
+		if (mnt->flags & (MNTS_AUTOFS|MNTS_OFFSET)) {
 			/*
 			 * If we have submounts check if this path lives below
 			 * one of them and pass on the state change.
 			 */
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-			if (next->flags & MNTS_INDIRECT)
-				master_notify_submount(ap, next->mp, ap->state);
-			else if (next->flags & MNTS_OFFSET) {
+			if (mnt->flags & MNTS_AUTOFS)
+				master_notify_submount(ap, mnt->mp, ap->state);
+
+			/* An offset without a real mount, check for manual umount */
+			if (mnt->flags & MNTS_OFFSET &&
+			    !is_mounted(mnt->mp, MNTS_REAL)) {
 				struct mnt_list *sbmnt;
 				struct map_source *map;
 				struct mapent_cache *mc = NULL;
-				struct mapent *me = NULL;
 				struct stat st;
 
-				/* It's got a mount, deal with in the outer loop */
-				if (is_mounted(next->mp, MNTS_REAL)) {
-					pthread_setcancelstate(cur_state, NULL);
-					continue;
-				}
-
 				/* Don't touch submounts */
-				sbmnt = mnts_find_submount(next->mp);
+				sbmnt = mnts_find_submount(mnt->mp);
 				if (sbmnt) {
 					mnts_put_mount(sbmnt);
 					pthread_setcancelstate(cur_state, NULL);
@@ -427,7 +425,7 @@ void *expire_proc_indirect(void *arg)
 				while (map) {
 					mc = map->mc;
 					cache_writelock(mc);
-					me = cache_lookup_distinct(mc, next->mp);
+					me = cache_lookup_distinct(mc, mnt->mp);
 					if (me)
 						break;
 					cache_unlock(mc);
@@ -456,10 +454,10 @@ void *expire_proc_indirect(void *arg)
 
 				cache_unlock(mc);
 				master_source_unlock(ap->entry);
+				pthread_setcancelstate(cur_state, NULL);
+				continue;
 			}
-
 			pthread_setcancelstate(cur_state, NULL);
-			continue;
 		}
 
 		if (ap->state == ST_EXPIRE || ap->state == ST_PRUNE)
@@ -469,7 +467,7 @@ void *expire_proc_indirect(void *arg)
 		 * If the mount corresponds to an offset trigger then
 		 * the key is the path, otherwise it's the last component.
 		 */
-		ind_key = strrchr(next->mp, '/');
+		ind_key = strrchr(mnt->mp, '/');
 		if (ind_key)
 			ind_key++;
 
@@ -482,7 +480,7 @@ void *expire_proc_indirect(void *arg)
 		 */
 		pthread_cleanup_push(master_source_lock_cleanup, ap->entry);
 		master_source_readlock(ap->entry);
-		me = lookup_source_mapent(ap, next->mp, LKP_DISTINCT);
+		me = lookup_source_mapent(ap, mnt->mp, LKP_DISTINCT);
 		if (!me && ind_key)
 			me = lookup_source_mapent(ap, ind_key, LKP_NORMAL);
 		pthread_cleanup_pop(1);
@@ -494,10 +492,10 @@ void *expire_proc_indirect(void *arg)
 			cache_unlock(me->mc);
 		}
 
-		debug(ap->logopt, "expire %s", next->mp);
+		debug(ap->logopt, "expire %s", mnt->mp);
 
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-		ret = ops->expire(ap->logopt, ioctlfd, next->mp, how);
+		ret = ops->expire(ap->logopt, ioctlfd, mnt->mp, how);
 		if (ret)
 			left++;
 		pthread_setcancelstate(cur_state, NULL);
@@ -519,14 +517,14 @@ void *expire_proc_indirect(void *arg)
 	pthread_cleanup_pop(1);
 
 	count = offsets = submnts = 0;
-	mnts = get_mnt_list(ap->path, 0);
-	pthread_cleanup_push(mnts_cleanup, mnts);
+	mnts_get_expire_list(&mnts, ap);
+	pthread_cleanup_push(mnts_cleanup, &mnts);
 	/* Are there any real mounts left */
-	for (next = mnts; next; next = next->next) {
-		if (!(next->flags & MNTS_AUTOFS))
+	list_for_each_entry(mnt, &mnts, expire) {
+		if (!(mnt->flags & MNTS_AUTOFS))
 			count++;
 		else {
-			if (next->flags & MNTS_INDIRECT)
+			if (mnt->flags & MNTS_INDIRECT)
 				submnts++;
 			else
 				offsets++;
@@ -544,7 +542,7 @@ void *expire_proc_indirect(void *arg)
 	 */
 	if (count)
 		debug(ap->logopt, "%d remaining in %s", count, ap->path);
-
+done:
 	ec.status = left;
 
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
