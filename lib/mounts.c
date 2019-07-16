@@ -786,6 +786,101 @@ done:
 	return ret;
 }
 
+/* From glibc decode_name() */
+/* Since the values in a line are separated by spaces, a name cannot
+ * contain a space.  Therefore some programs encode spaces in names
+ * by the strings "\040".  We undo the encoding when reading an entry.
+ * The decoding happens in place.
+ */
+static char *local_decode_name(char *buf)
+{
+	char *rp = buf;
+	char *wp = buf;
+
+	do {
+		if (rp[0] == '\\' && rp[1] == '0' &&
+		    rp[2] == '4' && rp[3] == '0') {
+			/* \040 is a SPACE.  */
+			*wp++ = ' ';
+			rp += 3;
+		} else if (rp[0] == '\\' && rp[1] == '0' &&
+			   rp[2] == '1' && rp[3] == '1') {
+			/* \011 is a TAB.  */
+			*wp++ = '\t';
+			rp += 3;
+		} else if (rp[0] == '\\' && rp[1] == '0' &&
+			   rp[2] == '1' && rp[3] == '2') {
+			/* \012 is a NEWLINE.  */
+			*wp++ = '\n';
+			rp += 3;
+		} else if (rp[0] == '\\' && rp[1] == '\\') {
+			/*
+			 * We have to escape \\ to be able to represent
+			 * all characters.
+			 */
+			*wp++ = '\\';
+			rp += 1;
+		} else if (rp[0] == '\\' && rp[1] == '1' &&
+			   rp[2] == '3' && rp[3] == '4') {
+			/* \134 is also \\.  */
+			*wp++ = '\\';
+			rp += 3;
+		} else
+			*wp++ = *rp;
+	} while (*rp++ != '\0');
+
+	return buf;
+}
+
+/* From glibc getmntent_r() */
+static struct mntent *
+local_getmntent_r(FILE *tab, struct mntent *mnt, char *buf, int size)
+{
+	char *cp, *head;
+
+	do {
+		char *end_ptr;
+
+		if (fgets(buf, size, tab) == NULL)
+			return 0;
+
+		end_ptr = strchr(buf, '\n');
+		if (end_ptr != NULL) {
+			while (end_ptr[-1] == ' ' || end_ptr[-1] == '\t')
+				end_ptr--;
+			*end_ptr = '\0';
+		} else {
+			/* Whole line was not read. Do it now but forget it. */
+			char tmp[1024];
+			while (fgets(tmp, sizeof tmp, tab) != NULL)
+				if (strchr(tmp, '\n') != NULL)
+					break;
+		}
+
+		head = buf + strspn(buf, " \t");
+	/* skip empty lines and comment lines */
+	} while (head[0] == '\0' || head[0] == '#');
+
+	cp = strsep(&head, " \t");
+	mnt->mnt_fsname = cp != NULL ? local_decode_name(cp) : (char *) "";
+	if (head)
+		head += strspn(head, " \t");
+	cp = strsep(&head, " \t");
+	mnt->mnt_dir = cp != NULL ? local_decode_name (cp) : (char *) "";
+	if (head)
+		head += strspn(head, " \t");
+	cp = strsep(&head, " \t");
+	mnt->mnt_type = cp != NULL ? local_decode_name (cp) : (char *) "";
+	if (head)
+		head += strspn (head, " \t");
+	cp = strsep (&head, " \t");
+	mnt->mnt_opts = cp != NULL ? local_decode_name (cp) : (char *) "";
+
+	/* autofs doesn't need freq or passno */
+
+	return mnt;
+}
+
 /*
  * Get list of mounts under path in longest->shortest order
  */
