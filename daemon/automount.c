@@ -723,7 +723,7 @@ static int umount_all(struct autofs_point *ap, int force)
 	return left;
 }
 
-int umount_autofs(struct autofs_point *ap, const char *root, int force)
+static int umount_autofs(struct autofs_point *ap, const char *root)
 {
 	int ret = 0;
 
@@ -738,8 +738,7 @@ int umount_autofs(struct autofs_point *ap, const char *root, int force)
 	lookup_close_lookup(ap);
 
 	if (ap->type == LKP_INDIRECT) {
-		if (umount_all(ap, force) && !force)
-			return -1;
+		umount_all(ap, 1);
 		ret = umount_autofs_indirect(ap, root);
 	} else
 		ret = umount_autofs_direct(ap);
@@ -1868,7 +1867,7 @@ int handle_mounts_exit(struct autofs_point *ap)
 	 * to check for possible recovery.
 	 */
 	if (ap->type == LKP_DIRECT) {
-		umount_autofs(ap, NULL, 1);
+		umount_autofs(ap, NULL);
 		handle_mounts_cleanup(ap);
 		return 1;
 	}
@@ -1879,7 +1878,7 @@ int handle_mounts_exit(struct autofs_point *ap)
 	 * so we can continue. This can happen if a lookup
 	 * occurs while we're trying to umount.
 	 */
-	ret = umount_autofs(ap, NULL, 1);
+	ret = umount_autofs(ap, NULL);
 	if (!ret) {
 		set_indirect_mount_tree_catatonic(ap);
 		handle_mounts_cleanup(ap);
@@ -1935,7 +1934,7 @@ void *handle_mounts(void *arg)
 		if (!(do_force_unlink & UNLINK_AND_EXIT))
 			crit(ap->logopt, "mount of %s failed!", ap->path);
 		suc->status = 1;
-		umount_autofs(ap, root, 1);
+		umount_autofs(ap, root);
 		free(root);
 		pthread_setcancelstate(cancel_state, NULL);
 		pthread_exit(NULL);

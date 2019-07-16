@@ -58,6 +58,7 @@ xx/xx/2020 autofs-5.1.7
 - add a hash index to mnt_list.
 - use mnt_list for submounts.
 - use mnt_list for amdmounts.
+- make umount_autofs() static.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.
