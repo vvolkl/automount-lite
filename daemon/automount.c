@@ -99,7 +99,6 @@ pthread_key_t key_thread_attempt_id = (pthread_key_t) 0L;
 
 int aquire_flag_file(void);
 void release_flag_file(void);
-static int umount_all(struct autofs_point *ap, int force);
 
 extern struct master *master_list;
 
@@ -711,16 +710,14 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 	return left;
 }
 
-static int umount_all(struct autofs_point *ap, int force)
+static void umount_all(struct autofs_point *ap)
 {
 	int left;
 
 	left = umount_multi(ap, ap->path, 0);
-	if (force && left)
+	if (left)
 		warn(ap->logopt, "could not unmount %d dirs under %s",
 		     left, ap->path);
-
-	return left;
 }
 
 static int umount_autofs(struct autofs_point *ap, const char *root)
@@ -738,7 +735,7 @@ static int umount_autofs(struct autofs_point *ap, const char *root)
 	lookup_close_lookup(ap);
 
 	if (ap->type == LKP_INDIRECT) {
-		umount_all(ap, 1);
+		umount_all(ap);
 		ret = umount_autofs_indirect(ap, root);
 	} else
 		ret = umount_autofs_direct(ap);
