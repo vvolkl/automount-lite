@@ -999,14 +999,14 @@ static int table_is_mounted(const char *mp, unsigned int type)
 	if (!mp || !mp_len || mp_len >= PATH_MAX)
 		return 0;
 
-	tab = open_setmntent_r(_PROC_MOUNTS);
+	tab = open_fopen_r(_PROC_MOUNTS);
 	if (!tab) {
 		char *estr = strerror_r(errno, buf, PATH_MAX - 1);
-		logerr("setmntent: %s", estr);
+		logerr("fopen: %s", estr);
 		return 0;
 	}
 
-	while ((mnt = getmntent_r(tab, &mnt_wrk, buf, PATH_MAX * 3))) {
+	while ((mnt = local_getmntent_r(tab, &mnt_wrk, buf, PATH_MAX * 3))) {
 		size_t len = strlen(mnt->mnt_dir);
 
 		if (type) {
@@ -1028,7 +1028,7 @@ static int table_is_mounted(const char *mp, unsigned int type)
 			break;
 		}
 	}
-	endmntent(tab);
+	fclose(tab);
 
 	return ret;
 }
