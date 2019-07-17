@@ -881,21 +881,44 @@ local_getmntent_r(FILE *tab, struct mntent *mnt, char *buf, int size)
 	return mnt;
 }
 
-int unlink_mount_tree(struct autofs_point *ap, struct mnt_list *mnts)
+int unlink_mount_tree(struct autofs_point *ap, const char *mp)
 {
-	struct mnt_list *this;
-	int rv, ret;
+	FILE *tab;
+	struct mntent *mnt;
+	struct mntent mnt_wrk;
+	char buf[PATH_MAX * 3];
+	unsigned int mp_len = strlen(mp);
+	int rv, ret = 1;
 
-	ret = 1;
-	this = mnts;
-	while (this) {
-		if (this->flags & MNTS_AUTOFS)
-			rv = umount2(this->mp, MNT_DETACH);
+	tab = open_fopen_r(_PROC_MOUNTS);
+	if (!tab) {
+		char *estr = strerror_r(errno, buf, PATH_MAX - 1);
+		logerr("fopen: %s", estr);
+		return 0;
+	}
+
+	while ((mnt = local_getmntent_r(tab, &mnt_wrk, buf, PATH_MAX * 3))) {
+		unsigned int mnt_dir_len;
+		int is_autofs;
+
+		if (strncmp(mnt->mnt_dir, mp, mp_len))
+			continue;
+
+		mnt_dir_len = strlen(mnt->mnt_dir);
+		is_autofs = !strcmp(mnt->mnt_type, "autofs");
+
+		if (mnt_dir_len == mp_len && !is_autofs) {
+			ret = 0;
+			break;
+		}
+
+		if (is_autofs)
+			rv = umount2(mnt->mnt_dir, MNT_DETACH);
 		else
-			rv = spawn_umount(ap->logopt, "-l", this->mp, NULL);
+			rv = spawn_umount(ap->logopt, "-l", mnt->mnt_dir, NULL);
 		if (rv == -1) {
 			debug(ap->logopt,
-			      "can't unlink %s from mount tree", this->mp);
+			      "can't unlink %s from mount tree", mnt->mnt_dir);
 
 			switch (errno) {
 			case EINVAL:
@@ -910,8 +933,8 @@ int unlink_mount_tree(struct autofs_point *ap, struct mnt_list *mnts)
 				break;
 			}
 		}
-		this = this->next;
 	}
+	fclose(tab);
 
 	return ret;
 }

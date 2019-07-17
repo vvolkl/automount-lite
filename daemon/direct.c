@@ -286,8 +286,6 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 		if (ret == 0)
 			return -1;
 	} else {
-		struct mnt_list *mnts;
-
 		if (ap->state == ST_READMAP && is_mounted(me->key, MNTS_ALL)) {
 			time_t tout = get_exp_timeout(ap, me->source);
 			int save_ioctlfd, ioctlfd;
@@ -313,22 +311,12 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 			return 0;
 		}
 
-		mnts = get_mnt_list(me->key, 1);
-		if (mnts) {
-			/*
-			 * A return of 1 indicates we successfully unlinked
-			 * the mount tree if there was one. A return of 0
-			 * indicates we failed to unlink the mount tree so
-			 * we have to return a failure.
-			 */
-			ret = unlink_mount_tree(ap, mnts);
-			free_mnt_list(mnts);
-			if (!ret) {
-				error(ap->logopt,
-				      "already mounted as other than autofs "
-				      "or failed to unlink entry in tree");
-				return -1;
-			}
+		ret = unlink_mount_tree(ap, ap->path);
+		if (!ret) {
+			error(ap->logopt,
+			     "already mounted as other than autofs "
+			     "or failed to unlink entry in tree");
+			goto out_err;
 		}
 
 		if (me->ioctlfd != -1) {

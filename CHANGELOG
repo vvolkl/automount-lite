@@ -34,6 +34,7 @@ xx/xx/2019 autofs-5.1.6
 - don't use tree_is_mounted() for mounted checks.
 - use single unlink_umount_tree() for both direct and indirect mounts.
 - move unlink_mount_tree() to lib/mounts.c.
+- use local_getmntent_r() for unlink_mount_tree().
 
 30/10/2018 autofs-5.1.5
 - fix flag file permission.

@@ -50,7 +50,6 @@ static int do_mount_autofs_indirect(struct autofs_point *ap, const char *root)
 	const char *map_name = hosts_map_name;
 	const char *type;
 	struct stat st;
-	struct mnt_list *mnts;
 	int ret;
 	int err;
 
@@ -70,16 +69,12 @@ static int do_mount_autofs_indirect(struct autofs_point *ap, const char *root)
 		if (ret == 0)
 			return -1;
 	} else {
-		mnts = get_mnt_list(ap->path, 1);
-		if (mnts) {
-			ret = unlink_mount_tree(ap, mnts);
-			free_mnt_list(mnts);
-			if (!ret) {
-				error(ap->logopt,
-				      "already mounted as other than autofs "
-				      "or failed to unlink entry in tree");
-				goto out_err;
-			}
+		ret = unlink_mount_tree(ap, ap->path);
+		if (!ret) {
+			error(ap->logopt,
+			      "already mounted as other than autofs "
+			      "or failed to unlink entry in tree");
+			goto out_err;
 		}
 	}
 
