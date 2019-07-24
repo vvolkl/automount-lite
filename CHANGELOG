@@ -19,6 +19,7 @@ xx/xx/2019 autofs-5.1.6
 - increase group buffer size geometrically.
 - also use strictexpire for offsets.
 - remove unused function has_fstab_option().
+- remove unused function reverse_mnt_list().
 
 30/10/2018 autofs-5.1.5
 - fix flag file permission.
