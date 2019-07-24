@@ -53,7 +53,6 @@ struct mnt_list {
 	char *fs_name;
 	char *fs_type;
 	char *opts;
-	pid_t owner;
 	/*
 	 * List operations ie. get_mnt_list.
 	 */

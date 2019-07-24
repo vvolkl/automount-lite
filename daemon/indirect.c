@@ -44,19 +44,10 @@ static int unlink_mount_tree(struct autofs_point *ap, struct mnt_list *mnts)
 {
 	struct mnt_list *this;
 	int rv, ret;
-	pid_t pgrp = getpgrp();
-	char spgrp[20];
-
-	sprintf(spgrp, "pgrp=%d", pgrp);
 
 	ret = 1;
 	this = mnts;
 	while (this) {
-		if (strstr(this->opts, spgrp)) {
-			this = this->next;
-			continue;
-		}
-
 		if (strcmp(this->fs_type, "autofs"))
 			rv = spawn_umount(ap->logopt, "-l", this->path, NULL);
 		else

@@ -22,6 +22,7 @@ xx/xx/2019 autofs-5.1.6
 - remove unused function reverse_mnt_list().
 - remove a couple of old debug messages.
 - fix amd entry memory leak.
+- fix unlink_mount_tree() not umounting mounts.
 
 30/10/2018 autofs-5.1.5
 - fix flag file permission.
