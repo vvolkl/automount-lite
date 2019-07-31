@@ -51,6 +51,7 @@
 
 #define DEFAULT_USE_HOSTNAME_FOR_MOUNTS  "0"
 #define DEFAULT_DISABLE_NOT_FOUND_MESSAGE "0"
+#define DEFAULT_USE_IGNORE_MOUNT_OPTION	 "0"
 
 #define DEFAULT_SSS_MASTER_MAP_WAIT	"0"
 #define DEFAULT_USE_MOUNT_REQUEST_LOG_ID "0"
@@ -174,6 +175,7 @@ const char *defaults_get_auth_conf_file(void);
 unsigned int defaults_get_map_hash_table_size(void);
 unsigned int defaults_use_hostname_for_mounts(void);
 unsigned int defaults_disable_not_found_message(void);
+unsigned int defaults_get_use_ignore_mount_option(void);
 unsigned int defaults_get_sss_master_map_wait(void);
 unsigned int defaults_get_use_mount_request_log_id(void);
 

@@ -150,6 +150,13 @@ That produces, IMHO, unnecessary noise in the log so a configuration option
 has been added to provide the ability to turn it off. The default is "no"
 to maintain the current behaviour.
 .TP
+.B use_ignore_mount_option
+.br
+An option to enable the use of autofs pseudo option "disable". This option
+is used as a hint to user space that the mount entry should be ommitted from
+mount table listings. The default is "no" to avoid unexpected changes in
+behaviour and so is an opt-in setting.
+.TP
 .B sss_master_map_wait
 .br
 Set the time to wait and retry if sssd returns "no such entry" when starting

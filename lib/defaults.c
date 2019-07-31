@@ -77,6 +77,7 @@
 
 #define NAME_USE_HOSTNAME_FOR_MOUNTS	"use_hostname_for_mounts"
 #define NAME_DISABLE_NOT_FOUND_MESSAGE	"disable_not_found_message"
+#define NAME_USE_IGNORE_MOUNT_OPTION	"use_ignore_mount_option"
 
 #define NAME_SSS_MASTER_MAP_WAIT	"sss_master_map_wait"
 #define NAME_USE_MOUNT_REQUEST_LOG_ID	"use_mount_request_log_id"
@@ -361,6 +362,11 @@ static int conf_load_autofs_defaults(void)
 
 	ret = conf_update(sec, NAME_DISABLE_NOT_FOUND_MESSAGE,
 			  DEFAULT_DISABLE_NOT_FOUND_MESSAGE, CONF_ENV);
+	if (ret == CFG_FAIL)
+		goto error;
+
+	ret = conf_update(sec, NAME_USE_IGNORE_MOUNT_OPTION,
+			  DEFAULT_USE_IGNORE_MOUNT_OPTION, CONF_ENV);
 	if (ret == CFG_FAIL)
 		goto error;
 
@@ -1860,6 +1866,17 @@ unsigned int defaults_disable_not_found_message(void)
 	res = conf_get_yesno(autofs_gbl_sec, NAME_DISABLE_NOT_FOUND_MESSAGE);
 	if (res < 0)
 		res = atoi(DEFAULT_DISABLE_NOT_FOUND_MESSAGE);
+
+	return res;
+}
+
+unsigned int defaults_get_use_ignore_mount_option(void)
+{
+	int res;
+
+	res = conf_get_yesno(autofs_gbl_sec, NAME_USE_IGNORE_MOUNT_OPTION);
+	if (res < 0)
+		res = atoi(DEFAULT_USE_IGNORE_MOUNT_OPTION);
 
 	return res;
 }
