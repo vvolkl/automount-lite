@@ -64,6 +64,7 @@ xx/xx/2020 autofs-5.1.7
 - fix stale offset directories disable mount.
 - use struct mnt_list to track mounted mounts.
 - use struct mnt_list mounted list for expire.
+- remove unused function tree_get_mnt_list().
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

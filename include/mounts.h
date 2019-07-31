@@ -83,19 +83,7 @@ struct mnt_list {
 	 * List operations ie. get_mnt_list.
 	 */
 	struct mnt_list *next;
-
-	/*
-	 * Tree operations ie. tree_make_tree,
-	 * tree_get_mnt_list etc.
-	 */
-	struct mnt_list *left;
-	struct mnt_list *right;
-	struct list_head self;
-	struct list_head list;
-	struct list_head entries;
-	struct list_head sublist;
 };
-
 
 struct nfs_mount_vers {
 	unsigned int major;
@@ -143,11 +131,6 @@ void mnts_set_mounted_mount(struct autofs_point *ap, const char *name);
 int unlink_mount_tree(struct autofs_point *ap, const char *mp);
 void free_mnt_list(struct mnt_list *list);
 int is_mounted(const char *mp, unsigned int type);
-void tree_free_mnt_tree(struct mnt_list *tree);
-struct mnt_list *tree_make_mnt_tree(const char *path);
-int tree_get_mnt_list(struct mnt_list *mnts, struct list_head *list, const char *path, int include);
-int tree_get_mnt_sublist(struct mnt_list *mnts, struct list_head *list, const char *path, int include);
-int tree_find_mnt_ents(struct mnt_list *mnts, struct list_head *list, const char *path);
 void set_tsd_user_vars(unsigned int, uid_t, gid_t);
 const char *mount_type_str(unsigned int);
 void set_exp_timeout(struct autofs_point *ap, struct map_source *source, time_t timeout);
