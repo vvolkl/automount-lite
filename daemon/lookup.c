@@ -793,11 +793,6 @@ int lookup_ghost(struct autofs_point *ap, const char *root)
 
 			/* Directory already exists? */
 			if (!ret) {
-				/* Shouldn't need this
-				me->dev = st.st_dev;
-				me->ino = st.st_ino;
-				*/
-				debug(ap->logopt, "me->dev %d me->ino %d", me->dev, me->ino);
 				free(fullpath);
 				goto next;
 			}
