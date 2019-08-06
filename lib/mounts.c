@@ -1182,16 +1182,16 @@ struct mnt_list *tree_make_mnt_tree(const char *path)
 	size_t plen;
 	int eq;
 
-	tab = open_setmntent_r(_PROC_MOUNTS);
+	tab = open_fopen_r(_PROC_MOUNTS);
 	if (!tab) {
 		char *estr = strerror_r(errno, buf, PATH_MAX - 1);
-		logerr("setmntent: %s", estr);
+		logerr("fopen: %s", estr);
 		return NULL;
 	}
 
 	plen = strlen(path);
 
-	while ((mnt = getmntent_r(tab, &mnt_wrk, buf, PATH_MAX * 3))) {
+	while ((mnt = local_getmntent_r(tab, &mnt_wrk, buf, PATH_MAX * 3))) {
 		size_t len = strlen(mnt->mnt_dir);
 
 		/* Not matching path */
@@ -1283,7 +1283,7 @@ struct mnt_list *tree_make_mnt_tree(const char *path)
 		if (!tree)
 			tree = ent;
 	}
-	endmntent(tab);
+	fclose(tab);
 
 	return tree;
 }
