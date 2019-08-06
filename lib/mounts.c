@@ -956,14 +956,14 @@ struct mnt_list *get_mnt_list(const char *path, int include)
 	if (!path || !pathlen || pathlen > PATH_MAX)
 		return NULL;
 
-	tab = open_setmntent_r(_PROC_MOUNTS);
+	tab = open_fopen_r(_PROC_MOUNTS);
 	if (!tab) {
 		char *estr = strerror_r(errno, buf, PATH_MAX - 1);
-		logerr("setmntent: %s", estr);
+		logerr("fopen: %s", estr);
 		return NULL;
 	}
 
-	while ((mnt = getmntent_r(tab, &mnt_wrk, buf, PATH_MAX * 3))) {
+	while ((mnt = local_getmntent_r(tab, &mnt_wrk, buf, PATH_MAX * 3))) {
 		len = strlen(mnt->mnt_dir);
 
 		if ((!include && len <= pathlen) ||
@@ -1020,7 +1020,7 @@ struct mnt_list *get_mnt_list(const char *path, int include)
 				ent->flags |= MNTS_OFFSET;
 		}
 	}
-	endmntent(tab);
+	fclose(tab);
 
 	return list;
 }

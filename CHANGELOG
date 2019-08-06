@@ -35,6 +35,7 @@ xx/xx/2019 autofs-5.1.6
 - use single unlink_umount_tree() for both direct and indirect mounts.
 - move unlink_mount_tree() to lib/mounts.c.
 - use local_getmntent_r() for unlink_mount_tree().
+- use local getmntent_r() in get_mnt_list().
 
 30/10/2018 autofs-5.1.5
 - fix flag file permission.
