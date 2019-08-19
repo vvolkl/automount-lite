@@ -37,6 +37,7 @@ xx/xx/2019 autofs-5.1.6
 - use local_getmntent_r() for unlink_mount_tree().
 - use local getmntent_r() in get_mnt_list().
 - use local getmntent_r() in tree_make_mnt_list().
+- fix missing initialization of autofs_point flags.
 
 30/10/2018 autofs-5.1.5
 - fix flag file permission.
