@@ -37,7 +37,9 @@ BuildRequires: systemd-devel
 %if %{with_libtirpc}
 BuildRequires: libtirpc-devel
 %endif
-BuildRequires: autoconf, hesiod-devel, openldap-devel, bison, flex, cyrus-sasl-devel
+BuildRequires: autoconf, openldap-devel, bison, flex, libxml2-devel
+BuildRequires: cyrus-sasl-devel, openssl-devel, util-linux
+BuildRequires: libtirpc-devel, rpcgen, libnsl2-devel, krb5-devel
 Requires: chkconfig
 Requires: /bin/bash sed grep /bin/ps
 %if %{with_systemd}
@@ -98,6 +100,7 @@ LDFLAGS="-Wl,-z,now" \
 	--disable-mount-locking \
 	--enable-ignore-busy \
 	--enable-forced-shutdown \
+	--without-hesiod \
 	%{?systemd_configure_arg:} \
 	%{?libtirpc_configure_arg:} \
 	%{?fedfs_configure_arg:}
