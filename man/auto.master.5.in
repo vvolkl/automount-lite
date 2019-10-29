@@ -208,17 +208,18 @@ applications scanning the mount tree. Note that this doesn't completely
 resolve the problem of expired automounts being immediately re-mounted
 due to application accesses triggered by the expire itself.
 .TP
-.I slave \fPor\fI private
+.I slave\fP, \fIprivate\fP or \fIshared\fP
 This option allows mount propagation of bind mounts to be set to
-either \fIslave\fP or \fIprivate\fP. This option may be needed when using
-multi-mounts that have bind mounts that bind to a file system that is
-propagation shared. This is because the bind mount will have the same
-properties as its target which causes problems for offset mounts. When
-this happens an unwanted offset mount is propagated back to the target
-file system resulting in a deadlock when attempting to access the offset.
+\fIslave\fP, \fIprivate\fP or \fIshared\fP. This option defaults to
+\fIslave\fP if no option is given. When using multi-mounts that have
+bind mounts the bind mount will have the same properties as its parent
+which is commonly propagation \fIshared\fP. And if the mount target is
+also propagation \fIshared\fP this can lead to a deadlock when attempting
+to access the offset mounts. When this happens an unwanted offset mount
+is propagated back to the target file system resulting in a deadlock
+since the automount target is itself an (unwanted) automount trigger.
 This option is an autofs pseudo mount option that can be used in the
-master map only. By default, bind mounts will inherit the mount propagation
-of the target file system.
+master map only.
 .TP
 .I "\-r, \-\-random-multimount-selection"
 Enables the use of random selection when choosing a host from a

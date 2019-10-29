@@ -551,14 +551,15 @@ struct kernel_mod_version {
 #define MOUNT_FLAG_AMD_CACHE_ALL	0x0080
 
 /* Set mount propagation for bind mounts */
-#define MOUNT_FLAG_SLAVE		0x0100
-#define MOUNT_FLAG_PRIVATE		0x0200
+#define MOUNT_FLAG_SHARED		0x0100
+#define MOUNT_FLAG_SLAVE		0x0200
+#define MOUNT_FLAG_PRIVATE		0x0400
 
 /* Use strict expire semantics if requested and kernel supports it */
-#define MOUNT_FLAG_STRICTEXPIRE		0x0400
+#define MOUNT_FLAG_STRICTEXPIRE		0x0800
 
 /* Indicator for applications to ignore the mount entry */
-#define MOUNT_FLAG_IGNORE		0x0800
+#define MOUNT_FLAG_IGNORE		0x1000
 
 struct autofs_point {
 	pthread_t thid;

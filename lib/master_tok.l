@@ -389,6 +389,7 @@ MODE		(--mode{OPTWS}|--mode{OPTWS}={OPTWS})
 	-?symlink		{ return(OPT_SYMLINK); }
 	-?nobind		{ return(OPT_NOBIND); }
 	-?nobrowse		{ return(OPT_NOGHOST); }
+	-?shared		{ return(OPT_SHARED); }
 	-?slave			{ return(OPT_SLAVE); }
 	-?private		{ return(OPT_PRIVATE); }
 	-?strictexpire		{ return(OPT_STRICTEXPIRE); }

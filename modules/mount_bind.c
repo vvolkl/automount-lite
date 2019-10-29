@@ -153,6 +153,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 
 	if (!symlnk && bind_works) {
 		int status, existed = 1;
+		int flags;
 
 		debug(ap->logopt, MODPREFIX "calling mkdir_path %s", fullpath);
 
@@ -190,24 +191,27 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 			      what, fstype, fullpath);
 		}
 
-		if (ap->flags & (MOUNT_FLAG_SLAVE | MOUNT_FLAG_PRIVATE)) {
-			int flags = MS_SLAVE;
+		/* The bind mount has succeeded, now set the mount propagation.
+		 *
+		 * The default is propagation shared, change it if the master
+		 * map entry has a different option specified.
+		 */
+		flags = MS_SLAVE;
+		if (ap->flags & MOUNT_FLAG_PRIVATE)
+			flags = MS_PRIVATE;
+		else if (ap->flags & MOUNT_FLAG_SHARED)
+			flags = MS_SHARED;
 
-			if (ap->flags & MOUNT_FLAG_PRIVATE)
-				flags = MS_PRIVATE;
-
-			/* The bind mount has succeeded but if the target
-			 * mount is propagation shared propagation of child
-			 * mounts (autofs offset mounts for example) back to
-			 * the target of the bind mount must be avoided or
-			 * autofs trigger mounts will deadlock.
-			 */
-			err = mount(NULL, fullpath, NULL, flags, NULL);
-			if (err) {
-				warn(ap->logopt,
-				     "failed to set propagation for %s",
-				     fullpath, root);
-			}
+		/* Note: If the parent mount is propagation shared propagation
+		 *  of child mounts (autofs offset mounts for example) back to
+		 *  the target of the bind mount can happen in some cases and
+		 *  must be avoided or autofs trigger mounts will deadlock.
+		 */
+		err = mount(NULL, fullpath, NULL, flags, NULL);
+		if (err) {
+			warn(ap->logopt,
+			     "failed to set propagation for %s",
+			     fullpath, root);
 		}
 
 		return 0;
