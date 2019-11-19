@@ -194,7 +194,8 @@ fi
 
 %files
 %defattr(-,root,root)
-%doc CREDITS CHANGELOG INSTALL COPY* README* samples/ldap* samples/autofs.schema samples/autofs_ldap_auth.conf
+%doc CREDITS CHANGELOG INSTALL COPY* README* samples/ldap* samples/*.schema
+%doc samples/am-utils-ldap-id.txt samples/autofs_ldap_auth.conf
 %config %{init_file_name}
 %config(noreplace) /etc/auto.master
 %config(noreplace) /etc/autofs.conf

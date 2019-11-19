@@ -1,0 +1,14 @@
+LDAP Schema
+===========
+
+LDAP Schema definitions may be found in the samples sub-directory.
+
+The ldap schema rfc2307.schema and rfc2307bis.schema may be used by
+autofs for Sun format automount maps, the choice of which is used is
+dependent on user needs. They are included for reference only as at
+least one of these should be included in LDAP server distributions.
+
+The ldap schema am-utils-ldap.schema and am-utils-ldap-id.txt describe
+the schema used by autofs for amd format maps.
+
+Ian
