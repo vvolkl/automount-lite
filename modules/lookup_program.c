@@ -646,7 +646,7 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 				 name_len, ent, ctxt->parse->context);
 			goto out_free;
 		} else {
-			if (me->multi) {
+			if (me->multi && me->multi != me) {
 				cache_unlock(mc);
 				warn(ap->logopt, MODPREFIX
 				     "unexpected lookup for active multi-mount"
@@ -656,8 +656,11 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 			cache_unlock(mc);
 			cache_writelock(mc);
 			me = cache_lookup_distinct(mc, name);
-			if (me)
+			if (me) {
+				if (me->multi)
+					cache_delete_offset_list(mc, name);
 				cache_delete(mc, name);
+			}
 			cache_unlock(mc);
 		}
 	}
