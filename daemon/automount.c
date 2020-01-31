@@ -650,6 +650,25 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 			      "failed to remove symlink %s", path);
 			return 1;
 		}
+		/* Check if the autofs mount has browse mode enabled.
+		 * If so re-create the directory entry.
+		 */
+		if (ap->flags | MOUNT_FLAG_GHOST) {
+			int ret;
+
+			/* If the browse directory create fails log an
+			 * error and continue anyway since the expire
+			 * has succeeded.
+			 */
+			ret = mkdir_path(path, mp_mode);
+			if (ret && errno != EEXIST) {
+				char buf[MAX_ERR_BUF];
+				char *estr;
+				estr = strerror_r(errno, buf, MAX_ERR_BUF);
+				warn(ap->logopt,
+				     "mkdir_path %s failed: %s", path, estr);
+			}
+		}
 		/* Check for an external mount and attempt umount if needed */
 		mounts_mutex_lock(ap);
 		entry = __master_find_amdmount(ap, path);
