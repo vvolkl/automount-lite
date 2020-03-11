@@ -53,7 +53,7 @@ CONFIG = $(shell test -e $(INSTALLROOT)$(autofsmapdir)/autofs.conf.orig || echo 
 CEXISTS = $(shell test -e $(INSTALLROOT)$(autofsmapdir)/autofs || echo "no")
 
 .PHONY: autofs.conf
-autofs.conf: autofs.conf.default
+autofs.conf: autofs.conf.default | dirs
 	@echo
 	@echo "Installing autofs default configuation in $(autofsmapdir)"
 	@if test -z "$(CONFIG)" ; \
@@ -76,7 +76,7 @@ CINIT = $(shell test -e $(INSTALLROOT)$(autofsconfdir)/autofs.orig || echo "-b -
 CIEXISTS = $(shell test -e $(INSTALLROOT)$(autofsconfdir)/autofs || echo "no")
 
 .PHONY: autofs.sysinit
-autofs.sysinit: autofs.init.conf
+autofs.sysinit: autofs.init.conf | dirs
 	@echo
 	@echo "Installing autofs init configuation in $(autofsconfdir)"
 	@if test -z "$(CINIT)" ; \
@@ -99,7 +99,7 @@ AUTH = $(shell test -e $(INSTALLROOT)$(autofsmapdir)/autofs_ldap_auth.conf.orig 
 AEXISTS = $(shell test -e $(INSTALLROOT)$(autofsmapdir)/autofs_ldap_auth.conf || echo "no")
 
 .PHONY: autofs_ldap_auth.conf
-autofs_ldap_auth.conf:
+autofs_ldap_auth.conf: | dirs
 	@echo
 	@echo "Installing autofs ldap auth config \"autofs_ldap_auth.conf\" in $(autofsmapdir)"
 	@if test -z "$(AUTH)" ; \
@@ -122,7 +122,7 @@ MASTER = $(shell test -e $(INSTALLROOT)$(autofsmapdir)/auto.master.orig || echo 
 MEXISTS = $(shell test -e $(INSTALLROOT)$(autofsmapdir)/auto.master || echo "no")
 
 .PHONY: auto.master
-auto.master:
+auto.master: | dirs
 	@echo
 	@echo "Installing autofs default master map in $(autofsmapdir)"
 	@if test -z "$(MASTER)" ; \
@@ -145,7 +145,7 @@ MISC = $(shell test -e $(INSTALLROOT)$(autofsmapdir)/auto.misc.orig || echo "-b 
 IEXISTS = $(shell test -e $(INSTALLROOT)$(autofsmapdir)/auto.misc || echo "no")
 
 .PHONY: auto.misc
-auto.misc:
+auto.misc: | dirs
 	@echo
 	@echo "Installing autofs sample map \"auto.misc\" in $(autofsmapdir)"
 	@if test -z "$(MISC)" ; \
@@ -168,7 +168,7 @@ NET = $(shell test -e $(INSTALLROOT)$(autofsmapdir)/auto.net.orig || echo "-b --
 NEXISTS = $(shell test -e $(INSTALLROOT)$(autofsmapdir)/auto.net || echo "no")
 
 .PHONY: auto.net
-auto.net:
+auto.net: | dirs
 	@echo
 	@echo "Installing autofs sample map \"auto.net\" in $(autofsmapdir)"
 	@if test -z "$(NET)" ; \
@@ -191,7 +191,7 @@ SMB = $(shell test -e $(INSTALLROOT)$(autofsmapdir)/auto.smb.orig || echo "-b --
 SEXISTS = $(shell test -e $(INSTALLROOT)$(autofsmapdir)/auto.smb || echo "no")
 
 .PHONY: auto.smb
-auto.smb:
+auto.smb: | dirs
 	@echo
 	@echo "Installing autofs sample map \"auto.smb\" in $(autofsmapdir)"
 	@if test -z "$(SMB)" ; \

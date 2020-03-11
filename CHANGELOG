@@ -5,6 +5,7 @@ xx/xx/2020 autofs-5.1.7
 - fix browse dir not re-created on symlink expire.
 - fix a regression with map instance lookup.
 - correct fsf address.
+- samples: fix Makefile targets' directory dependencies
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.
