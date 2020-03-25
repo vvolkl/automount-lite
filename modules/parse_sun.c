@@ -161,6 +161,18 @@ int expandsunent(const char *src, char *dst, const char *key,
 				}
 				src = p + 1;
 			} else {
+				/* If the '$' is folloed by a space or NULL it
+				 * can't be a macro, and the value can't be
+				 * quoted since '\' and '"' cases are handled
+				 * in other cases, so treat the $ as a valid
+				 * map entry character.
+				 */
+				if (isblank(*src) || !*src) {
+					if (dst)
+						*dst++ = ch;
+					len++;
+					break;
+				}
 				p = src;
 				while (isalnum(*p) || *p == '_')
 					p++;
