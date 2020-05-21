@@ -86,13 +86,13 @@ Indirect map:
 .RS +.2i
 .ta 1.0i 3.0i
 .nf
-kernel	\-ro,soft,intr	ftp.kernel.org:/pub/linux
+kernel	\-ro,soft	ftp.kernel.org:/pub/linux
 boot	\-fstype=ext2	:/dev/hda1
 windoze	\-fstype=smbfs	://windoze/c
 removable	\-fstype=ext2	:/dev/hdd
 cd	\-fstype=iso9660,ro	:/dev/hdc
 floppy	\-fstype=auto	:/dev/fd0
-server	\-rw,hard,intr	/ \-ro myserver.me.org:/ \\
+server	\-rw,hard	/ \-ro myserver.me.org:/ \\
 			/usr myserver.me.org:/usr \\
 			/home myserver.me.org:/home
 .fi

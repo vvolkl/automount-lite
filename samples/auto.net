@@ -9,7 +9,7 @@ key="$1"
 
 # add "nosymlink" here if you want to suppress symlinking local filesystems
 # add "nonstrict" to make it OK for some filesystems to not mount
-opts="-fstype=nfs,hard,intr,nodev,nosuid"
+opts="-fstype=nfs,hard,nodev,nosuid"
 
 for P in /bin /sbin /usr/bin /usr/sbin
 do
