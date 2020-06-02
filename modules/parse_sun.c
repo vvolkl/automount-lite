@@ -213,9 +213,11 @@ int expandsunent(const char *src, char *dst, const char *key,
 					*dst++ = *src;
 				src++;
 			}
-			if (*src && dst) {
+			if (*src) {
 				len++;
-				*dst++ = *src++;
+				if (dst)
+					*dst++ = *src;
+				src++;
 			}
 			break;
 
