@@ -475,6 +475,7 @@ unsigned int get_network_proximity(const char *name)
 	hints.ai_socktype = SOCK_DGRAM;
 	hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG | AI_CANONNAME;
 
+	ni = NULL;
 	ret = getaddrinfo(name_or_num, NULL, &hints, &ni);
 	if (ret) {
 		logerr("hostname lookup for %s failed: %s",

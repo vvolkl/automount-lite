@@ -691,6 +691,7 @@ static int create_client(struct conn_info *info, CLIENT **client)
 	else
 		hints.ai_socktype = SOCK_STREAM;
 
+	ai = NULL;
 	ret = getaddrinfo(info->host, NULL, &hints, &ai);
 	if (ret) {
 		error(LOGOPT_ANY,

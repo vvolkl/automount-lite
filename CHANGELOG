@@ -8,6 +8,7 @@ xx/xx/2020 autofs-5.1.7
 - samples: fix Makefile targets' directory dependencies
 - remove intr hosts map mount option.
 - fix trailing dollar sun entry expansion.
+- initialize struct addrinfo for getaddrinfo() calls.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

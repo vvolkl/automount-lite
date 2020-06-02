@@ -269,6 +269,7 @@ static int match_my_name(struct autofs_point *ap, const char *name, struct subst
 	hints.ai_socktype = SOCK_DGRAM;
 
 	/* Get host canonical name */
+	cni = NULL;
 	ret = getaddrinfo(v->val, NULL, &hints, &cni);
 	if (ret) {
 		error(logopt, MODPREFIX
@@ -280,6 +281,7 @@ static int match_my_name(struct autofs_point *ap, const char *name, struct subst
 	hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG | AI_CANONNAME;
 
 	/* Resolve comparison name to its names and compare */
+	ni = NULL;
 	ret = getaddrinfo(exp_name, NULL, &hints, &ni);
 	if (ret) {
 		error(logopt, MODPREFIX
@@ -775,6 +777,7 @@ static char *normalize_hostname(unsigned int logopt, const char *host,
 		hints.ai_family = AF_UNSPEC;
 		hints.ai_socktype = SOCK_DGRAM;
 
+		ni = NULL;
 		ret = getaddrinfo(host, NULL, &hints, &ni);
 		if (ret) {
 			error(logopt, MODPREFIX

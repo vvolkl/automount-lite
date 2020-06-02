@@ -982,6 +982,7 @@ static int add_host_addrs(struct host **list, const char *host, int ent_num,
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 
+	ni = NULL;
 	ret = getaddrinfo(name, NULL, &hints, &ni);
 	if (ret)
 		goto try_name;
@@ -1002,6 +1003,7 @@ try_name:
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 
+	ni = NULL;
 	ret = getaddrinfo(name, NULL, &hints, &ni);
 	if (ret) {
 		error(LOGOPT_ANY,
