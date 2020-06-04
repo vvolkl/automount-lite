@@ -75,7 +75,6 @@ $SMBCLIENT $smbopts -gL "$key" 2>/dev/null| awk -v "key=$key" -v "opts=$opts" -F
 		  dir = $2
 		  loc = $2
 		  # Enclose mount dir and location in quotes
-		  gsub(/\&/,"\\\\&",loc)
 		  print " \\\n\t \"/" dir "\"", "\"://" key "/" loc "\""
 		}
 	END 	{ if (!first) print "\n"; else exit 1 }
