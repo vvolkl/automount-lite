@@ -396,9 +396,9 @@ do_sasl_bind(unsigned logopt, LDAP *ld, sasl_conn_t *conn, const char **clientou
  *  cache, add the TGT to that cache, and set the environment variable so
  *  that the sasl/krb5 libraries can find our credentials.
  *
- *  Returns 0 upon success.  ctxt->kinit_done and ctxt->kinit_successful
- *  are set for cleanup purposes.  The krb5 context and ccache entries in
- *  the lookup_context are also filled in.
+ *  Returns 0 upon success.  ctxt->kinit_successful is set for cleanup
+ *  purposes.  The krb5 context and ccache entries in the lookup_context
+ *  are also filled in.
  *
  *  Upon failure, -1 is returned.
  */
@@ -412,9 +412,16 @@ sasl_do_kinit(unsigned logopt, struct lookup_context *ctxt)
 	const char *realm_name;
 	int status, realm_length;
 
-	if (ctxt->kinit_done)
+	status = pthread_mutex_lock(&krb5cc_mutex);
+	if (status)
+		fatal(status);
+
+	if (ctxt->kinit_successful) {
+		status = pthread_mutex_unlock(&krb5cc_mutex);
+		if (status)
+			fatal(status);
 		return 0;
-	ctxt->kinit_done = 1;
+	}
 
 	debug(logopt,
 	      "initializing kerberos ticket: client principal %s",
@@ -423,15 +430,14 @@ sasl_do_kinit(unsigned logopt, struct lookup_context *ctxt)
 	ret = krb5_init_context(&ctxt->krb5ctxt);
 	if (ret) {
 		error(logopt, "krb5_init_context failed with %d", ret);
-		return -1;
+		goto out_unlock;
 	}
 
 	ret = krb5_cc_resolve(ctxt->krb5ctxt, krb5ccval, &ctxt->krb5_ccache);
 	if (ret) {
 		error(logopt, "krb5_cc_resolve failed with error %d",
 		      ret);
-		krb5_free_context(ctxt->krb5ctxt);
-		return -1;
+		goto out_free_context;
 	}
 
 	if (ctxt->client_princ) {
@@ -515,18 +521,10 @@ sasl_do_kinit(unsigned logopt, struct lookup_context *ctxt)
 		goto out_cleanup_unparse;
 	}
 
-	status = pthread_mutex_lock(&krb5cc_mutex);
-	if (status)
-		fatal(status);
-
 	if (krb5cc_in_use++ == 0)
 		/* tell the cache what the default principal is */
 		ret = krb5_cc_initialize(ctxt->krb5ctxt,
 				 ctxt->krb5_ccache, krb5_client_princ);
-
-	status = pthread_mutex_unlock(&krb5cc_mutex);
-	if (status)
-		fatal(status);
 
 	if (ret) {
 		error(logopt,
@@ -550,6 +548,10 @@ sasl_do_kinit(unsigned logopt, struct lookup_context *ctxt)
 	}
 	ctxt->kinit_successful = 1;
 
+	status = pthread_mutex_unlock(&krb5cc_mutex);
+	if (status)
+		fatal(status);
+
 	debug(logopt, "Kerberos authentication was successful!");
 
 	krb5_free_unparsed_name(ctxt->krb5ctxt, tgs_name);
@@ -568,10 +570,6 @@ out_cleanup_unparse:
 out_cleanup_client_princ:
 	krb5_free_principal(ctxt->krb5ctxt, krb5_client_princ);
 out_cleanup_cc:
-	status = pthread_mutex_lock(&krb5cc_mutex);
-	if (status)
-		fatal(status);
-
 	if (krb5cc_in_use)
 		ret = krb5_cc_close(ctxt->krb5ctxt, ctxt->krb5_ccache);
 	else
@@ -579,22 +577,21 @@ out_cleanup_cc:
 	if (ret)
 		warn(logopt,
 		     "krb5_cc_destroy failed with non-fatal error %d", ret);
-
+out_free_context:
+	krb5_free_context(ctxt->krb5ctxt);
+out_unlock:
 	status = pthread_mutex_unlock(&krb5cc_mutex);
 	if (status)
 		fatal(status);
-
-	krb5_free_context(ctxt->krb5ctxt);
-
 	return -1;
 }
 
 /*
  *  Check a client given external credential cache.
  *
- *  Returns 0 upon success.  ctxt->kinit_done and ctxt->kinit_successful
- *  are set for cleanup purposes.  The krb5 context and ccache entries in
- *  the lookup_context are also filled in.
+ *  Returns 0 upon success.  ctxt->kinit_successful is set for cleanup
+ *  purposes.  The krb5 context and ccache entries in the lookup_context
+ *  are also filled in.
  *
  *  Upon failure, -1 is returned.
  */
@@ -605,10 +602,18 @@ sasl_do_kinit_ext_cc(unsigned logopt, struct lookup_context *ctxt)
 	krb5_principal krb5_client_princ;
 	krb5_error_code ret;
 	char *cc_princ, *client_princ;
+	int status;
 
-	if (ctxt->kinit_done)
+	status = pthread_mutex_lock(&krb5cc_mutex);
+	if (status)
+		fatal(status);
+
+	if (ctxt->kinit_successful) {
+		status = pthread_mutex_unlock(&krb5cc_mutex);
+		if (status)
+			fatal(status);
 		return 0;
-	ctxt->kinit_done = 1;
+	}
 
 	debug(logopt,
 	      "using external credential cache for auth: client principal %s",
@@ -617,33 +622,26 @@ sasl_do_kinit_ext_cc(unsigned logopt, struct lookup_context *ctxt)
 	ret = krb5_init_context(&ctxt->krb5ctxt);
 	if (ret) {
 		error(logopt, "krb5_init_context failed with %d", ret);
-		return -1;
+		goto out_unlock;
 	}
 
 	ret = krb5_cc_resolve(ctxt->krb5ctxt, ctxt->client_cc, &ctxt->krb5_ccache);
 	if (ret) {
 		error(logopt, "krb5_cc_resolve failed with error %d",
 		      ret);
-		krb5_cc_close(ctxt->krb5ctxt, ctxt->krb5_ccache);
-		krb5_free_context(ctxt->krb5ctxt);
-		return -1;
+		goto out_cleanup_cc;
 	}
 
 	ret = krb5_cc_get_principal(ctxt->krb5ctxt, ctxt->krb5_ccache, &def_princ);
 	if (ret) {
 		error(logopt, "krb5_cc_get_principal failed with error %d", ret);
-		krb5_cc_close(ctxt->krb5ctxt, ctxt->krb5_ccache);
-		krb5_free_context(ctxt->krb5ctxt);
-		return -1;
+		goto out_cleanup_cc;
 	}
 
 	ret = krb5_unparse_name(ctxt->krb5ctxt, def_princ, &cc_princ);
 	if (ret) {
 		error(logopt, "krb5_unparse_name failed with error %d", ret);
-		krb5_free_principal(ctxt->krb5ctxt, def_princ);
-		krb5_cc_close(ctxt->krb5ctxt, ctxt->krb5_ccache);
-		krb5_free_context(ctxt->krb5ctxt);
-		return -1;
+		goto out_cleanup_def_princ;
 	}
 
 	debug(logopt, "external credential cache default principal %s", cc_princ);
@@ -666,10 +664,8 @@ sasl_do_kinit_ext_cc(unsigned logopt, struct lookup_context *ctxt)
 			error(logopt,
 			      "krb5_sname_to_principal failed for "
 			      "%s with error %d", default_client, ret);
-			krb5_free_principal(ctxt->krb5ctxt, def_princ);
-			krb5_cc_close(ctxt->krb5ctxt, ctxt->krb5_ccache);
-			krb5_free_context(ctxt->krb5ctxt);
-			return -1;
+			krb5_free_unparsed_name(ctxt->krb5ctxt, cc_princ);
+			goto out_cleanup_def_princ;
 		}
 
 
@@ -680,10 +676,8 @@ sasl_do_kinit_ext_cc(unsigned logopt, struct lookup_context *ctxt)
 			      "krb5_unparse_name failed with error %d",
 			      ret);
 			krb5_free_principal(ctxt->krb5ctxt, krb5_client_princ);
-			krb5_free_principal(ctxt->krb5ctxt, def_princ);
-			krb5_cc_close(ctxt->krb5ctxt, ctxt->krb5_ccache);
-			krb5_free_context(ctxt->krb5ctxt);
-			return -1;
+			krb5_free_unparsed_name(ctxt->krb5ctxt, cc_princ);
+			goto out_cleanup_def_princ;
 		}
 
 		debug(logopt,
@@ -710,10 +704,7 @@ sasl_do_kinit_ext_cc(unsigned logopt, struct lookup_context *ctxt)
 		if (!ctxt->client_princ)
 			krb5_free_unparsed_name(ctxt->krb5ctxt, client_princ);
 		krb5_free_unparsed_name(ctxt->krb5ctxt, cc_princ);
-		krb5_free_principal(ctxt->krb5ctxt, def_princ);
-		krb5_cc_close(ctxt->krb5ctxt, ctxt->krb5_ccache);
-		krb5_free_context(ctxt->krb5ctxt);
-		return -1;
+		goto out_cleanup_def_princ;
 	}
 
 	if (!ctxt->client_princ)
@@ -724,15 +715,24 @@ sasl_do_kinit_ext_cc(unsigned logopt, struct lookup_context *ctxt)
 	/* Set the environment variable to point to the external cred cache */
 	if (setenv(krb5ccenv, ctxt->client_cc, 1) != 0) {
 		error(logopt, "setenv failed with %d", errno);
-		krb5_cc_close(ctxt->krb5ctxt, ctxt->krb5_ccache);
-		krb5_free_context(ctxt->krb5ctxt);
-		return -1;
+		goto out_cleanup_cc;
 	}
 	ctxt->kinit_successful = 1;
 
 	debug(logopt, "Kerberos authentication was successful!");
 
 	return 0;
+
+out_cleanup_def_princ:
+	krb5_free_principal(ctxt->krb5ctxt, def_princ);
+out_cleanup_cc:
+	krb5_cc_close(ctxt->krb5ctxt, ctxt->krb5_ccache);
+	krb5_free_context(ctxt->krb5ctxt);
+out_unlock:
+	status = pthread_mutex_unlock(&krb5cc_mutex);
+	if (status)
+		fatal(status);
+	return -1;
 }
 
 /*
@@ -974,11 +974,19 @@ void autofs_sasl_dispose(struct ldap_conn *conn, struct lookup_context *ctxt)
 {
 	int status, ret;
 
+	status = pthread_mutex_lock(&krb5cc_mutex);
+	if (status)
+		fatal(status);
+
 	if (ctxt->sasl_mech && !strncmp(ctxt->sasl_mech, "EXTERNAL", 8)) {
 		if (conn && conn->ldap) {
 			ldap_unbind_s(conn->ldap);
 			conn->ldap = NULL;
+			ctxt->kinit_successful = 0;
 		}
+		status = pthread_mutex_unlock(&krb5cc_mutex);
+		if (status)
+			fatal(status);
 		return;
 	}
 
@@ -988,10 +996,6 @@ void autofs_sasl_dispose(struct ldap_conn *conn, struct lookup_context *ctxt)
 	}
 
 	if (ctxt->kinit_successful) {
-		status = pthread_mutex_lock(&krb5cc_mutex);
-		if (status)
-			fatal(status);
-
 		if (--krb5cc_in_use || ctxt->client_cc)
 			ret = krb5_cc_close(ctxt->krb5ctxt, ctxt->krb5_ccache);
 		else 
@@ -1000,19 +1004,18 @@ void autofs_sasl_dispose(struct ldap_conn *conn, struct lookup_context *ctxt)
 			logmsg("krb5_cc_destroy failed with non-fatal error %d",
 			     ret);
 
-		status = pthread_mutex_unlock(&krb5cc_mutex);
-		if (status)
-			fatal(status);
-
 		krb5_free_context(ctxt->krb5ctxt);
 		if (unsetenv(krb5ccenv) != 0)
 			logerr("unsetenv failed with error %d", errno);
 
 		ctxt->krb5ctxt = NULL;
 		ctxt->krb5_ccache = NULL;
-		ctxt->kinit_done = 0;
 		ctxt->kinit_successful = 0;
 	}
+
+	status = pthread_mutex_unlock(&krb5cc_mutex);
+	if (status)
+		fatal(status);
 }
 
 static void *sasl_mutex_new(void)

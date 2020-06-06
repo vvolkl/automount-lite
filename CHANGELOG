@@ -15,6 +15,7 @@ xx/xx/2020 autofs-5.1.7
 - configure.in: Remove unneeded second call to PKG_PROG_PKG_CONFIG.
 - configure.in: Do not append parentheses to PKG_PROG_PKG_CONFIG.
 - Use PKG_CHECK_MODULES to detect the libxml2 library.
+- fix ldap sasl reconnect problem.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

@@ -87,7 +87,6 @@ struct lookup_context {
 	char        *secret;
 	char        *client_princ;
 	char        *client_cc;
-	int          kinit_done;
 	int          kinit_successful;
 #ifdef WITH_SASL
 	/* Kerberos */
