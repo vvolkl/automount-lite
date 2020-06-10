@@ -348,29 +348,10 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 	}
 
 	if (!mp->options) {
-		mp->options = make_options_string(ap->path, ap->kpipefd, str_direct);
+		mp->options = make_options_string(ap->path,
+				ap->kpipefd, str_direct, ap->flags);
 		if (!mp->options)
 			return 0;
-
-		if ((ap->flags & MOUNT_FLAG_STRICTEXPIRE) &&
-		    ((get_kver_major() == 5 && get_kver_minor() > 3) ||
-		     (get_kver_major() > 5))) {
-			char *tmp = realloc(mp->options, strlen(mp->options) + 12);
-			if (tmp) {
-				strcat(tmp, ",strictexpire");
-				mp->options = tmp;
-			}
-		}
-
-		if ((ap->flags & MOUNT_FLAG_IGNORE) &&
-		    ((get_kver_major() == 5 && get_kver_minor() > 4) ||
-		     (get_kver_major() > 5))) {
-			char *tmp = realloc(mp->options, strlen(mp->options) + 7);
-			if (tmp) {
-				strcat(tmp, ",ignore");
-				mp->options = tmp;
-			}
-		}
 	}
 
 	/* In case the directory doesn't exist, try to mkdir it */
@@ -676,29 +657,10 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *
 	}
 
 	if (!mp->options) {
-		mp->options = make_options_string(ap->path, ap->kpipefd, str_offset);
+		mp->options = make_options_string(ap->path,
+				ap->kpipefd, str_offset, ap->flags);
 		if (!mp->options)
 			return MOUNT_OFFSET_OK;
-
-		if ((ap->flags & MOUNT_FLAG_STRICTEXPIRE) &&
-		    ((get_kver_major() == 5 && get_kver_minor() > 3) ||
-		     (get_kver_major() > 5))) {
-			char *tmp = realloc(mp->options, strlen(mp->options) + 12);
-			if (tmp) {
-				strcat(tmp, ",strictexpire");
-				mp->options = tmp;
-			}
-		}
-
-		if ((ap->flags & MOUNT_FLAG_IGNORE) &&
-		    ((get_kver_major() == 5 && get_kver_minor() > 4) ||
-		     (get_kver_major() > 5))) {
-			char *tmp = realloc(mp->options, strlen(mp->options) + 7);
-			if (tmp) {
-				strcat(tmp, ",ignore");
-				mp->options = tmp;
-			}
-		}
 	}
 
 	strcpy(mountpoint, root);

@@ -599,43 +599,111 @@ void free_amd_entry_list(struct list_head *entries)
 	}
 }
 
+static int cacl_max_options_len(unsigned int flags)
+{
+	unsigned int kver_major = get_kver_major();
+	unsigned int kver_minor = get_kver_minor();
+	int max_len;
+
+	/* %d and %u are maximum lenght of 10 and mount type is maximum
+	 * length of 9 (e. ",indirect").
+	 * The base temaplate is "fd=%d,pgrp=%u,minproto=5,maxproto=%d"
+	 * plus the length of mount type plus 1 for the NULL.
+	 */
+	max_len = 79 + 1;
+
+	if (kver_major < 5 || (kver_major == 5 && kver_minor < 4))
+		goto out;
+
+	/* maybe add ",strictexpire" */
+	if (flags & MOUNT_FLAG_STRICTEXPIRE)
+		max_len += 13;
+
+	if (kver_major == 5 && kver_minor < 5)
+		goto out;
+
+	/* maybe add ",ignore" */
+	if (flags & MOUNT_FLAG_IGNORE)
+		max_len += 7;
+out:
+	return max_len;
+}
+
 /*
  * Make common autofs mount options string
  */
-char *make_options_string(char *path, int pipefd, const char *extra)
+char *make_options_string(char *path, int pipefd,
+			  const char *type, unsigned int flags)
 {
+	unsigned int kver_major = get_kver_major();
+	unsigned int kver_minor = get_kver_minor();
 	char *options;
-	int len;
+	int max_len, len, new;
 
-	options = malloc(MAX_OPTIONS_LEN + 1);
+	max_len = cacl_max_options_len(flags);
+
+	options = malloc(max_len);
 	if (!options) {
 		logerr("can't malloc options string");
 		return NULL;
 	}
 
-	if (extra) 
-		len = snprintf(options, MAX_OPTIONS_LEN,
+	if (type)
+		len = snprintf(options, max_len,
 				options_template_extra,
 				pipefd, (unsigned) getpgrp(),
-				AUTOFS_MAX_PROTO_VERSION, extra);
+				AUTOFS_MAX_PROTO_VERSION, type);
 	else
-		len = snprintf(options, MAX_OPTIONS_LEN, options_template,
+		len = snprintf(options, max_len, options_template,
 			pipefd, (unsigned) getpgrp(),
 			AUTOFS_MAX_PROTO_VERSION);
 
-	if (len >= MAX_OPTIONS_LEN) {
-		logerr("buffer to small for options - truncated");
-		len = MAX_OPTIONS_LEN - 1;
+	if (len < 0)
+		goto error_out;
+
+	if (len >= max_len)
+		goto truncated;
+
+	if (kver_major < 5 || (kver_major == 5 && kver_minor < 4))
+		goto out;
+
+	/* maybe add ",strictexpire" */
+	if (flags & MOUNT_FLAG_STRICTEXPIRE) {
+		new = snprintf(options + len,
+			       max_len, "%s", ",strictexpire");
+		if (new < 0)
+		       goto error_out;
+		len += new;
+		if (len >= max_len)
+			goto truncated;
 	}
 
-	if (len < 0) {
-		logerr("failed to malloc autofs mount options for %s", path);
-		free(options);
-		return NULL;
+	if (kver_major == 5 && kver_minor < 5)
+		goto out;
+
+	/* maybe add ",ignore" */
+	if (flags & MOUNT_FLAG_IGNORE) {
+		new = snprintf(options + len,
+			       max_len, "%s", ",ignore");
+		if (new < 0)
+		       goto error_out;
+		len += new;
+		if (len >= max_len)
+			goto truncated;
 	}
+out:
 	options[len] = '\0';
-
 	return options;
+
+truncated:
+	logerr("buffer to small for options - truncated");
+	len = max_len -1;
+	goto out;
+
+error_out:
+	logerr("error constructing mount options string for %s", path);
+	free(options);
+	return NULL;
 }
 
 char *make_mnt_name_string(char *path)

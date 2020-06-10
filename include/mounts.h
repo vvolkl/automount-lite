@@ -94,7 +94,8 @@ void free_amd_entry_list(struct list_head *entries);
 unsigned int query_kproto_ver(void);
 unsigned int get_kver_major(void);
 unsigned int get_kver_minor(void);
-char *make_options_string(char *path, int kernel_pipefd, const char *extra);
+char *make_options_string(char *path, int pipefd,
+			  const char *type, unsigned int flags);
 char *make_mnt_name_string(char *path);
 int ext_mount_add(struct list_head *, const char *, unsigned int);
 int ext_mount_remove(struct list_head *, const char *);

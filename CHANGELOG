@@ -10,6 +10,7 @@ xx/xx/2020 autofs-5.1.7
 - fix trailing dollar sun entry expansion.
 - initialize struct addrinfo for getaddrinfo() calls.
 - fix quoted string length calc in expandsunent().
+- fix autofs mount options construction.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

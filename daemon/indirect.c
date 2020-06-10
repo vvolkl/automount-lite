@@ -78,30 +78,11 @@ static int do_mount_autofs_indirect(struct autofs_point *ap, const char *root)
 		}
 	}
 
-	options = make_options_string(ap->path, ap->kpipefd, str_indirect);
+	options = make_options_string(ap->path,
+				ap->kpipefd, str_indirect, ap->flags);
 	if (!options) {
 		error(ap->logopt, "options string error");
 		goto out_err;
-	}
-
-	if ((ap->flags & MOUNT_FLAG_STRICTEXPIRE) &&
-	    ((get_kver_major() == 5 && get_kver_minor() > 3) ||
-	     (get_kver_major() > 5))) {
-		char *tmp = realloc(options, strlen(options) + 12);
-		if (tmp) {
-			strcat(tmp, ",strictexpire");
-			options = tmp;
-		}
-	}
-
-	if ((ap->flags & MOUNT_FLAG_IGNORE) &&
-	    ((get_kver_major() == 5 && get_kver_minor() > 4) ||
-	     (get_kver_major() > 5))) {
-		char *tmp = realloc(options, strlen(options) + 7);
-		if (tmp) {
-			strcat(tmp, ",ignore");
-			options = tmp;
-		}
 	}
 
 	/* In case the directory doesn't exist, try to mkdir it */
