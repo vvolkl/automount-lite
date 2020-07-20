@@ -134,7 +134,6 @@ AC_SUBST(flagdir)
 #
 # Use libtirpc
 #
-PKG_PROG_PKG_CONFIG()
 AC_ARG_WITH([libtirpc], AS_HELP_STRING([--with-libtirpc], [use libtirpc if available]))
 if test "x$with_libtirpc" = "xyes"; then
   PKG_CHECK_MODULES([TIRPC],[libtirpc],[
