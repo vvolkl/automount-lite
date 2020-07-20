@@ -48,7 +48,7 @@ AF_INIT_D()
 AC_SUBST(initdir)
 AF_PID_D()
 AC_SUBST(piddir)
-PKG_PROG_PKG_CONFIG()
+PKG_PROG_PKG_CONFIG
 
 #
 # Check for systemd unit files direectory exists if unit file installation

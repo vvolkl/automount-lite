@@ -13,6 +13,7 @@ xx/xx/2020 autofs-5.1.7
 - fix autofs mount options construction.
 - mount_nfs.c fix local rdma share not mounting.
 - configure.in: Remove unneeded second call to PKG_PROG_PKG_CONFIG.
+- configure.in: Do not append parentheses to PKG_PROG_PKG_CONFIG.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.
