@@ -25,7 +25,7 @@ CFLAGS += -DAUTOFS_MAP_DIR=\"$(autofsmapdir)\"
 CFLAGS += -DAUTOFS_CONF_DIR=\"$(autofsconfdir)\"
 
 ifeq ($(LDAP), 1)
-  CFLAGS += $(XML_FLAGS) $(XML_LIBS)
+  CFLAGS += $(XML_CFLAGS) $(XML_LIBS)
 endif
 
 .PHONY: all install clean

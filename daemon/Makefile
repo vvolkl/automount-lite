@@ -28,7 +28,7 @@ ifeq ($(SYSTEMD), 1)
 endif
 
 ifeq ($(LDAP), 1)
-    CFLAGS += $(XML_FLAGS)
+    CFLAGS += $(XML_CFLAGS)
     LIBS += $(XML_LIBS)
 endif
 

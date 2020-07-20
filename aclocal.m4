@@ -273,38 +273,6 @@ fi])
 ])
 
 dnl --------------------------------------------------------------------------
-dnl AF_CHECK_LIBXML
-dnl
-dnl Check for lib xml
-dnl --------------------------------------------------------------------------
-AC_DEFUN([AF_CHECK_LIBXML],
-[AC_PATH_PROGS(XML_CONFIG, xml2-config, no)
-AC_MSG_CHECKING(for libxml2)
-if test "$XML_CONFIG" = "no"
-then
-  AC_MSG_RESULT(no)
-  HAVE_LIBXML=0
-else
-  AC_MSG_RESULT(yes)
-  HAVE_LIBXML=1
-  XML_LIBS=`$XML_CONFIG --libs`
-  XML_FLAGS=`$XML_CONFIG --cflags`
-  XML_VER=`$XML_CONFIG --version`
-  XML_MAJOR=`echo $XML_VER|cut -d\. -f1`
-  if test $XML_MAJOR -le 99
-  then
-    XML_MINOR=`echo $XML_VER|cut -d\. -f2`
-    if test $XML_MINOR -le 99
-    then
-      XML_REV=`echo $XML_VER|cut -d\. -f3`
-      if test $XML_REV -le 99; then
-        AC_DEFINE(LIBXML2_WORKAROUND,1, [Use libxml2 tsd usage workaround])
-      fi
-    fi
-  fi
-fi])
-
-dnl --------------------------------------------------------------------------
 dnl AF_CHECK_KRB5
 dnl
 dnl Check for Kerberos 5

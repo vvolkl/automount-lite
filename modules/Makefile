@@ -47,7 +47,7 @@ endif
 ifeq ($(LDAP), 1)
   SRCS += lookup_ldap.c
   MODS += lookup_ldap.so
-  LDAP_FLAGS += $(XML_FLAGS) -DLDAP_THREAD_SAFE
+  LDAP_FLAGS += $(XML_CFLAGS) -DLDAP_THREAD_SAFE
   LIBLDAP += $(XML_LIBS)
   ifeq ($(SASL), 1)
     SASL_OBJ = cyrus-sasl.o cyrus-sasl-extern.o
