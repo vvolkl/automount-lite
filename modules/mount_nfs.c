@@ -375,9 +375,14 @@ dont_probe:
 		 */
 		if (this->proximity == PROXIMITY_LOCAL) {
 			char *host = this->name ? this->name : "localhost";
-			int ret;
+			int ret = 1;
 
-			ret = rpc_ping(host, port, vers, 2, 0, RPC_CLOSE_DEFAULT);
+			/* If we're using RDMA, rpc_ping will fail when
+			 * nfs-server is local. Therefore, don't probe
+			 * when we're using RDMA.
+			 */
+			if(!rdma)
+				ret = rpc_ping(host, port, vers, 2, 0, RPC_CLOSE_DEFAULT);
 			if (ret <= 0)
 				goto next;
 		}
