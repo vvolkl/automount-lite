@@ -17,6 +17,7 @@ xx/xx/2020 autofs-5.1.7
 - Use PKG_CHECK_MODULES to detect the libxml2 library.
 - fix ldap sasl reconnect problem.
 - samples/ldap.schema fix.
+- fix configure force shutdown check.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

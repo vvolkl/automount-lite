@@ -6264,7 +6264,7 @@ else
   enableval=no
 fi
 
-if test x$enable_forced_shutdown = xyes -o x$enableval = xyes; then
+if test x$enable_force_shutdown = xyes -o x$enableval = xyes; then
 
 $as_echo "#define ENABLE_FORCED_SHUTDOWN 1" >>confdefs.h
 

@@ -407,7 +407,7 @@ AC_ARG_ENABLE(force-shutdown,
 [  --enable-force-shutdown       enable USR1 signal to force unlink umount of any
 			        busy mounts during shutdown],,
 	enableval=no)
-if test x$enable_forced_shutdown = xyes -o x$enableval = xyes; then
+if test x$enable_force_shutdown = xyes -o x$enableval = xyes; then
 	AC_DEFINE(ENABLE_FORCED_SHUTDOWN, 1, [Enable forced shutdown on USR1 signal])
 fi
 
