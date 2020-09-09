@@ -592,8 +592,9 @@ static int sun_mount(struct autofs_point *ap, const char *root,
 		if (np > noptions + len) {
 			warn(ap->logopt, MODPREFIX "options string truncated");
 			np[len] = '\0';
-		} else
+		} else if (np > noptions) {
 			*(np - 1) = '\0';
+		}
 
 		options = noptions;
 	}
