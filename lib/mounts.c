@@ -1921,8 +1921,7 @@ static int do_remount_direct(struct autofs_point *ap,
 
 		info(ap->logopt, "re-connected to %s", path);
 
-		if (!ap->submount)
-			conditional_alarm_add(ap, ap->exp_runfreq);
+		conditional_alarm_add(ap, ap->exp_runfreq);
 	} else {
 		status = REMOUNT_FAIL;
 		info(ap->logopt, "failed to re-connect %s", path);
@@ -1997,8 +1996,7 @@ static int do_remount_indirect(struct autofs_point *ap, const unsigned int type,
 
 			info(ap->logopt, "re-connected to %s", buf);
 
-			if (!ap->submount)
-				conditional_alarm_add(ap, ap->exp_runfreq);
+			conditional_alarm_add(ap, ap->exp_runfreq);
 		} else {
 			status = REMOUNT_FAIL;
 			info(ap->logopt, "failed to re-connect %s", buf);

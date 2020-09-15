@@ -1246,8 +1246,7 @@ static void *do_mount_direct(void *arg)
 
 		mnts_set_mounted_mount(ap, mt.name);
 
-		if (!ap->submount)
-			conditional_alarm_add(ap, ap->exp_runfreq);
+		conditional_alarm_add(ap, ap->exp_runfreq);
 	} else {
 		/* TODO: get mount return status from lookup_nss_mount */
 		ops->send_fail(ap->logopt,

@@ -187,6 +187,8 @@ int conditional_alarm_add(struct autofs_point *ap, time_t seconds)
 {
 	int status;
 
+	if (ap->submount)
+		return 1;
 	if (!mnts_has_mounted_mounts(ap))
 		return 1;
 

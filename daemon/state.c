@@ -130,7 +130,7 @@ void expire_cleanup(void *arg)
 			} else if (ap->submount > 1)
 				ap->submount = 1;
 
-			if (ap->state == ST_EXPIRE && !ap->submount)
+			if (ap->state == ST_EXPIRE)
 				conditional_alarm_add(ap, ap->exp_runfreq);
 
 			/* FALLTHROUGH */
@@ -148,8 +148,7 @@ void expire_cleanup(void *arg)
 			rv = ops->askumount(ap->logopt, ap->ioctlfd, &idle);
 			if (!rv && !idle && !ap->shutdown) {
 				next = ST_READY;
-				if (!ap->submount)
-					conditional_alarm_add(ap, ap->exp_runfreq);
+				conditional_alarm_add(ap, ap->exp_runfreq);
 				break;
 			}
 
@@ -162,8 +161,7 @@ void expire_cleanup(void *arg)
 
 			/* Failed shutdown returns to ready */
 			warn(ap->logopt, "filesystem %s still busy", ap->path);
-			if (!ap->submount)
-				conditional_alarm_add(ap, ap->exp_runfreq);
+			conditional_alarm_add(ap, ap->exp_runfreq);
 			next = ST_READY;
 			break;
 #endif
@@ -553,8 +551,7 @@ static unsigned int st_readmap(struct autofs_point *ap)
 		error(ap->logopt, "failed to malloc readmap cond struct");
 		/* It didn't work: return to ready */
 		st_ready(ap);
-		if (!ap->submount)
-			conditional_alarm_add(ap, ap->exp_runfreq);
+		conditional_alarm_add(ap, ap->exp_runfreq);
 		return 0;
 	}
 
@@ -580,8 +577,7 @@ static unsigned int st_readmap(struct autofs_point *ap)
 		free(ra);
 		/* It didn't work: return to ready */
 		st_ready(ap);
-		if (!ap->submount)
-			conditional_alarm_add(ap, ap->exp_runfreq);
+		conditional_alarm_add(ap, ap->exp_runfreq);
 		return 0;
 	}
 	ap->readmap_thread = thid;
@@ -616,8 +612,7 @@ static unsigned int st_prepare_shutdown(struct autofs_point *ap)
 	case EXP_ERROR:
 	case EXP_PARTIAL:
 		/* It didn't work: return to ready */
-		if (!ap->submount)
-			conditional_alarm_add(ap, ap->exp_runfreq);
+		conditional_alarm_add(ap, ap->exp_runfreq);
 		st_ready(ap);
 		return 0;
 
@@ -642,8 +637,7 @@ static unsigned int st_force_shutdown(struct autofs_point *ap)
 	case EXP_ERROR:
 	case EXP_PARTIAL:
 		/* It didn't work: return to ready */
-		if (!ap->submount)
-			conditional_alarm_add(ap, ap->exp_runfreq);
+		conditional_alarm_add(ap, ap->exp_runfreq);
 		st_ready(ap);
 		return 0;
 
@@ -675,8 +669,7 @@ static unsigned int st_prune(struct autofs_point *ap)
 	switch (expire_proc(ap, AUTOFS_EXP_IMMEDIATE)) {
 	case EXP_ERROR:
 	case EXP_PARTIAL:
-		if (!ap->submount)
-			conditional_alarm_add(ap, ap->exp_runfreq);
+		conditional_alarm_add(ap, ap->exp_runfreq);
 		st_ready(ap);
 		return 0;
 
@@ -696,8 +689,7 @@ static unsigned int st_expire(struct autofs_point *ap)
 	switch (expire_proc(ap, AUTOFS_EXP_NORMAL)) {
 	case EXP_ERROR:
 	case EXP_PARTIAL:
-		if (!ap->submount)
-			conditional_alarm_add(ap, ap->exp_runfreq);
+		conditional_alarm_add(ap, ap->exp_runfreq);
 		st_ready(ap);
 		return 0;
 

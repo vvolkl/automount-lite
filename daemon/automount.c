@@ -1844,8 +1844,7 @@ int handle_mounts_exit(struct autofs_point *ap)
 	}
 
 	if (ap->state != ST_SHUTDOWN) {
-		if (!ap->submount)
-			conditional_alarm_add(ap, ap->exp_runfreq);
+		conditional_alarm_add(ap, ap->exp_runfreq);
 		/* Return to ST_READY is done immediately */
 		st_add_task(ap, ST_READY);
 		if (ap->submount)
@@ -1889,8 +1888,7 @@ int handle_mounts_exit(struct autofs_point *ap)
 
 	/* Failed shutdown returns to ready */
 	warn(ap->logopt, "can't shutdown: filesystem %s still busy", ap->path);
-	if (!ap->submount)
-		conditional_alarm_add(ap, ap->exp_runfreq);
+	conditional_alarm_add(ap, ap->exp_runfreq);
 	/* Return to ST_READY is done immediately */
 	st_add_task(ap, ST_READY);
 	if (ap->submount)
