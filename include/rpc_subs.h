@@ -18,7 +18,7 @@
 
 #include <rpc/rpc.h>
 #include <rpc/pmap_prot.h>
-#include <nfs/nfs.h>
+#include <linux/nfs.h>
 #include <linux/nfs2.h>
 #include <linux/nfs3.h>
 
