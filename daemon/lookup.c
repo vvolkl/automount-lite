@@ -303,10 +303,8 @@ int lookup_nss_read_master(struct master *master, time_t age)
 			master->read_fail = 1;
 
 		status = check_nss_result(this, result);
-		if (status >= 0) {
-			free_sources(&nsslist);
-			return status;
-		}
+		if (status >= 0)
+			break;
 	}
 
 	if (!list_empty(&nsslist))
