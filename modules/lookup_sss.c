@@ -259,16 +259,37 @@ static int setautomntent_wait(unsigned int logopt,
 	*sss_ctxt = NULL;
 
 	retries = defaults_get_sss_master_map_wait();
-	if (retries <= 0)
-		return ENOENT;
+
+	/* If sss_master_map_wait is not set in the autofs
+	 * configuration give it a sensible value since we
+	 * want to wait for a host that's down in case it
+	 * comes back up.
+	 */
+	if (retries <= 0) {
+		/* Protocol version 0 cant't tell us about
+		 * a host being down, return not found.
+		 */
+		if (proto_version(ctxt) == 0)
+			return ENOENT;
+		retries = 10;
+	}
+
+	warn(logopt,
+	     "can't connect to sssd, retry for %d seconds",
+	     retries);
 
 	while (++retry <= retries) {
 		struct timespec t = { SSS_WAIT_INTERVAL, 0 };
 		struct timespec r;
 
 		ret = ctxt->setautomntent(ctxt->mapname, sss_ctxt);
-		if (ret != ENOENT)
-			break;
+		if (proto_version(ctxt) == 0) {
+			if (ret != ENOENT)
+				break;
+		} else {
+			if (ret != EHOSTDOWN)
+				break;
+		}
 
 		if (*sss_ctxt) {
 			free(*sss_ctxt);
@@ -279,17 +300,17 @@ static int setautomntent_wait(unsigned int logopt,
 			memcpy(&t, &r, sizeof(struct timespec));
 	}
 
-
-	if (ret) {
+	if (!ret)
+		info(logopt, "successfully connected to sssd");
+	else {
 		if (*sss_ctxt) {
 			free(*sss_ctxt);
 			*sss_ctxt = NULL;
 		}
 
-		if (retry > retries)
+		if (proto_version(ctxt) == 0 && retry > retries)
 			ret = ETIMEDOUT;
 	}
-
 	return ret;
 }
 
@@ -298,35 +319,50 @@ static int setautomntent(unsigned int logopt,
 {
 	char buf[MAX_ERR_BUF];
 	char *estr;
+	int err = NSS_STATUS_UNAVAIL;
 	int ret;
 
 	ret = ctxt->setautomntent(ctxt->mapname, sss_ctxt);
 	if (ret) {
-		if (ret == ECONNREFUSED)
-			return NSS_STATUS_UNKNOWN;
-
-		if (ret != ENOENT)
+		if (ret == ECONNREFUSED) {
+			err = NSS_STATUS_UNKNOWN;
 			goto error;
+		}
+
+		if (proto_version(ctxt) == 0) {
+			if (ret != ENOENT)
+				goto error;
+		} else {
+			if (ret != ENOENT && ret != EHOSTDOWN)
+				goto error;
+		}
 
 		ret = setautomntent_wait(logopt, ctxt, sss_ctxt);
 		if (ret) {
-			if (ret == ECONNREFUSED)
-				return NSS_STATUS_UNKNOWN;
-			if (ret == ENOENT)
-				return NSS_STATUS_NOTFOUND;
+			if (ret == ECONNREFUSED) {
+				err = NSS_STATUS_UNKNOWN;
+				goto error;
+			}
+			if (ret == ETIMEDOUT)
+				goto error;
+			if (ret == ENOENT) {
+				err = NSS_STATUS_NOTFOUND;
+				goto free;
+			}
 			goto error;
 		}
 	}
-	return ret;
+	return NSS_STATUS_SUCCESS;
 
 error:
 	estr = strerror_r(ret, buf, MAX_ERR_BUF);
 	error(logopt, MODPREFIX "setautomntent: %s", estr);
+free:
 	if (*sss_ctxt) {
 		free(*sss_ctxt);
 		*sss_ctxt = NULL;
 	}
-	return NSS_STATUS_UNAVAIL;
+	return err;
 }
 
 static int endautomntent(unsigned int logopt,
