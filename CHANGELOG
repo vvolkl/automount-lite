@@ -40,6 +40,7 @@ xx/xx/2020 autofs-5.1.7
 - dont prune offset map entries.
 - simplify sss source stale check.
 - include linux/nfs.h directly in rpc_subs.h.
+- fix typo in daemon/automount.c.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

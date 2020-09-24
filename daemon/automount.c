@@ -1958,7 +1958,7 @@ static void usage(void)
 		"			run automounter as a systemd service\n"
 		"	-f --foreground do not fork into background\n"
 		"	-r --random-multimount-selection\n"
-		"			use ramdom replicated server selection\n"
+		"			use random replicated server selection\n"
 		"	-m --dumpmaps [<map type> <map name>]\n"
 		"			dump automounter maps and exit\n"
 		"	-n --negative-timeout n\n"
