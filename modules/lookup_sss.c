@@ -30,8 +30,8 @@
 
 #define MAPFMT_DEFAULT "sun"
 
-/* Half a second between retries */
-#define SETAUTOMOUNTENT_MASTER_INTERVAL	500000000
+/* One second between retries */
+#define SSS_WAIT_INTERVAL	1
 
 #define MODPREFIX "lookup(sss): "
 
@@ -230,8 +230,8 @@ static int setautomntent_wait(unsigned int logopt,
 
 	*sss_ctxt = NULL;
 
-	while (++retry < retries) {
-		struct timespec t = { 0, SETAUTOMOUNTENT_MASTER_INTERVAL };
+	while (++retry <= retries) {
+		struct timespec t = { SSS_WAIT_INTERVAL, 0 };
 		struct timespec r;
 
 		ret = ctxt->setautomntent(mapname, sss_ctxt);
@@ -300,7 +300,7 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 		if (ret != ENOENT)
 			return NSS_STATUS_UNAVAIL;
 
-		retries = defaults_get_sss_master_map_wait() * 2;
+		retries = defaults_get_sss_master_map_wait();
 		if (retries <= 0)
 			return NSS_STATUS_NOTFOUND;
 
