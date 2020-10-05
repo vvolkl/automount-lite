@@ -41,6 +41,7 @@ xx/xx/2020 autofs-5.1.7
 - simplify sss source stale check.
 - include linux/nfs.h directly in rpc_subs.h.
 - fix typo in daemon/automount.c.
+- fix direct mount unlink_mount_tree() path.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

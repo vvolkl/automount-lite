@@ -311,7 +311,7 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 			return 0;
 		}
 
-		ret = unlink_mount_tree(ap, ap->path);
+		ret = unlink_mount_tree(ap, me->key);
 		if (!ret) {
 			error(ap->logopt,
 			     "already mounted as other than autofs "
