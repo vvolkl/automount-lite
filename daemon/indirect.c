@@ -76,6 +76,9 @@ static int do_mount_autofs_indirect(struct autofs_point *ap, const char *root)
 			      "or failed to unlink entry in tree");
 			goto out_err;
 		}
+
+		if (do_force_unlink & UNLINK_AND_EXIT)
+			return -1;
 	}
 
 	options = make_options_string(ap->path,
@@ -163,12 +166,20 @@ int mount_autofs_indirect(struct autofs_point *ap, const char *root)
 	int status;
 	int map;
 
+	/* Don't read the map if the unlink and exit option has been
+	 * given. do_mount_autofs_indirect() will return -1 if this
+	 * option has been given so there's no need to do anything
+	 * else.
+	 */
+
 	/* TODO: read map, determine map type is OK */
-	if (lookup_nss_read_map(ap, NULL, now))
-		lookup_prune_cache(ap, now);
-	else {
-		error(ap->logopt, "failed to read map for %s", ap->path);
-		return -1;
+	if (!(do_force_unlink & UNLINK_AND_EXIT)) {
+		if (lookup_nss_read_map(ap, NULL, now))
+			lookup_prune_cache(ap, now);
+		else {
+			error(ap->logopt, "failed to read map for %s", ap->path);
+			return -1;
+		}
 	}
 
 	status = do_mount_autofs_indirect(ap, root);

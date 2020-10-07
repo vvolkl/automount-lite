@@ -594,6 +594,7 @@ struct autofs_point {
 };
 
 #define UNLINK_AND_CONT		0x01
+#define UNLINK_AND_EXIT		0x02
 
 /* Foreably unlink existing mounts at startup. */
 extern int do_force_unlink;

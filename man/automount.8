@@ -121,6 +121,12 @@ Don't check if the daemon is currently running (see NOTES).
 Force an unlink umount of existing mounts under configured autofs managed
 mount points during startup. This can cause problems for processes with
 working directories within these mounts (see NOTES).
+.TP
+.I "\-U, \-\-force-exit"
+Force an unlink umount of existing mounts under configured autofs managed
+mount points and exit rather than continuing the startup. This can cause
+problems for processes with working directories within these mounts (see
+NOTES).
 .SH ARGUMENTS
 \fBautomount\fP takes one optional argument, the name of the master map to
 use.

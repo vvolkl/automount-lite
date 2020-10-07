@@ -1172,8 +1172,13 @@ static int mount_autofs(struct autofs_point *ap, const char *root)
 {
 	int status = 0;
 
-	if (autofs_init_ap(ap) != 0)
-		return -1;
+	/* No need to create comms fds and command fifo if
+	 * unlinking mounts and exiting.
+	 */
+	if (!(do_force_unlink & UNLINK_AND_EXIT)) {
+		if (autofs_init_ap(ap) != 0)
+			return -1;
+	}
 
 	if (ap->type == LKP_DIRECT)
 		status = mount_autofs_direct(ap);
@@ -1880,7 +1885,8 @@ void *handle_mounts(void *arg)
 	}
 
 	if (mount_autofs(ap, root) < 0) {
-		crit(ap->logopt, "mount of %s failed!", ap->path);
+		if (!(do_force_unlink & UNLINK_AND_EXIT))
+			crit(ap->logopt, "mount of %s failed!", ap->path);
 		suc->status = 1;
 		umount_autofs(ap, root, 1);
 		free(root);
@@ -1972,6 +1978,7 @@ static void usage(void)
 		"	-C --dont-check-daemon\n"
 		"			don't check if daemon is already running\n"
 		"	-F --force	forceably clean up known automounts at start\n"
+		"	-U --force-exit	forceably clean up known automounts and exit\n"
 		"	-V --version	print version, build config and exit\n"
 		, program);
 }
@@ -2222,7 +2229,7 @@ int main(int argc, char *argv[])
 	time_t timeout;
 	time_t age = monotonic_time(NULL);
 	struct rlimit rlim;
-	const char *options = "+hp:t:vmdD:SfVrO:l:n:CFM";
+	const char *options = "+hp:t:vmdD:SfVrO:l:n:CFUM";
 	static const struct option long_options[] = {
 		{"help", 0, 0, 'h'},
 		{"pid-file", 1, 0, 'p'},
@@ -2240,6 +2247,7 @@ int main(int argc, char *argv[])
 		{"set-log-priority", 1, 0, 'l'},
 		{"dont-check-daemon", 0, 0, 'C'},
 		{"force", 0, 0, 'F'},
+		{"force-exit", 0, 0, 'U'},
 		{"master-wait", 1, 0, 'M'},
 		{0, 0, 0, 0}
 	};
@@ -2360,6 +2368,11 @@ int main(int argc, char *argv[])
 
 		case 'F':
 			do_force_unlink = UNLINK_AND_CONT;
+			break;
+
+		case 'U':
+			flags |= DAEMON_FLAGS_FOREGROUND;
+			do_force_unlink = UNLINK_AND_EXIT;
 			break;
 
 		case '?':
@@ -2682,25 +2695,27 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/*
-	 * Mmm ... reset force unlink umount so we don't also do this
-	 * in future when we receive a HUP signal.
-	 */
-	do_force_unlink = 0;
+	if (!(do_force_unlink & UNLINK_AND_EXIT)) {
+		/*
+		 * Mmm ... reset force unlink umount so we don't also do
+		 * this in future when we receive a HUP signal.
+		 */
+		do_force_unlink = 0;
 
-	if (start_pipefd[1] != -1) {
-		st_stat = 0;
-		res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
-		close(start_pipefd[1]);
-	}
+		if (start_pipefd[1] != -1) {
+			st_stat = 0;
+			res = write(start_pipefd[1], pst_stat, sizeof(*pst_stat));
+			close(start_pipefd[1]);
+		}
 
 #ifdef WITH_SYSTEMD
-	if (flags & DAEMON_FLAGS_SYSTEMD_SERVICE)
-		sd_notify(1, "READY=1");
+		if (flags & DAEMON_FLAGS_SYSTEMD_SERVICE)
+			sd_notify(1, "READY=1");
 #endif
 
-	state_mach_thid = pthread_self();
-	statemachine(NULL);
+		state_mach_thid = pthread_self();
+		statemachine(NULL);
+	}
 
 	master_kill(master_list);
 

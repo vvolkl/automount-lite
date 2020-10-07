@@ -1359,7 +1359,8 @@ static int master_do_mount(struct master_mapent *entry)
 	suc.done = 0;
 	suc.status = 0;
 
-	debug(ap->logopt, "mounting %s", entry->path);
+	if (!(do_force_unlink & UNLINK_AND_EXIT))
+		debug(ap->logopt, "mounting %s", entry->path);
 
 	status = pthread_create(&thid, &th_attr, handle_mounts, &suc);
 	if (status) {
@@ -1377,7 +1378,8 @@ static int master_do_mount(struct master_mapent *entry)
 	}
 
 	if (suc.status) {
-		error(ap->logopt, "failed to startup mount");
+		if (!(do_force_unlink & UNLINK_AND_EXIT))
+			error(ap->logopt, "failed to startup mount");
 		handle_mounts_startup_cond_destroy(&suc);
 		return 0;
 	}

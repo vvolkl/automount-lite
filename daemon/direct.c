@@ -286,7 +286,14 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 		if (ret == 0)
 			return -1;
 	} else {
-		if (ap->state == ST_READMAP && is_mounted(me->key, MNTS_ALL)) {
+		/* I don't remember why this is here for the force
+		 * unlink case. I don't think it should be but I may
+		 * have done it for a reason so keep it for the unlink
+		 * and continue case but not for the unlink and exit
+		 * case.
+		 */
+		if (!(do_force_unlink & UNLINK_AND_EXIT) &&
+		    ap->state == ST_READMAP && is_mounted(me->key, MNTS_ALL)) {
 			time_t tout = get_exp_timeout(ap, me->source);
 			int save_ioctlfd, ioctlfd;
 
@@ -318,6 +325,9 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 			     "or failed to unlink entry in tree");
 			goto out_err;
 		}
+
+		if (do_force_unlink & UNLINK_AND_EXIT)
+			return -1;
 
 		if (me->ioctlfd != -1) {
 			error(ap->logopt, "active direct mount %s", me->key);
