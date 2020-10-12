@@ -45,6 +45,7 @@ xx/xx/2020 autofs-5.1.7
 - fix unlink mounts umount order.
 - fix incorrect logical compare in unlink_mount_tree().
 - use bit flag for force unlink mounts.
+- improve force unlink option description.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.
