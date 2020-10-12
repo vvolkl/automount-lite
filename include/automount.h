@@ -593,6 +593,8 @@ struct autofs_point {
 	struct list_head submounts;	/* List of child submounts */
 };
 
+#define UNLINK_AND_CONT		0x01
+
 /* Foreably unlink existing mounts at startup. */
 extern int do_force_unlink;
 

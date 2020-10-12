@@ -2357,7 +2357,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'F':
-			do_force_unlink = 1;
+			do_force_unlink = UNLINK_AND_CONT;
 			break;
 
 		case '?':
