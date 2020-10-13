@@ -63,7 +63,7 @@ entry has expired.
 .P
 .B @@initdir@@/autofs status
 or
-.B systemctl autofs.service status
+.B systemctl status autofs.service
 will display the status of,
 .BR automount (8),
 running or not. When using the systemd init system the status output includes
