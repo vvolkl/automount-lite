@@ -959,7 +959,7 @@ int unlink_mount_tree(struct autofs_point *ap, const char *mp)
 		return 0;
 
 	for (mnt = mnts; mnt; mnt = mnt->next) {
-		if (mnt->flags | MNTS_AUTOFS)
+		if (mnt->flags & MNTS_AUTOFS)
 			rv = umount2(mnt->mp, MNT_DETACH);
 		else
 			rv = spawn_umount(ap->logopt, "-l", mnt->mp, NULL);
