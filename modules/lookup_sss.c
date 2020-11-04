@@ -37,11 +37,29 @@
 
 #define SSS_SO_NAME "libsss_autofs"
 
+/* If the sss library protocol version is greater than 0 there are
+ * more possibile error returns from the sss autofs library calls.
+ *
+ * If ECONNREFUSED is returned then sssd is not running or not
+ * configured on the system, immediately return an unavailable
+ * status.
+ *
+ * A return of EHOSTDOWN means sss backend server is down so we
+ * should retry.
+ *
+ * With older sss ilibrary we can get a return of ENOENT for the
+ * above cases so also wait in that case since we can't be sure
+ * the map doesn't exist.
+ */
+#define SSS_PROTO_VERSION 1
+
+unsigned int _sss_auto_protocol_version(unsigned int);
 int _sss_setautomntent(const char *, void **);
 int _sss_getautomntent_r(char **, char **, void *);
 int _sss_getautomntbyname_r(char *, char **, void *);
 int _sss_endautomntent(void **);
 
+typedef unsigned int (*protocol_version_t) (unsigned int);
 typedef int (*setautomntent_t) (const char *, void **);
 typedef int (*getautomntent_t) (char **, char **, void *);
 typedef int (*getautomntbyname_t) (char *, char **, void *);
@@ -50,6 +68,7 @@ typedef int (*endautomntent_t) (void **);
 struct lookup_context {
 	const char *mapname;
     	void *dlhandle;
+	protocol_version_t protocol_version;
 	setautomntent_t setautomntent;
 	getautomntent_t getautomntent_r;
 	getautomntbyname_t getautomntbyname_r;
@@ -58,6 +77,8 @@ struct lookup_context {
 };
 
 int lookup_version = AUTOFS_LOOKUP_VERSION;	/* Required by protocol */
+int sss_proto_version = SSS_PROTO_VERSION;	/* 0 => initial version,
+						 * >= 1 => new error handling. */
 
 static int open_sss_lib(struct lookup_context *ctxt)
 {
@@ -77,6 +98,11 @@ static int open_sss_lib(struct lookup_context *ctxt)
 	if (!dh)
 		return 1;
 	ctxt->dlhandle = dh;
+
+	/* Don't fail on NULL, it's simply not present in this version of the
+	 * sss autofs library.
+	 */
+	ctxt->protocol_version = (protocol_version_t) dlsym(dh, "_sss_auto_protocol_version");
 
 	ctxt->setautomntent = (setautomntent_t) dlsym(dh, "_sss_setautomntent");
 	if (!ctxt->setautomntent)
@@ -193,6 +219,7 @@ int lookup_reinit(const char *mapfmt,
 	}
 
 	new->dlhandle = ctxt->dlhandle;
+	new->protocol_version = ctxt->protocol_version;
 	new->setautomntent = ctxt->setautomntent;
 	new->getautomntent_r = ctxt->getautomntent_r;
 	new->getautomntbyname_r = ctxt->getautomntbyname_r;
@@ -217,6 +244,23 @@ static int setautomntent(unsigned int logopt,
 			free(*sss_ctxt);
 	}
 	return ret;
+}
+
+static unsigned int proto_version(struct lookup_context *ctxt)
+{
+	unsigned int proto_version = 0;
+
+	if (ctxt->protocol_version) {
+		/* If ctxt->protocol_version() is defined it's assumed
+		 * that for sss_proto_version <= sss autofs library
+		 * protocol version ctxt->protocol_version() will
+		 * return the version requested by autofs to indicate
+		 * it userstands what the autofs module is capable of
+		 * handling.
+		 */
+		proto_version = ctxt->protocol_version(sss_proto_version);
+	}
+	return proto_version;
 }
 
 static int setautomntent_wait(unsigned int logopt,
