@@ -1180,8 +1180,10 @@ static int mount_autofs(struct autofs_point *ap, const char *root)
 	else
 		status = mount_autofs_indirect(ap, root);
 
-	if (status < 0)
+	if (status < 0) {
+		destroy_logpri_fifo(ap);
 		return -1;
+	}
 
 	st_add_task(ap, ST_READY);
 
