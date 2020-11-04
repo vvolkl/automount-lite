@@ -60,7 +60,8 @@ unsigned int nfs_mount_uses_string_options = 0;
 static struct nfs_mount_vers vers, check = {1, 1, 1};
 
 /* autofs fifo name prefix */
-const char *fifodir = AUTOFS_FIFO_DIR "/autofs.fifo";
+#define FIFO_NAME_PREFIX "autofs.fifo"
+const char *fifodir = AUTOFS_FIFO_DIR "/" FIFO_NAME_PREFIX;
 
 const char *global_options;		/* Global option, from command line */
 
@@ -904,6 +905,48 @@ int destroy_logpri_fifo(struct autofs_point *ap)
 out_free:
 	free(fifo_name);
 	return ret;
+}
+
+static void cleanup_stale_logpri_fifo_pipes(void)
+{
+	size_t prefix_len = strlen(FIFO_NAME_PREFIX);
+	char *dir = AUTOFS_FIFO_DIR;
+	size_t dir_len = strlen(dir);
+	struct dirent *dent;
+	DIR *dfd;
+	int ret;
+
+	dfd = opendir(dir);
+	if (!dfd) {
+		warn(LOGOPT_ANY, "failed to open fifo dir %s", dir);
+		return;
+	}
+
+	while ((dent = readdir(dfd))) {
+		char fifo_path[PATH_MAX];
+
+		if (!(dent->d_type & DT_FIFO))
+			continue;
+		if (strncmp(FIFO_NAME_PREFIX, dent->d_name, prefix_len))
+			continue;
+		if ((dir_len + 1 + strlen(dent->d_name)) >= PATH_MAX) {
+			warn(LOGOPT_ANY, "fifo path too long for buffer");
+			continue;
+		}
+
+		strcpy(fifo_path, dir);
+		strcat(fifo_path, "/");
+		strcat(fifo_path, dent->d_name);
+
+		ret = unlink(fifo_path);
+		if (ret == -1) {
+			char buf[MAX_ERR_BUF];
+			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+			warn(LOGOPT_ANY, "unlink of fifo failed: %s", estr);
+		}
+	}
+
+	closedir(dfd);
 }
 
 static void handle_fifo_message(struct autofs_point *ap, int fd)
@@ -2695,7 +2738,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (!(do_force_unlink & UNLINK_AND_EXIT)) {
+	/* If the option to unlink all autofs mounts and exit has
+	 * been given remove logpri fifo pipe files as all the mounts
+	 * will be detached leaving them stale.
+	 */
+	if (do_force_unlink & UNLINK_AND_EXIT)
+		cleanup_stale_logpri_fifo_pipes();
+	else {
 		/*
 		 * Mmm ... reset force unlink umount so we don't also do
 		 * this in future when we receive a HUP signal.
