@@ -232,20 +232,6 @@ int lookup_reinit(const char *mapfmt,
 	return 0;
 }
 
-static int setautomntent(unsigned int logopt,
-			 struct lookup_context *ctxt, void **sss_ctxt)
-{
-	int ret = ctxt->setautomntent(ctxt->mapname, sss_ctxt);
-	if (ret) {
-		char buf[MAX_ERR_BUF];
-		char *estr = strerror_r(ret, buf, MAX_ERR_BUF);
-		error(logopt, MODPREFIX "setautomntent: %s", estr);
-		if (*sss_ctxt)
-			free(*sss_ctxt);
-	}
-	return ret;
-}
-
 static unsigned int proto_version(struct lookup_context *ctxt)
 {
 	unsigned int proto_version = 0;
@@ -264,13 +250,17 @@ static unsigned int proto_version(struct lookup_context *ctxt)
 }
 
 static int setautomntent_wait(unsigned int logopt,
-			      struct lookup_context *ctxt,
-			      void **sss_ctxt, unsigned int retries)
+			      struct lookup_context *ctxt, void **sss_ctxt)
 {
+	unsigned int retries;
 	unsigned int retry = 0;
 	int ret = 0;
 
 	*sss_ctxt = NULL;
+
+	retries = defaults_get_sss_master_map_wait();
+	if (retries <= 0)
+		return ENOENT;
 
 	while (++retry <= retries) {
 		struct timespec t = { SSS_WAIT_INTERVAL, 0 };
@@ -291,9 +281,6 @@ static int setautomntent_wait(unsigned int logopt,
 
 
 	if (ret) {
-		char buf[MAX_ERR_BUF];
-		char *estr;
-
 		if (*sss_ctxt) {
 			free(*sss_ctxt);
 			*sss_ctxt = NULL;
@@ -301,12 +288,45 @@ static int setautomntent_wait(unsigned int logopt,
 
 		if (retry > retries)
 			ret = ETIMEDOUT;
-
-		estr = strerror_r(ret, buf, MAX_ERR_BUF);
-		error(logopt, MODPREFIX "setautomntent: %s", estr);
 	}
 
 	return ret;
+}
+
+static int setautomntent(unsigned int logopt,
+			 struct lookup_context *ctxt, void **sss_ctxt)
+{
+	char buf[MAX_ERR_BUF];
+	char *estr;
+	int ret;
+
+	ret = ctxt->setautomntent(ctxt->mapname, sss_ctxt);
+	if (ret) {
+		if (ret == ECONNREFUSED)
+			return NSS_STATUS_UNKNOWN;
+
+		if (ret != ENOENT)
+			goto error;
+
+		ret = setautomntent_wait(logopt, ctxt, sss_ctxt);
+		if (ret) {
+			if (ret == ECONNREFUSED)
+				return NSS_STATUS_UNKNOWN;
+			if (ret == ENOENT)
+				return NSS_STATUS_NOTFOUND;
+			goto error;
+		}
+	}
+	return ret;
+
+error:
+	estr = strerror_r(ret, buf, MAX_ERR_BUF);
+	error(logopt, MODPREFIX "setautomntent: %s", estr);
+	if (*sss_ctxt) {
+		free(*sss_ctxt);
+		*sss_ctxt = NULL;
+	}
+	return NSS_STATUS_UNAVAIL;
 }
 
 static int endautomntent(unsigned int logopt,
@@ -336,28 +356,8 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 	int count, ret;
 
 	ret = setautomntent(logopt, ctxt, &sss_ctxt);
-	if (ret) {
-		unsigned int retries;
-
-		if (ret == ECONNREFUSED)
-			return NSS_STATUS_UNKNOWN;
-
-		if (ret != ENOENT)
-			return NSS_STATUS_UNAVAIL;
-
-		retries = defaults_get_sss_master_map_wait();
-		if (retries <= 0)
-			return NSS_STATUS_NOTFOUND;
-
-		ret = setautomntent_wait(logopt, ctxt, &sss_ctxt, retries);
-		if (ret) {
-			if (ret == ECONNREFUSED)
-				return NSS_STATUS_UNKNOWN;
-			if (ret == ENOENT)
-				return NSS_STATUS_NOTFOUND;
-			return NSS_STATUS_UNAVAIL;
-		}
-	}
+	if (ret)
+		return ret;
 
 	count = 0;
 	while (1) {
@@ -459,13 +459,8 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 	}
 
 	ret = setautomntent(ap->logopt, ctxt, &sss_ctxt);
-	if (ret) {
-		if (ret == ECONNREFUSED)
-			return NSS_STATUS_UNKNOWN;
-		if (ret == ENOENT)
-			return NSS_STATUS_NOTFOUND;
-		return NSS_STATUS_UNAVAIL;
-	}
+	if (ret)
+		return ret;
 
 	count = 0;
 	while (1) {
@@ -571,13 +566,8 @@ static int lookup_one(struct autofs_point *ap,
 	mc = source->mc;
 
 	ret = setautomntent(ap->logopt, ctxt, &sss_ctxt);
-	if (ret) {
-		if (ret == ECONNREFUSED)
-			return NSS_STATUS_UNKNOWN;
-		if (ret == ENOENT)
-			return NSS_STATUS_NOTFOUND;
-		return NSS_STATUS_UNAVAIL;
-	}
+	if (ret)
+		return ret;
 
 	ret = ctxt->getautomntbyname_r(qKey, &value, sss_ctxt);
 	if (ret && ret != ENOENT) {
