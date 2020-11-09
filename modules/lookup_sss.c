@@ -206,10 +206,9 @@ int lookup_reinit(const char *mapfmt,
 }
 
 static int setautomntent(unsigned int logopt,
-			 struct lookup_context *ctxt, const char *mapname,
-			 void **sss_ctxt)
+			 struct lookup_context *ctxt, void **sss_ctxt)
 {
-	int ret = ctxt->setautomntent(mapname, sss_ctxt);
+	int ret = ctxt->setautomntent(ctxt->mapname, sss_ctxt);
 	if (ret) {
 		char buf[MAX_ERR_BUF];
 		char *estr = strerror_r(ret, buf, MAX_ERR_BUF);
@@ -222,7 +221,6 @@ static int setautomntent(unsigned int logopt,
 
 static int setautomntent_wait(unsigned int logopt,
 			      struct lookup_context *ctxt,
-			      const char *mapname,
 			      void **sss_ctxt, unsigned int retries)
 {
 	unsigned int retry = 0;
@@ -234,7 +232,7 @@ static int setautomntent_wait(unsigned int logopt,
 		struct timespec t = { SSS_WAIT_INTERVAL, 0 };
 		struct timespec r;
 
-		ret = ctxt->setautomntent(mapname, sss_ctxt);
+		ret = ctxt->setautomntent(ctxt->mapname, sss_ctxt);
 		if (ret != ENOENT)
 			break;
 
@@ -293,7 +291,7 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 	char *value = NULL;
 	int count, ret;
 
-	ret = setautomntent(logopt, ctxt, ctxt->mapname, &sss_ctxt);
+	ret = setautomntent(logopt, ctxt, &sss_ctxt);
 	if (ret) {
 		unsigned int retries;
 
@@ -307,9 +305,7 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 		if (retries <= 0)
 			return NSS_STATUS_NOTFOUND;
 
-		ret = setautomntent_wait(logopt,
-					 ctxt, ctxt->mapname, &sss_ctxt,
-					 retries);
+		ret = setautomntent_wait(logopt, ctxt, &sss_ctxt, retries);
 		if (ret) {
 			if (ret == ECONNREFUSED)
 				return NSS_STATUS_UNKNOWN;
@@ -418,7 +414,7 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 		return NSS_STATUS_SUCCESS;
 	}
 
-	ret = setautomntent(ap->logopt, ctxt, ctxt->mapname, &sss_ctxt);
+	ret = setautomntent(ap->logopt, ctxt, &sss_ctxt);
 	if (ret) {
 		if (ret == ECONNREFUSED)
 			return NSS_STATUS_UNKNOWN;
@@ -530,7 +526,7 @@ static int lookup_one(struct autofs_point *ap,
 
 	mc = source->mc;
 
-	ret = setautomntent(ap->logopt, ctxt, ctxt->mapname, &sss_ctxt);
+	ret = setautomntent(ap->logopt, ctxt, &sss_ctxt);
 	if (ret) {
 		if (ret == ECONNREFUSED)
 			return NSS_STATUS_UNKNOWN;

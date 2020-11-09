@@ -23,6 +23,7 @@ xx/xx/2020 autofs-5.1.7
 - fix typo in open_sss_lib().
 - fix sss_master_map_wait timing.
 - add sss ECONREFUSED return handling.
+- use mapname in sss context for setautomntent().
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.
