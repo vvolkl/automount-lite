@@ -91,7 +91,7 @@ static int open_sss_lib(struct lookup_context *ctxt)
 		goto lib_names_fail;
 
 	ctxt->endautomntent = (endautomntent_t) dlsym(dh, "_sss_endautomntent");
-	if (!ctxt->setautomntent)
+	if (!ctxt->endautomntent)
 		goto lib_names_fail;
 
 	return 0;
