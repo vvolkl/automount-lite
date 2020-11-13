@@ -377,6 +377,40 @@ static int endautomntent(unsigned int logopt,
 	return ret;
 }
 
+static int getautomntent(unsigned int logopt,
+			 struct lookup_context *ctxt,
+			 char **key, char **value, int count, void *sss_ctxt)
+{
+	char buf[MAX_ERR_BUF];
+	char *estr;
+	int ret = NSS_STATUS_UNAVAIL;
+
+	ret = ctxt->getautomntent_r(key, value, sss_ctxt);
+	if (ret) {
+		/* Host has gone down */
+		if (ret == ECONNREFUSED)
+			return NSS_STATUS_UNKNOWN;
+		if (ret != ENOENT)
+			goto error;
+		if (!count) {
+			ret = NSS_STATUS_NOTFOUND;
+			goto free;
+		}
+		goto error;
+	}
+	return ret;
+
+error:
+	estr = strerror_r(ret, buf, MAX_ERR_BUF);
+	error(logopt, MODPREFIX "getautomntent: %s", estr);
+free:
+	if (*key)
+		free(*key);
+	if (*value)
+		free(*value);
+	return ret;
+}
+
 int lookup_read_master(struct master *master, time_t age, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
@@ -399,30 +433,12 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 	while (1) {
 	        key = NULL;
 	        value = NULL;
-		ret = ctxt->getautomntent_r(&key, &value, sss_ctxt);
-		if (ret && ret != ENOENT) {
-			char *estr = strerror_r(ret, buf, MAX_ERR_BUF);
-			error(logopt, MODPREFIX "getautomntent_r: %s", estr);
+		ret = getautomntent(logopt, ctxt, &key, &value, count, sss_ctxt);
+		if (ret) {
 			endautomntent(logopt, ctxt, &sss_ctxt);
-			if (key)
-				free(key);
-			if (value)
-				free(value);
-			return NSS_STATUS_UNAVAIL;
+			return ret;
 		}
-		if (ret == ENOENT) {
-			if (!count) {
-				char *estr = strerror_r(ret, buf, MAX_ERR_BUF);
-				error(logopt, MODPREFIX "getautomntent_r: %s", estr);
-				endautomntent(logopt, ctxt, &sss_ctxt);
-				if (key)
-					free(key);
-				if (value)
-					free(value);
-				return NSS_STATUS_NOTFOUND;
-			}
-			break;
-		}
+
 		count++;
 
 		buffer_len = strlen(key) + 1 + strlen(value) + 2;
@@ -470,7 +486,6 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 	struct map_source *source;
 	struct mapent_cache *mc;
 	void *sss_ctxt = NULL;
-	char buf[MAX_ERR_BUF];
 	char *key;
 	char *value = NULL;
 	char *s_key;
@@ -502,31 +517,10 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 	while (1) {
 	        key = NULL;
 	        value = NULL;
-		ret = ctxt->getautomntent_r(&key, &value, sss_ctxt);
-		if (ret && ret != ENOENT) {
-			char *estr = strerror_r(ret, buf, MAX_ERR_BUF);
-			error(ap->logopt,
-			      MODPREFIX "getautomntent_r: %s", estr);
+		ret = getautomntent(ap->logopt, ctxt, &key, &value, count, sss_ctxt);
+		if (ret) {
 			endautomntent(ap->logopt, ctxt, &sss_ctxt);
-			if (key)
-				free(key);
-			if (value)
-				free(value);
-			return NSS_STATUS_UNAVAIL;
-		}
-		if (ret == ENOENT) {
-			if (!count) {
-				char *estr = strerror_r(ret, buf, MAX_ERR_BUF);
-				error(ap->logopt,
-				      MODPREFIX "getautomntent_r: %s", estr);
-				endautomntent(ap->logopt, ctxt, &sss_ctxt);
-				if (key)
-					free(key);
-				if (value)
-					free(value);
-				return NSS_STATUS_NOTFOUND;
-			}
-			break;
+			return ret;
 		}
 
 		/*
