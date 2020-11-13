@@ -377,38 +377,136 @@ static int endautomntent(unsigned int logopt,
 	return ret;
 }
 
+static int getautomntent_wait(unsigned int logopt,
+			 struct lookup_context *ctxt,
+			 char **key, char **value, void *sss_ctxt)
+{
+	unsigned int retries;
+	unsigned int retry = 0;
+	int ret = 0;
+
+	retries = defaults_get_sss_master_map_wait();
+
+	/* Use the sss_master_map_wait configuration option
+	 * for the time to wait when reading a map too. If
+	 * it isn't set in the antofs configuration give it
+	 * a sensible value since we want to wait for a host
+	 * that's down in case it comes back up.
+	 */
+	if (retries <= 0) {
+		/* Protocol version 0 cant't tell us about
+		 * a host being down, return not found.
+		 */
+		if (proto_version(ctxt) == 0)
+			return ENOENT;
+		retries = 10;
+	}
+
+	warn(logopt,
+	 "can't contact sssd to to get map entry, retry for %d seconds",
+	 retries);
+
+	while (++retry <= retries) {
+		struct timespec t = { SSS_WAIT_INTERVAL, 0 };
+		struct timespec r;
+
+		ret = ctxt->getautomntent_r(key, value, sss_ctxt);
+		if (proto_version(ctxt) == 0) {
+			if (ret != ENOENT)
+				break;
+		} else {
+			if (ret != EHOSTDOWN)
+				break;
+		}
+
+		while (nanosleep(&t, &r) == -1 && errno == EINTR)
+			memcpy(&t, &r, sizeof(struct timespec));
+	}
+
+	if (!ret)
+		info(logopt,
+		     "successfully contacted sssd to get map entry");
+	else {
+		if (retry == retries)
+			ret = ETIMEDOUT;
+	}
+	return ret;
+}
+
 static int getautomntent(unsigned int logopt,
 			 struct lookup_context *ctxt,
 			 char **key, char **value, int count, void *sss_ctxt)
 {
 	char buf[MAX_ERR_BUF];
 	char *estr;
-	int ret = NSS_STATUS_UNAVAIL;
+	int err = NSS_STATUS_UNAVAIL;
+	int ret;
 
 	ret = ctxt->getautomntent_r(key, value, sss_ctxt);
 	if (ret) {
 		/* Host has gone down */
-		if (ret == ECONNREFUSED)
-			return NSS_STATUS_UNKNOWN;
-		if (ret != ENOENT)
+		if (ret == ECONNREFUSED) {
+			err = NSS_STATUS_UNKNOWN;
 			goto error;
-		if (!count) {
-			ret = NSS_STATUS_NOTFOUND;
-			goto free;
 		}
-		goto error;
+
+		if (proto_version(ctxt) == 0) {
+			if (ret != ENOENT)
+				goto error;
+			/* For prorocol version 0 ENOENT can only be
+			 * used to indicate we've read all entries.
+			 * So even if we haven't got any values yet we
+			 * can't use it to determine if we need to wait
+			 * on sss.
+			 */
+			err = NSS_STATUS_NOTFOUND;
+			if (count)
+				err = NSS_STATUS_SUCCESS;
+			goto free;
+		} else {
+			if (ret == ENOENT) {
+				err = NSS_STATUS_NOTFOUND;
+				if (count)
+					err = NSS_STATUS_SUCCESS;
+				goto free;
+			}
+			if (ret != EHOSTDOWN)
+				goto error;
+		}
+
+		ret = getautomntent_wait(logopt, ctxt,
+					 key, value, sss_ctxt);
+		if (ret) {
+			if (ret == ECONNREFUSED) {
+				err = NSS_STATUS_UNKNOWN;
+				goto free;
+			}
+			if (ret == ETIMEDOUT)
+				goto error;
+			if (ret == ENOENT) {
+				err = NSS_STATUS_NOTFOUND;
+				if (count)
+					err = NSS_STATUS_SUCCESS;
+				goto free;
+			}
+			goto error;
+		}
 	}
-	return ret;
+	return NSS_STATUS_SUCCESS;
 
 error:
 	estr = strerror_r(ret, buf, MAX_ERR_BUF);
 	error(logopt, MODPREFIX "getautomntent: %s", estr);
 free:
-	if (*key)
+	if (*key) {
 		free(*key);
-	if (*value)
+		*key = NULL;
+	}
+	if (*value) {
 		free(*value);
-	return ret;
+		*value = NULL;
+	}
+	return err;
 }
 
 int lookup_read_master(struct master *master, time_t age, void *context)
@@ -438,6 +536,9 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 			endautomntent(logopt, ctxt, &sss_ctxt);
 			return ret;
 		}
+
+		if (!key || !value)
+			break;
 
 		count++;
 
@@ -522,6 +623,9 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 			endautomntent(ap->logopt, ctxt, &sss_ctxt);
 			return ret;
 		}
+
+		if (!key || !value)
+			break;
 
 		/*
 		 * Ignore keys beginning with '+' as plus map
