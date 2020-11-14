@@ -297,6 +297,9 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 	if (ret) {
 		unsigned int retries;
 
+		if (ret == ECONNREFUSED)
+			return NSS_STATUS_UNKNOWN;
+
 		if (ret != ENOENT)
 			return NSS_STATUS_UNAVAIL;
 
@@ -308,6 +311,8 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 					 ctxt, ctxt->mapname, &sss_ctxt,
 					 retries);
 		if (ret) {
+			if (ret == ECONNREFUSED)
+				return NSS_STATUS_UNKNOWN;
 			if (ret == ENOENT)
 				return NSS_STATUS_NOTFOUND;
 			return NSS_STATUS_UNAVAIL;
@@ -415,6 +420,8 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 
 	ret = setautomntent(ap->logopt, ctxt, ctxt->mapname, &sss_ctxt);
 	if (ret) {
+		if (ret == ECONNREFUSED)
+			return NSS_STATUS_UNKNOWN;
 		if (ret == ENOENT)
 			return NSS_STATUS_NOTFOUND;
 		return NSS_STATUS_UNAVAIL;
@@ -525,6 +532,8 @@ static int lookup_one(struct autofs_point *ap,
 
 	ret = setautomntent(ap->logopt, ctxt, ctxt->mapname, &sss_ctxt);
 	if (ret) {
+		if (ret == ECONNREFUSED)
+			return NSS_STATUS_UNKNOWN;
 		if (ret == ENOENT)
 			return NSS_STATUS_NOTFOUND;
 		return NSS_STATUS_UNAVAIL;
