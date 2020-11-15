@@ -53,6 +53,24 @@
  */
 #define SSS_PROTO_VERSION 1
 
+#define SSS_DEFAULT_WAIT	10
+
+/* When the master map is being read a retry loop is used by the
+ * caller to try harder to read the master map because it is required
+ * for autofs to start up.
+ *
+ * But when reading dependent maps or looking up a key that loop isn't
+ * used so a longer retry is needed for those cases.
+ *
+ * Introduce a flag to indicate which map is being read or if a lookup
+ * is being done so the number of retries can be adjusted accordingly.
+ */
+#define SSS_READ_NONE		0x00
+#define SSS_READ_MASTER_MAP	0x01
+#define SSS_REREAD_MASTER_MAP	0x02
+#define SSS_READ_DEPENDENT_MAP	0x04
+#define SSS_LOOKUP_KEY		0x08
+
 unsigned int _sss_auto_protocol_version(unsigned int);
 int _sss_setautomntent(const char *, void **);
 int _sss_getautomntent_r(char **, char **, void *);
@@ -249,7 +267,7 @@ static unsigned int proto_version(struct lookup_context *ctxt)
 	return proto_version;
 }
 
-static unsigned int calculate_retry_count(struct lookup_context *ctxt)
+static unsigned int calculate_retry_count(struct lookup_context *ctxt, unsigned int flags)
 {
 	int retries;
 
@@ -269,15 +287,39 @@ static unsigned int calculate_retry_count(struct lookup_context *ctxt)
 		 * a host being down, return 0 for retries.
 		 */
 		if (proto_version(ctxt) == 0)
-			retries = 0;
+			return 0;
 		else
-			retries = 10;
+			retries = SSS_DEFAULT_WAIT;
 	}
+
+	if (proto_version(ctxt) == 0)
+		return retries;
+
+	/* When the master map is being read there's an additional
+	 * outer wait loop.
+	 *
+	 * If master map wait is set in the configuration there
+	 * will be an outer loop interating master_map_wait / 2
+	 * times so adjust the number of retries here to account
+	 * for this for the cases where the master map isn't being
+	 * read.
+	 */
+
+	if (!(flags & SSS_READ_MASTER_MAP) ||
+	     (flags & SSS_REREAD_MASTER_MAP)) {
+		unsigned int master_map_wait = defaults_get_master_wait();
+		unsigned int m_wait;
+
+		m_wait = master_map_wait ? master_map_wait : SSS_DEFAULT_WAIT;
+		retries *= (m_wait / 2);
+	}
+
 	return retries;
 }
 
 static int setautomntent_wait(unsigned int logopt,
-			      struct lookup_context *ctxt, void **sss_ctxt)
+			      struct lookup_context *ctxt, void **sss_ctxt,
+			      unsigned int flags)
 {
 	unsigned int retries;
 	unsigned int retry = 0;
@@ -285,7 +327,7 @@ static int setautomntent_wait(unsigned int logopt,
 
 	*sss_ctxt = NULL;
 
-	retries = calculate_retry_count(ctxt);
+	retries = calculate_retry_count(ctxt, flags);
 	if (retries == 0) {
 		if (proto_version(ctxt) == 0)
 			return EINVAL;
@@ -333,7 +375,8 @@ static int setautomntent_wait(unsigned int logopt,
 }
 
 static int setautomntent(unsigned int logopt,
-			 struct lookup_context *ctxt, void **sss_ctxt)
+			 struct lookup_context *ctxt, void **sss_ctxt,
+			 unsigned int flags)
 {
 	char buf[MAX_ERR_BUF];
 	char *estr;
@@ -355,7 +398,7 @@ static int setautomntent(unsigned int logopt,
 				goto error;
 		}
 
-		ret = setautomntent_wait(logopt, ctxt, sss_ctxt);
+		ret = setautomntent_wait(logopt, ctxt, sss_ctxt, flags);
 		if (ret) {
 			if (ret == ECONNREFUSED) {
 				err = NSS_STATUS_UNKNOWN;
@@ -400,13 +443,14 @@ static int endautomntent(unsigned int logopt,
 
 static int getautomntent_wait(unsigned int logopt,
 			 struct lookup_context *ctxt,
-			 char **key, char **value, void *sss_ctxt)
+			 char **key, char **value, void *sss_ctxt,
+			 unsigned int flags)
 {
 	unsigned int retries;
 	unsigned int retry = 0;
 	int ret = 0;
 
-	retries = calculate_retry_count(ctxt);
+	retries = calculate_retry_count(ctxt, flags);
 	if (retries == 0) {
 		if (proto_version(ctxt) == 0)
 			return EINVAL;
@@ -446,7 +490,8 @@ static int getautomntent_wait(unsigned int logopt,
 
 static int getautomntent(unsigned int logopt,
 			 struct lookup_context *ctxt,
-			 char **key, char **value, int count, void *sss_ctxt)
+			 char **key, char **value, int count,
+			 void *sss_ctxt, unsigned int flags)
 {
 	char buf[MAX_ERR_BUF];
 	char *estr;
@@ -486,7 +531,7 @@ static int getautomntent(unsigned int logopt,
 		}
 
 		ret = getautomntent_wait(logopt, ctxt,
-					 key, value, sss_ctxt);
+					 key, value, sss_ctxt, flags);
 		if (ret) {
 			if (ret == ECONNREFUSED) {
 				err = NSS_STATUS_UNKNOWN;
@@ -534,8 +579,13 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 	char *key;
 	char *value = NULL;
 	int count, ret;
+	unsigned int flags;
 
-	ret = setautomntent(logopt, ctxt, &sss_ctxt);
+	flags = SSS_READ_MASTER_MAP;
+	if (master->readall)
+		flags |= SSS_REREAD_MASTER_MAP;
+
+	ret = setautomntent(logopt, ctxt, &sss_ctxt, flags);
 	if (ret)
 		return ret;
 
@@ -543,7 +593,9 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 	while (1) {
 	        key = NULL;
 	        value = NULL;
-		ret = getautomntent(logopt, ctxt, &key, &value, count, sss_ctxt);
+		ret = getautomntent(logopt, ctxt,
+				    &key, &value, count,
+				    sss_ctxt, SSS_READ_MASTER_MAP);
 		if (ret) {
 			endautomntent(logopt, ctxt, &sss_ctxt);
 			return ret;
@@ -622,7 +674,8 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 		return NSS_STATUS_SUCCESS;
 	}
 
-	ret = setautomntent(ap->logopt, ctxt, &sss_ctxt);
+	ret = setautomntent(ap->logopt, ctxt,
+			    &sss_ctxt, SSS_READ_DEPENDENT_MAP);
 	if (ret)
 		return ret;
 
@@ -630,7 +683,9 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 	while (1) {
 	        key = NULL;
 	        value = NULL;
-		ret = getautomntent(ap->logopt, ctxt, &key, &value, count, sss_ctxt);
+		ret = getautomntent(ap->logopt, ctxt,
+				    &key, &value, count,
+				    sss_ctxt, SSS_READ_DEPENDENT_MAP);
 		if (ret) {
 			endautomntent(ap->logopt, ctxt, &sss_ctxt);
 			return ret;
@@ -711,7 +766,7 @@ static int lookup_one(struct autofs_point *ap,
 
 	mc = source->mc;
 
-	ret = setautomntent(ap->logopt, ctxt, &sss_ctxt);
+	ret = setautomntent(ap->logopt, ctxt, &sss_ctxt, SSS_LOOKUP_KEY);
 	if (ret)
 		return ret;
 
