@@ -35,6 +35,7 @@ xx/xx/2020 autofs-5.1.7
 - sss introduce a flag to indicate map being read.
 - update sss timeout documentation.
 - refactor sss getautomntbyname().
+- improve sss getautomntbyname() error handling.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

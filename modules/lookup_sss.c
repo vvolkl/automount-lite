@@ -566,27 +566,106 @@ free:
 	return err;
 }
 
+static int getautomntbyname_wait(unsigned int logopt,
+			 struct lookup_context *ctxt,
+			 char *key, char **value, void *sss_ctxt,
+			 unsigned int flags)
+{
+	unsigned int retries;
+	unsigned int retry = 0;
+	int ret = 0;
+
+	retries = calculate_retry_count(ctxt, flags);
+	if (retries == 0) {
+		if (proto_version(ctxt) == 0)
+			return EINVAL;
+		return ENOENT;
+	}
+
+	warn(logopt,
+	"can't contact sssd to to lookup key value, retry for %d seconds",
+	retries);
+
+	while (++retry <= retries) {
+		struct timespec t = { SSS_WAIT_INTERVAL, 0 };
+		struct timespec r;
+
+		ret = ctxt->getautomntbyname_r(key, value, sss_ctxt);
+		if (proto_version(ctxt) == 0) {
+			if (ret != ENOENT)
+				break;
+		} else {
+			if (ret != EHOSTDOWN)
+				break;
+		}
+
+		while (nanosleep(&t, &r) == -1 && errno == EINTR)
+			memcpy(&t, &r, sizeof(struct timespec));
+	}
+
+	if (!ret)
+		info(logopt,
+		     "successfully contacted sssd to lookup key value");
+	else {
+		if (proto_version(ctxt) == 0 && retry > retries)
+			ret = ETIMEDOUT;
+	}
+	return ret;
+}
+
 static int getautomntbyname(unsigned int logopt,
 			    struct lookup_context *ctxt,
-			    char *key, char **value, void *sss_ctxt)
+			    char *key, char **value, void *sss_ctxt,
+			    unsigned int flags)
 {
 	char buf[MAX_ERR_BUF];
 	char *estr;
-	int ret = NSS_STATUS_UNAVAIL;
+	int err = NSS_STATUS_UNAVAIL;
+	int ret;
 
 	ret = ctxt->getautomntbyname_r(key, value, sss_ctxt);
 	if (ret) {
 		/* Host has gone down */
 		if (ret == ECONNREFUSED)
-			return NSS_STATUS_UNKNOWN;
-
-		if (ret != ENOENT)
 			goto error;
 
-		ret = NSS_STATUS_NOTFOUND;
-		goto free;
+		if (proto_version(ctxt) == 0) {
+			if (ret != ENOENT)
+				goto error;
+			/* For prorocol version 0 ENOENT can only be
+			 * used to indicate no entry was found. So it
+			 * can't be used to determine if we need to wait
+			 * on sss.
+			 */
+			err = NSS_STATUS_NOTFOUND;
+			goto free;
+		} else {
+			if (ret == ENOENT) {
+				err = NSS_STATUS_NOTFOUND;
+				goto free;
+			}
+			if (ret != EHOSTDOWN)
+				goto error;
+		}
+
+		ret = getautomntbyname_wait(logopt, ctxt,
+					    key, value, sss_ctxt, flags);
+		if (ret) {
+			if (ret == ECONNREFUSED)
+				goto free;
+			if (ret == ETIMEDOUT)
+				goto error;
+			/* sss proto version 0 and sss timeout not set */
+			if (ret == EINVAL)
+				goto free;
+			if (ret == ENOENT) {
+				err = NSS_STATUS_NOTFOUND;
+				goto free;
+			}
+			goto error;
+		}
 	}
-	return ret;
+	return NSS_STATUS_SUCCESS;
 
 error:
 	estr = strerror_r(ret, buf, MAX_ERR_BUF);
@@ -596,7 +675,7 @@ free:
 		free(*value);
 		*value = NULL;
 	}
-	return ret;
+	return err;
 }
 
 int lookup_read_master(struct master *master, time_t age, void *context)
@@ -802,7 +881,8 @@ static int lookup_one(struct autofs_point *ap,
 	if (ret)
 		return ret;
 
-	ret = getautomntbyname(ap->logopt, ctxt, qKey, &value, sss_ctxt);
+	ret = getautomntbyname(ap->logopt, ctxt,
+			       qKey, &value, sss_ctxt, SSS_LOOKUP_KEY);
 	if (ret == NSS_STATUS_NOTFOUND)
 		goto wild;
 	if (ret) {
@@ -829,13 +909,15 @@ static int lookup_one(struct autofs_point *ap,
 	return NSS_STATUS_SUCCESS;
 
 wild:
-	ret = getautomntbyname(ap->logopt, ctxt, "/", &value, sss_ctxt);
+	ret = getautomntbyname(ap->logopt, ctxt,
+			       "/", &value, sss_ctxt, SSS_LOOKUP_KEY);
 	if (ret) {
 		if (ret != NSS_STATUS_NOTFOUND) {
 			endautomntent(ap->logopt, ctxt, &sss_ctxt);
 			return ret;
 		}
-		ret = getautomntbyname(ap->logopt, ctxt, "*", &value, sss_ctxt);
+		ret = getautomntbyname(ap->logopt, ctxt,
+				       "*", &value, sss_ctxt, SSS_LOOKUP_KEY);
 		if (ret && ret != NSS_STATUS_NOTFOUND) {
 			endautomntent(ap->logopt, ctxt, &sss_ctxt);
 			return ret;
