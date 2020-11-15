@@ -30,6 +30,7 @@ xx/xx/2020 autofs-5.1.7
 - improve sss setautomntent() error handling.
 - refactor sss getautomntent().
 - improve sss getautomntent() error handling.
+- sss introduce calculate_retry_count() function.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

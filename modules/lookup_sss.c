@@ -249,6 +249,33 @@ static unsigned int proto_version(struct lookup_context *ctxt)
 	return proto_version;
 }
 
+static unsigned int calculate_retry_count(struct lookup_context *ctxt)
+{
+	int retries;
+
+	retries = defaults_get_sss_master_map_wait();
+
+	/* If sss_master_map_wait is not set in the autofs
+	 * configuration give it a sensible value since we
+	 * want to wait for a host that's down in case it
+	 * comes back up.
+	 *
+	 * Use the sss_master_map_wait configuration option
+	 * for the time to wait when reading a dependednt map
+	 * or performing a key lookup too.
+	 */
+	if (retries <= 0) {
+		/* Protocol version 0 cant't tell us about
+		 * a host being down, return 0 for retries.
+		 */
+		if (proto_version(ctxt) == 0)
+			retries = 0;
+		else
+			retries = 10;
+	}
+	return retries;
+}
+
 static int setautomntent_wait(unsigned int logopt,
 			      struct lookup_context *ctxt, void **sss_ctxt)
 {
@@ -258,20 +285,11 @@ static int setautomntent_wait(unsigned int logopt,
 
 	*sss_ctxt = NULL;
 
-	retries = defaults_get_sss_master_map_wait();
-
-	/* If sss_master_map_wait is not set in the autofs
-	 * configuration give it a sensible value since we
-	 * want to wait for a host that's down in case it
-	 * comes back up.
-	 */
-	if (retries <= 0) {
-		/* Protocol version 0 cant't tell us about
-		 * a host being down, return not found.
-		 */
+	retries = calculate_retry_count(ctxt);
+	if (retries == 0) {
 		if (proto_version(ctxt) == 0)
-			return ENOENT;
-		retries = 10;
+			return EINVAL;
+		return ENOENT;
 	}
 
 	warn(logopt,
@@ -345,6 +363,9 @@ static int setautomntent(unsigned int logopt,
 			}
 			if (ret == ETIMEDOUT)
 				goto error;
+			/* sss proto version 0 and sss timeout not set */
+			if (ret == EINVAL)
+				goto free;
 			if (ret == ENOENT) {
 				err = NSS_STATUS_NOTFOUND;
 				goto free;
@@ -385,21 +406,11 @@ static int getautomntent_wait(unsigned int logopt,
 	unsigned int retry = 0;
 	int ret = 0;
 
-	retries = defaults_get_sss_master_map_wait();
-
-	/* Use the sss_master_map_wait configuration option
-	 * for the time to wait when reading a map too. If
-	 * it isn't set in the antofs configuration give it
-	 * a sensible value since we want to wait for a host
-	 * that's down in case it comes back up.
-	 */
-	if (retries <= 0) {
-		/* Protocol version 0 cant't tell us about
-		 * a host being down, return not found.
-		 */
+	retries = calculate_retry_count(ctxt);
+	if (retries == 0) {
 		if (proto_version(ctxt) == 0)
-			return ENOENT;
-		retries = 10;
+			return EINVAL;
+		return ENOENT;
 	}
 
 	warn(logopt,
@@ -483,7 +494,8 @@ static int getautomntent(unsigned int logopt,
 			}
 			if (ret == ETIMEDOUT)
 				goto error;
-			if (ret == ENOENT) {
+			/* sss proto version 0 and sss timeout not set => EINVAL */
+			if (ret == ENOENT || ret == EINVAL) {
 				err = NSS_STATUS_NOTFOUND;
 				if (count)
 					err = NSS_STATUS_SUCCESS;
