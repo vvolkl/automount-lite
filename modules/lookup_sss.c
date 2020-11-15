@@ -566,6 +566,39 @@ free:
 	return err;
 }
 
+static int getautomntbyname(unsigned int logopt,
+			    struct lookup_context *ctxt,
+			    char *key, char **value, void *sss_ctxt)
+{
+	char buf[MAX_ERR_BUF];
+	char *estr;
+	int ret = NSS_STATUS_UNAVAIL;
+
+	ret = ctxt->getautomntbyname_r(key, value, sss_ctxt);
+	if (ret) {
+		/* Host has gone down */
+		if (ret == ECONNREFUSED)
+			return NSS_STATUS_UNKNOWN;
+
+		if (ret != ENOENT)
+			goto error;
+
+		ret = NSS_STATUS_NOTFOUND;
+		goto free;
+	}
+	return ret;
+
+error:
+	estr = strerror_r(ret, buf, MAX_ERR_BUF);
+	error(logopt, MODPREFIX "getautomntbyname: %s", estr);
+free:
+	if (*value) {
+		free(*value);
+		*value = NULL;
+	}
+	return ret;
+}
+
 int lookup_read_master(struct master *master, time_t age, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
@@ -755,7 +788,6 @@ static int lookup_one(struct autofs_point *ap,
 	struct mapent *we;
 	void *sss_ctxt = NULL;
 	time_t age = monotonic_time(NULL);
-	char buf[MAX_ERR_BUF];
 	char *value = NULL;
 	char *s_key;
 	int ret;
@@ -770,61 +802,47 @@ static int lookup_one(struct autofs_point *ap,
 	if (ret)
 		return ret;
 
-	ret = ctxt->getautomntbyname_r(qKey, &value, sss_ctxt);
-	if (ret && ret != ENOENT) {
-		char *estr = strerror_r(ret, buf, MAX_ERR_BUF);
-		error(ap->logopt,
-		      MODPREFIX "getautomntbyname_r: %s", estr);
+	ret = getautomntbyname(ap->logopt, ctxt, qKey, &value, sss_ctxt);
+	if (ret == NSS_STATUS_NOTFOUND)
+		goto wild;
+	if (ret) {
 		endautomntent(ap->logopt, ctxt, &sss_ctxt);
-		if (value)
-			free(value);
-		return NSS_STATUS_UNAVAIL;
+		return ret;
 	}
-	if (ret != ENOENT) {
-		/*
-		 * TODO: implement sun % hack for key translation for
-		 * mixed case keys in schema that are single case only.
-		 */
-		s_key = sanitize_path(qKey, qKey_len, ap->type, ap->logopt);
-		if (!s_key) {
-			free(value);
-			value = NULL;
-			goto wild;
-		}
-		cache_writelock(mc);
-		ret = cache_update(mc, source, s_key, value, age);
-		cache_unlock(mc);
-		endautomntent(ap->logopt, ctxt, &sss_ctxt);
-		free(s_key);
+
+	/*
+	 * TODO: implement sun % hack for key translation for
+	 * mixed case keys in schema that are single case only.
+	 */
+	s_key = sanitize_path(qKey, qKey_len, ap->type, ap->logopt);
+	if (!s_key) {
 		free(value);
-		return NSS_STATUS_SUCCESS;
+		value = NULL;
+		goto wild;
 	}
+	cache_writelock(mc);
+	ret = cache_update(mc, source, s_key, value, age);
+	cache_unlock(mc);
+	endautomntent(ap->logopt, ctxt, &sss_ctxt);
+	free(s_key);
+	free(value);
+	return NSS_STATUS_SUCCESS;
 
 wild:
-	ret = ctxt->getautomntbyname_r("/", &value, sss_ctxt);
-	if (ret && ret != ENOENT) {
-		char *estr = strerror_r(ret, buf, MAX_ERR_BUF);
-		error(ap->logopt,
-		      MODPREFIX "getautomntbyname_r: %s", estr);
-		endautomntent(ap->logopt, ctxt, &sss_ctxt);
-		if (value)
-			free(value);
-		return NSS_STATUS_UNAVAIL;
-	}
-	if (ret == ENOENT) {
-		ret = ctxt->getautomntbyname_r("*", &value, sss_ctxt);
-		if (ret && ret != ENOENT) {
-			char *estr = strerror_r(ret, buf, MAX_ERR_BUF);
-			error(ap->logopt,
-			      MODPREFIX "getautomntbyname_r: %s", estr);
+	ret = getautomntbyname(ap->logopt, ctxt, "/", &value, sss_ctxt);
+	if (ret) {
+		if (ret != NSS_STATUS_NOTFOUND) {
 			endautomntent(ap->logopt, ctxt, &sss_ctxt);
-			if (value)
-				free(value);
-			return NSS_STATUS_UNAVAIL;
+			return ret;
+		}
+		ret = getautomntbyname(ap->logopt, ctxt, "*", &value, sss_ctxt);
+		if (ret && ret != NSS_STATUS_NOTFOUND) {
+			endautomntent(ap->logopt, ctxt, &sss_ctxt);
+			return ret;
 		}
 	}
 
-	if (ret == ENOENT) {
+	if (ret == NSS_STATUS_NOTFOUND) {
 		/* Failed to find wild entry, update cache if needed */
 		cache_writelock(mc);
 		we = cache_lookup_distinct(mc, "*");
