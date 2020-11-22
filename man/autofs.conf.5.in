@@ -31,9 +31,11 @@ overrides this and sets the timeout to 5 minutes to be consistent
 with earlier autofs releases.
 .TP
 .B master_wait
-sets the default maximum time to wait for the master map to become
-available if it cannot be read at program start (program default 10,
-wait for 10 seconds then continue).
+Sets the default maximum number of retries (actaul iterations is half
+this, each is delayed by 2 seconds before retrying) waiting for the
+master map to become available if it cannot be read at program start
+(program default 10, then continue). This can be longer if the map
+source itself waits for availability (such as sss).
 .TP
 .B negative_timeout
 .br
@@ -159,10 +161,14 @@ behaviour and so is an opt-in setting.
 .TP
 .B sss_master_map_wait
 .br
-Set the time to wait and retry if sssd returns "no such entry" when starting
-up. When sssd is starting up it can sometimes return "no such entry" for a
-short time until it has read in the LDAP map information. Default is 0 seconds,
-don't wait.
+Set the time to wait and retry if sssd is unable to read the master map
+at program start. Program default is 0 (don't wait) or 10 if sss supports
+returning EHSTDOWN when the provider isn't available.
+
+If the sss library supports returning EHOSTDOWN when the provider is down
+then this value is how long to wait between retries reading the master map.
+When reading dependent maps or looking up a map key this value is multiplied
+by the number of retries that would be used when reading the master map.
 .TP
 .B use_mount_request_log_id
 .br

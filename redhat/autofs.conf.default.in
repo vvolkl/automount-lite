@@ -14,10 +14,13 @@
 #
 timeout = 300
 #
-# master_wait - set the default maximum time to wait for the
-# 		master map to become available if it cannot
-# 		be read at program start (default 10, wait
-# 		for 10 seconds then continue).
+# master_wait - set the default maximum number of retries (actual
+# 		iterations is half this, each is delayed by 2 seconds
+# 		before retrying) waiting for the master map to become
+# 		available if it cannot be read at program start
+# 		(default 10, then continue). This can be longer
+# 		if the map source itself waits for availability
+# 		(such as sss).
 #
 #master_wait = 10
 #
@@ -195,10 +198,17 @@ mount_nfs_default_protocol = 4
 # sss_master_map_wait - When sssd is starting up it can sometimes return
 #			"no such entry" for a short time until it has read
 # 			in the LDAP map information. Internal default is 0
-# 			seconds, don't wait but if there is a problem with
-# 			autofs not finding the master map at startup (when
-# 			it should) then try setting this to 10 to work
-# 			around it.
+# 			(don't wait) or 10 if sss supports returning EHSTDOWN.
+# 			If there is a problem with autofs not finding the
+# 			master map at startup (when it should) then try setting
+# 			this to 10 or more. If the sss library supports returning
+# 			EHOSTDOWN when the provider is down then this value
+# 			is how long to wait between retries reading the
+# 			master map. When reading dependent maps or looking
+# 			up a map key this value is multiplied by the number
+# 			of retries that would be used when reading the master
+# 			map. (Default, 0 or 10 if sss suppprts returning
+# 			EHOSTDOWN).
 #
 #sss_master_map_wait = 0
 #
