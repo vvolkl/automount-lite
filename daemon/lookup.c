@@ -1346,6 +1346,21 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 			continue;
 		}
 
+		if (ap->type == LKP_INDIRECT) {
+			/* If the map hasn't been read (nobrowse
+			 * indirect mounts) then keep cached entries
+			 * for POSITIVE_TIMEOUT.
+			 */
+			if (!(ap->flags & (MOUNT_FLAG_GHOST |
+					   MOUNT_FLAG_AMD_CACHE_ALL))) {
+				time_t until = me->age + POSITIVE_TIMEOUT;
+				if ((long) age - (long) until < 0) {
+					me = cache_enumerate(mc, me);
+					continue;
+				}
+			}
+		}
+
 		key = strdup(me->key);
 		me = cache_enumerate(mc, me);
 		/* Don't consider any entries with a wildcard */
