@@ -869,7 +869,7 @@ static int lookup_one(struct autofs_point *ap,
 	time_t age = monotonic_time(NULL);
 	char *value = NULL;
 	char *s_key;
-	int ret;
+	int err, ret;
 
 	source = ap->entry->current;
 	ap->entry->current = NULL;
@@ -901,8 +901,11 @@ static int lookup_one(struct autofs_point *ap,
 		goto wild;
 	}
 	cache_writelock(mc);
-	ret = cache_update(mc, source, s_key, value, age);
+	err = cache_update(mc, source, s_key, value, age);
 	cache_unlock(mc);
+	/* Entry in map but not in cache, map is stale */
+	if (err & CHE_UPDATED)
+		source->stale = 1;
 	endautomntent(ap->logopt, ctxt, &sss_ctxt);
 	free(s_key);
 	free(value);
@@ -952,12 +955,12 @@ wild:
 	}
 
 	cache_writelock(mc);
-	/* Wildcard not in map but now is */
-	we = cache_lookup_distinct(mc, "*");
-	if (!we)
-		source->stale = 1;
-	ret = cache_update(mc, source, "*", value, age);
+	/* Wildcard in map but not in cache, update it */
+	err = cache_update(mc, source, "*", value, age);
 	cache_unlock(mc);
+	/* Wildcard in map but not in cache, map is stale */
+	if (err & CHE_UPDATED)
+		source->stale = 1;
 
 	endautomntent(ap->logopt, ctxt, &sss_ctxt);
         free(value);
@@ -971,9 +974,6 @@ static int check_map_indirect(struct autofs_point *ap,
 {
 	struct map_source *source;
 	struct mapent_cache *mc;
-	struct mapent *me;
-	time_t now = monotonic_time(NULL);
-	time_t t_last_read;
 	int ret, cur_state;
 
 	source = ap->entry->current;
@@ -1008,33 +1008,6 @@ static int check_map_indirect(struct autofs_point *ap,
 		return ret;
 	}
 	pthread_setcancelstate(cur_state, NULL);
-
-	/*
-	 * Check for map change and update as needed for
-	 * following cache lookup.
-	 */
-	cache_readlock(mc);
-	t_last_read = ap->exp_runfreq + 1;
-	me = cache_lookup_first(mc);
-	while (me) {
-		if (me->source == source) {
-			t_last_read = now - me->age;
-			break;
-		}
-		me = cache_lookup_next(mc, me);
-	}
-	cache_unlock(mc);
-
-	if (t_last_read > ap->exp_runfreq && ret & CHE_UPDATED)
-		source->stale = 1;
-
-	cache_readlock(mc);
-	me = cache_lookup_distinct(mc, "*");
-	if (ret == CHE_MISSING && (!me || me->source != source)) {
-		cache_unlock(mc);
-		return NSS_STATUS_NOTFOUND;
-	}
-	cache_unlock(mc);
 
 	return NSS_STATUS_SUCCESS;
 }
