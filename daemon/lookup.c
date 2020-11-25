@@ -1347,6 +1347,15 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 		}
 
 		if (ap->type == LKP_INDIRECT) {
+			/* Don't prune offset map entries since they are
+			 * created on demand and managed by expire and don't
+			 * prune the multi-map owner map entry.
+			 */
+			if (*me->key == '/' || me->multi == me) {
+				me = cache_enumerate(mc, me);
+				continue;
+			}
+
 			/* If the map hasn't been read (nobrowse
 			 * indirect mounts) then keep cached entries
 			 * for POSITIVE_TIMEOUT.
