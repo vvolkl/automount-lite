@@ -951,6 +951,7 @@ struct master *master_new(const char *name, unsigned int timeout, unsigned int f
 	master->depth = 0;
 	master->reading = 0;
 	master->read_fail = 0;
+	master->readall = 0;
 	master->default_ghost = flags & DAEMON_FLAGS_GHOST;
 	master->default_timeout = timeout;
 	master->default_logging = defaults_get_logging();
@@ -1126,7 +1127,7 @@ again:
 	}
 }
 
-int master_read_master(struct master *master, time_t age, int readall)
+int master_read_master(struct master *master, time_t age)
 {
 	unsigned int logopt = master->logopt;
 	struct mapent_cache *nc;
@@ -1157,15 +1158,15 @@ int master_read_master(struct master *master, time_t age, int readall)
 	master_add_amd_mount_section_mounts(master, age);
 
 	if (!master->read_fail)
-		master_mount_mounts(master, age, readall);
+		master_mount_mounts(master, age);
 	else {
 		master->read_fail = 0;
-		/* HUP signal sets readall == 1 only */
-		if (!readall) {
+		/* HUP signal sets master->readall == 1 only */
+		if (!master->readall) {
 			master_mutex_unlock();
 			return 0;
 		} else
-			master_mount_mounts(master, age, readall);
+			master_mount_mounts(master, age);
 	}
 
 	if (list_empty(&master->mounts))
@@ -1450,7 +1451,7 @@ static void check_update_map_sources(struct master_mapent *entry, int readall)
 	return;
 }
 
-int master_mount_mounts(struct master *master, time_t age, int readall)
+int master_mount_mounts(struct master *master, time_t age)
 {
 	struct mapent_cache *nc = master->nc;
 	struct list_head *p, *head;
@@ -1534,7 +1535,7 @@ cont:
 		st_mutex_unlock();
 
 		if (!ret)
-			check_update_map_sources(this, readall);
+			check_update_map_sources(this, master->readall);
 		else if (ret == -1 && save_errno == EBADF) {
 			if (!master_do_mount(this)) {
 				list_del_init(&this->list);

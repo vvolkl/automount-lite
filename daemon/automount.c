@@ -1434,7 +1434,6 @@ static void *do_read_master(void *arg)
 	struct master *master;
 	unsigned int logopt;
 	time_t age;
-	int readall = 1;
 	int status;
 
 	status = pthread_mutex_lock(&mrc.mutex);
@@ -1465,8 +1464,11 @@ static void *do_read_master(void *arg)
 
 	info(logopt, "re-reading master map %s", master->name);
 
-	status = master_read_master(master, age, readall);
+	master->readall = 1;
 
+	status = master_read_master(master, age);
+
+	master->readall = 0;
 	master->reading = 0;
 
 	return NULL;
@@ -2163,7 +2165,7 @@ static void do_master_list_reset(struct master *master)
 	master_mutex_unlock();
 }
 
-static int do_master_read_master(struct master *master, int wait)
+static int do_master_read_master(struct master *master, time_t *age, int wait)
 {
 	sigset_t signalset;
 	/* Wait must be at least 1 second */
@@ -2171,7 +2173,6 @@ static int do_master_read_master(struct master *master, int wait)
 	unsigned int elapsed = 0;
 	int max_wait = wait;
 	int ret = 0;
-	time_t age;
 
 	sigemptyset(&signalset);
 	sigaddset(&signalset, SIGTERM);
@@ -2184,8 +2185,8 @@ static int do_master_read_master(struct master *master, int wait)
 
 		do_master_list_reset(master);
 
-		age = monotonic_time(NULL);
-		if (master_read_master(master, age, 0)) {
+		*age = monotonic_time(NULL);
+		if (master_read_master(master, *age)) {
 			ret = 1;
 			break;
 		}
@@ -2653,14 +2654,14 @@ int main(int argc, char *argv[])
 		dh_tirpc = dlopen("libtirpc.so.3", RTLD_NOW);
 #endif
 
-	master_read = master_read_master(master_list, age, 0);
+	master_read = master_read_master(master_list, age);
 	if (!master_read) {
 		/*
 		 * Read master map, waiting until it is available, unless
 		 * a signal is received, in which case exit returning an
 		 * error.
 		 */
-		if (!do_master_read_master(master_list, master_wait)) {
+		if (!do_master_read_master(master_list, &age, master_wait)) {
 			logmsg("%s: warning: could not read at least one "
 				"map source after waiting, continuing ...",
 				 program);
@@ -2668,9 +2669,14 @@ int main(int argc, char *argv[])
 			 * Failed to read master map, continue with what
 			 * we have anyway.
 			 */
-			do_master_list_reset(master_list);
-			age = monotonic_time(NULL);
-			master_read_master(master_list, age, 1);
+			master_mutex_lock();
+			master_list->readall = 1;
+			master_mount_mounts(master_list, age);
+			master_list->readall = 0;
+
+			if (list_empty(&master_list->mounts))
+				warn(master_list->logopt, "no mounts in table");
+			master_mutex_unlock();
 		}
 	}
 
