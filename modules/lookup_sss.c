@@ -299,7 +299,7 @@ static int setautomntent_wait(unsigned int logopt,
 			*sss_ctxt = NULL;
 		}
 
-		if (retry == retries)
+		if (retry > retries)
 			ret = ETIMEDOUT;
 
 		estr = strerror_r(ret, buf, MAX_ERR_BUF);
