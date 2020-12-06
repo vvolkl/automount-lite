@@ -70,6 +70,7 @@ xx/xx/2020 autofs-5.1.7
 - move lib/master.c to daemon/master.c.
 - use master_list_empty() for list empty check.
 - add helper to construct mount point path.
+- check defaults_read_config() return.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

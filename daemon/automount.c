@@ -1510,7 +1510,11 @@ static void *do_read_master(void *arg)
 	if (status)
 		fatal(status);
 
-	defaults_read_config(1);
+	if (!defaults_read_config(1)) {
+		error(logopt, "failed to read configuration, exiting");
+		master->reading = 0;
+		pthread_exit(NULL);
+	}
 
 	info(logopt, "re-reading master map %s", master->name);
 
@@ -2305,7 +2309,11 @@ int main(int argc, char *argv[])
 
 	program = argv[0];
 
-	defaults_read_config(0);
+	if (!defaults_read_config(0)) {
+		printf("%s: failed to read configuration, exiting",
+			program);
+		exit(1);
+	}
 
 	nfs_mount_uses_string_options = check_nfs_mount_version(&vers, &check);
 
