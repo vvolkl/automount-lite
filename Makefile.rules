@@ -71,5 +71,5 @@ LIBS += $(LIBCLOCK_GETTIME)
 	$(CC) $(CFLAGS) -S $<
 
 .c.so:
-	$(CC) $(SOLDFLAGS) $(CFLAGS) -o $*.so $< $(LDFLAGS) $(AUTOFS_LIB) $(LIBS)
+	$(CC) $(SOLDFLAGS) $(CFLAGS) -o $*.so $< $(LDFLAGS) $(LIBS) $(AUTOFS_LIB)
 	$(STRIP) $*.so
