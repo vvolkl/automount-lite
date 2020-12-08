@@ -15,7 +15,7 @@ OBJS = cache.o mount_clnt.o mount_xdr.o cat_path.o rpc_subs.o \
 
 YACCSRC = nss_tok.c nss_parse.tab.c nss_parse.tab.h
 
-LIB = autofs.a
+LIB = libautofs.so
 
 CFLAGS += -I../include -fPIC -D_GNU_SOURCE
 CFLAGS += -DAUTOFS_MAP_DIR=\"$(autofsmapdir)\"
@@ -27,12 +27,11 @@ endif
 
 .PHONY: all install clean
 
-all: autofs.a
+all: libautofs.so
 
-autofs.a: $(OBJS)
-	rm -f $(LIB)
-	$(AR) $(ARFLAGS) $(LIB) $(OBJS)
-	-$(RANLIB) $(LIB)
+libautofs.so: $(OBJS)
+	$(CC) $(SOLDFLAGS) $(CFLAGS) -o $*.so $^ $(LDFLAGS) $(LIBS)
+	$(STRIP) $*.so
 
 mount.h: mount.x
 	$(RPCGEN) -h -o mount.h mount.x
@@ -64,6 +63,8 @@ nss_parse.tab.o: nss_parse.tab.c nss_parse.tab.h
 rpc_subs.o: mount.h
 
 install: all
+	install -d -m 755 $(INSTALLROOT)$(autofslibdir)
+	install -c $(LIB) -m 755 $(INSTALLROOT)$(sharedlibdir)
 
 clean:
 	rm -f $(LIB) $(RPCS) $(OBJS) $(YACCSRC) *.output *~

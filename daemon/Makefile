@@ -38,7 +38,7 @@ endif
 all: automount
 
 automount: $(OBJS) $(AUTOFS_LIB)
-	$(CC) $(DAEMON_LDFLAGS) -o automount $(OBJS) $(LDFLAGS) $(LIBS) $(AUTOFS_LIB)
+	$(CC) $(DAEMON_LDFLAGS) -o automount $(OBJS) $(LDFLAGS) $(LIBS) $(AUTOFS_LIB_LINK)
 	$(STRIP) automount
 
 master_tok.c: master_tok.l

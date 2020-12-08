@@ -110,7 +110,7 @@ amd_parse.tab.o: amd_parse.tab.c amd_parse.tab.h
 
 parse_amd.so: parse_amd.c amd_parse.tab.o amd_tok.o
 	$(CC) $(SOLDFLAGS) $(CFLAGS) -o parse_amd.so \
-		parse_amd.c amd_parse.tab.o amd_tok.o $(LDFLAGS) $(LIBS) $(AUTOFS_LIB)
+		parse_amd.c amd_parse.tab.o amd_tok.o $(LDFLAGS) $(LIBS) $(AUTOFS_LIB_LINK)
 	$(STRIP) parse_amd.so
 
 #
@@ -118,17 +118,17 @@ parse_amd.so: parse_amd.c amd_parse.tab.o amd_tok.o
 #
 lookup_yp.so: lookup_yp.c
 	$(CC) $(SOLDFLAGS) $(CFLAGS) $(NSLCFLAGS) -o lookup_yp.so \
-		lookup_yp.c $(LDFLAGS) $(LIBS) $(NSLLIB) $(AUTOFS_LIB)
+		lookup_yp.c $(LDFLAGS) $(LIBS) $(NSLLIB) $(AUTOFS_LIB_LINK)
 	$(STRIP) lookup_yp.so
 
 lookup_nisplus.so: lookup_nisplus.c
 	$(CC) $(SOLDFLAGS) $(CFLAGS) $(NSLCFLAGS) -o lookup_nisplus.so \
-		lookup_nisplus.c $(LDFLAGS) $(LIBS) $(NSLLIB) $(AUTOFS_LIB)
+		lookup_nisplus.c $(LDFLAGS) $(LIBS) $(NSLLIB) $(AUTOFS_LIB_LINK)
 	$(STRIP) lookup_nisplus.so
 
 lookup_hesiod.so: lookup_hesiod.c
 	$(CC) $(SOLDFLAGS) $(CFLAGS) $(HESIOD_FLAGS) -o lookup_hesiod.so \
-		lookup_hesiod.c $(LDFLAGS) $(LIBHESIOD) $(LIBRESOLV) $(LIBS) $(AUTOFS_LIB)
+		lookup_hesiod.c $(LDFLAGS) $(LIBHESIOD) $(LIBRESOLV) $(LIBS) $(AUTOFS_LIB_LINK)
 	$(STRIP) lookup_hesiod.so
 
 cyrus-sasl.o: cyrus-sasl.c
@@ -140,11 +140,11 @@ cyrus-sasl-extern.o: cyrus-sasl-extern.c
 lookup_ldap.so: lookup_ldap.c dclist.o base64.o $(SASL_OBJ)
 	$(CC) $(SOLDFLAGS) $(CFLAGS) $(LDAP_FLAGS) -o lookup_ldap.so \
 		lookup_ldap.c dclist.o base64.o $(SASL_OBJ) \
-		$(LDFLAGS) $(LIBLDAP) $(LIBRESOLV) $(LIBS) $(AUTOFS_LIB)
+		$(LDFLAGS) $(LIBLDAP) $(LIBRESOLV) $(LIBS) $(AUTOFS_LIB_LINK)
 	$(STRIP) lookup_ldap.so
 
 mount_nfs.so: mount_nfs.c replicated.o
 	$(CC) $(SOLDFLAGS) $(CFLAGS) -o mount_nfs.so \
-		mount_nfs.c replicated.o $(LDFLAGS) $(LIBS) $(AUTOFS_LIB)
+		mount_nfs.c replicated.o $(LDFLAGS) $(LIBS) $(AUTOFS_LIB_LINK)
 	$(STRIP) mount_nfs.so
 

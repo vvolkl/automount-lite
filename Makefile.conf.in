@@ -85,6 +85,9 @@ DMALLOCLIB = @DMALLOCLIB@
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 
+# Shared library directory
+sharedlibdir = @libdir@
+
 # SSS library module directory
 ssslibdir=@sssldir@
 

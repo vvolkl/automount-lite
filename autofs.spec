@@ -209,6 +209,7 @@ fi
 %{_sbindir}/mount.fedfs
 %{_sbindir}/fedfs-map-nfs4
 %endif
+%{_libdir}/libautofs.so
 %dir %{_libdir}/autofs
 %{_libdir}/autofs/*
 %{_mandir}/*/*
