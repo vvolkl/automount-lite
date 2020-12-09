@@ -459,7 +459,7 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 	if (master->depth > MAX_INCLUDE_DEPTH) {
 		error(logopt, MODPREFIX
 		      "maximum include depth exceeded %s", master->name);
-		return NSS_STATUS_UNAVAIL;
+		return NSS_STATUS_UNKNOWN;
 	}
 
 	f = open_fopen_r(ctxt->mapname);
@@ -469,7 +469,7 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 		error(logopt,
 		      MODPREFIX "could not open master map file %s",
 		      ctxt->mapname);
-		return NSS_STATUS_UNAVAIL;
+		return NSS_STATUS_UNKNOWN;
 	}
 
 	while(1) {
@@ -509,7 +509,7 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 				     MODPREFIX
 				     "failed to read included master map %s",
 				     master->name);
-				if (status != NSS_STATUS_NOTFOUND) {
+				if (status == NSS_STATUS_UNAVAIL) {
 					/*
 					 * If we're starting up we need the whole
 					 * master map initially, so tell the upper
@@ -529,7 +529,7 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 				error(logopt,
 				      MODPREFIX "could not malloc parse buffer");
 				fclose(f);
-				return NSS_STATUS_UNAVAIL;
+				return NSS_STATUS_UNKNOWN;
 			}
 			memset(buffer, 0, blen);
 
@@ -712,7 +712,7 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 	if (source->depth > MAX_INCLUDE_DEPTH) {
 		error(ap->logopt,
 		      "maximum include depth exceeded %s", ctxt->mapname);
-		return NSS_STATUS_UNAVAIL;
+		return NSS_STATUS_UNKNOWN;
 	}
 
 	f = open_fopen_r(ctxt->mapname);
@@ -721,7 +721,7 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 			return NSS_STATUS_NOTFOUND;
 		error(ap->logopt,
 		      MODPREFIX "could not open map file %s", ctxt->mapname);
-		return NSS_STATUS_UNAVAIL;
+		return NSS_STATUS_UNKNOWN;
 	}
 
 	while(1) {
