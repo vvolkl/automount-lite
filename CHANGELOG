@@ -60,6 +60,7 @@ xx/xx/2020 autofs-5.1.7
 - use mnt_list for amdmounts.
 - make umount_autofs() static.
 - remove force parameter from umount_all().
+- fix remount expire.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

@@ -2205,8 +2205,14 @@ int try_remount(struct autofs_point *ap, struct mapent *me, unsigned int type)
 		if (fd != -1) {
 			if (type == t_indirect)
 				ap->ioctlfd = fd;
-			else
+			else {
+				if (type == t_offset &&
+				    !is_mounted(me->key, MNTS_REAL)) {
+					ops->close(ap->logopt, fd);
+					fd = -1;
+				}
 				me->ioctlfd = fd;
+			}
 			return 1;
 		}
 
