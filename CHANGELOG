@@ -61,6 +61,7 @@ xx/xx/2020 autofs-5.1.7
 - make umount_autofs() static.
 - remove force parameter from umount_all().
 - fix remount expire.
+- fix stale offset directories disable mount.
 
 07/10/2019 autofs-5.1.6
 - support strictexpire mount option.

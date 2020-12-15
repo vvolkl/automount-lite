@@ -2182,15 +2182,23 @@ int try_remount(struct autofs_point *ap, struct mapent *me, unsigned int type)
 	 * number for the mount but we can't know if we created
 	 * it or not. However, if this is an indirect mount with
 	 * the nobrowse option we need to remove the mount point
-	 * directory at umount anyway.
+	 * directory at umount anyway. Also, if this is an offset
+	 * mount that's not within a real mount then we know we
+	 * created it so we must remove it on expire for the mount
+	 * to function.
 	 */
 	if (type == t_indirect) {
 		if (ap->flags & MOUNT_FLAG_GHOST)
 			ap->flags &= ~MOUNT_FLAG_DIR_CREATED;
 		else
 			ap->flags |= MOUNT_FLAG_DIR_CREATED;
-	} else
+	} else {
 		me->flags &= ~MOUNT_FLAG_DIR_CREATED;
+		if (type == t_offset) {
+			if (!is_mounted(me->parent->key, MNTS_REAL))
+				me->flags |= MOUNT_FLAG_DIR_CREATED;
+		}
+	}
 
 	/*
 	 * Either we opened the mount or we're re-reading the map.
