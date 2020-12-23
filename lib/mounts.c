@@ -1501,9 +1501,13 @@ int unlink_mount_tree(struct autofs_point *ap, const char *mp)
 	struct mnt_list *mnts, *mnt;
 	int rv, ret = 1;
 
+	errno = 0;
 	mnts = get_mnt_list(mp, 1);
-	if (!mnts)
-		return 0;
+	if (!mnts) {
+		if (errno)
+			return 0;
+		return 1;
+	}
 
 	for (mnt = mnts; mnt; mnt = mnt->next) {
 		if (mnt->flags & MNTS_AUTOFS)
