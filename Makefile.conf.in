@@ -65,7 +65,6 @@ FEDFS = @ENABLE_FEDFS@
 
 LEX = @PATH_LEX@
 YACC = @PATH_YACC@
-RPCGEN = @PATH_RPCGEN@
 RANLIB = @PATH_RANLIB@
 
 # Use libtirpc if requested and available

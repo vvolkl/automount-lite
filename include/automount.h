@@ -32,7 +32,6 @@
 #include "macros.h"
 #include "log.h"
 #include "rpc_subs.h"
-#include "mounts.h"
 #include "parse_subs.h"
 #include "mounts.h"
 #include "dev-ioctl-lib.h"

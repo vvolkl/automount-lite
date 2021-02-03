@@ -39,7 +39,7 @@ BuildRequires: libtirpc-devel
 %endif
 BuildRequires: autoconf, openldap-devel, bison, flex, libxml2-devel
 BuildRequires: cyrus-sasl-devel, openssl-devel, util-linux
-BuildRequires: libtirpc-devel, rpcgen, libnsl2-devel, krb5-devel
+BuildRequires: libtirpc-devel, libnsl2-devel, krb5-devel
 Requires: chkconfig
 Requires: /bin/bash sed grep /bin/ps
 %if %{with_systemd}

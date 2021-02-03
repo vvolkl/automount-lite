@@ -164,7 +164,6 @@ AF_PATH_INCLUDE(E4FSCK, fsck.ext4 e4fsck, , $searchpath)
 AF_CHECK_PROG(LEX, flex lex, , $searchpath)
 AF_CHECK_PROG(YACC, bison, , $searchpath)
 AF_CHECK_PROG(RANLIB, ranlib, , $searchpath)
-AF_CHECK_PROG(RPCGEN, rpcgen, , $searchpath)
 
 AF_CHECK_SSS_LIB(SSS_AUTOFS, libsss_autofs.so)
 AC_SUBST(HAVE_SSS_AUTOFS)

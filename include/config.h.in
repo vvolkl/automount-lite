@@ -135,9 +135,6 @@
 /* define if you have RANLIB */
 #undef PATH_RANLIB
 
-/* define if you have RPCGEN */
-#undef PATH_RPCGEN
-
 /* define if you have UMOUNT */
 #undef PATH_UMOUNT
 
