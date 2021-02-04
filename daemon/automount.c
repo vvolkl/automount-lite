@@ -2274,7 +2274,7 @@ int main(int argc, char *argv[])
 	time_t timeout;
 	time_t age = monotonic_time(NULL);
 	struct rlimit rlim;
-	const char *options = "+hp:t:vmdD:SfVrO:l:n:CFUM";
+	const char *options = "+hp:t:vmdD:SfVrO:l:n:CFUM:";
 	static const struct option long_options[] = {
 		{"help", 0, 0, 'h'},
 		{"pid-file", 1, 0, 'p'},
