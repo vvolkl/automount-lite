@@ -1086,6 +1086,8 @@ static void cleanup_multi_triggers(struct autofs_point *ap,
 	struct list_head *mm_root, *pos;
 	const char o_root[] = "/";
 	const char *mm_base;
+	unsigned int root_len;
+	unsigned int mm_base_len;
 
 	mm_root = &me->multi->multi_list;
 
@@ -1095,16 +1097,31 @@ static void cleanup_multi_triggers(struct autofs_point *ap,
 		mm_base = base;
 
 	pos = NULL;
+	root_len = strlen(root);
+	mm_base_len = strlen(mm_base);
 
 	/* Make sure "none" of the offsets have an active mount. */
 	while ((poffset = cache_get_offset(mm_base, poffset, start, mm_root, &pos))) {
-		oe = cache_lookup_offset(mm_base, poffset, start, &me->multi_list);
+		unsigned int path_len = root_len + strlen(poffset);
+
+		if (mm_base_len > 1)
+			path_len += mm_base_len;
+
+		if (path_len > PATH_MAX) {
+			warn(ap->logopt, "path loo long");
+			continue;
+		}
+
+		strcpy(path, root);
+		if (mm_base_len > 1)
+			strcat(path, mm_base);
+		strcat(path, poffset);
+
+		oe = cache_lookup_distinct(me->mc, path);
 		/* root offset is a special case */
 		if (!oe || !oe->mapent || (strlen(oe->key) - start) == 1)
 			continue;
 
-		strcpy(path, root);
-		strcat(path, poffset);
 		if (umount(path)) {
 			error(ap->logopt, "error recovering from mount fail");
 			error(ap->logopt, "cannot umount offset %s", path);
@@ -1117,17 +1134,14 @@ static void cleanup_multi_triggers(struct autofs_point *ap,
 static int mount_subtree(struct autofs_point *ap, struct mapent *me,
 			 const char *name, char *loc, char *options, void *ctxt)
 {
-	struct mapent *mm;
 	struct mapent *ro;
 	char *mm_root, *mm_base, *mm_key;
-	const char *mnt_root;
-	unsigned int mm_root_len, mnt_root_len;
+	unsigned int mm_root_len;
 	int start, ret = 0, rv;
 
 	rv = 0;
 
-	mm = me->multi;
-	mm_key = mm->key;
+	mm_key = me->multi->key;
 
 	if (*mm_key == '/') {
 		mm_root = mm_key;
@@ -1141,20 +1155,26 @@ static int mount_subtree(struct autofs_point *ap, struct mapent *me,
 	}
 	mm_root_len = strlen(mm_root);
 
-	mnt_root = mm_root;
-	mnt_root_len = mm_root_len;
-
 	if (me == me->multi) {
+		char key[PATH_MAX + 1];
+
+		if (mm_root_len + 1 > PATH_MAX) {
+			warn(ap->logopt, "path loo long");
+			return 1;
+		}
+
 		/* name = NULL */
 		/* destination = mm_root */
 		mm_base = "/";
 
+		strcpy(key, mm_root);
+		strcat(key, mm_base);
+
 		/* Mount root offset if it exists */
-		ro = cache_lookup_offset(mm_base, mm_base, strlen(mm_root), &me->multi_list);
+		ro = cache_lookup_distinct(me->mc, key);
 		if (ro) {
-			char *myoptions, *ro_loc, *tmp;
+			char *myoptions, *ro_loc;
 			int namelen = name ? strlen(name) : 0;
-			const char *root;
 			int ro_len;
 
 			myoptions = NULL;
@@ -1172,13 +1192,7 @@ static int mount_subtree(struct autofs_point *ap, struct mapent *me,
 			if (ro_loc)
 				ro_len = strlen(ro_loc);
 
-			tmp = alloca(mnt_root_len + 2);
-			strcpy(tmp, mnt_root);
-			tmp[mnt_root_len] = '/';
-			tmp[mnt_root_len + 1] = '\0';
-			root = tmp;
-
-			rv = sun_mount(ap, root, name, namelen, ro_loc, ro_len, myoptions, ctxt);
+			rv = sun_mount(ap, key, name, namelen, ro_loc, ro_len, myoptions, ctxt);
 
 			free(myoptions);
 			if (ro_loc)
@@ -1186,11 +1200,11 @@ static int mount_subtree(struct autofs_point *ap, struct mapent *me,
 		}
 
 		if (ro && rv == 0) {
-			ret = mount_multi_triggers(ap, me, mnt_root, start, mm_base);
+			ret = mount_multi_triggers(ap, me, mm_root, start, mm_base);
 			if (ret == -1) {
 				error(ap->logopt, MODPREFIX
 					 "failed to mount offset triggers");
-				cleanup_multi_triggers(ap, me, mnt_root, start, mm_base);
+				cleanup_multi_triggers(ap, me, mm_root, start, mm_base);
 				return 1;
 			}
 		} else if (rv <= 0) {
@@ -1206,24 +1220,29 @@ static int mount_subtree(struct autofs_point *ap, struct mapent *me,
 		int loclen = strlen(loc);
 		int namelen = strlen(name);
 
-		mnt_root = name;
-
 		/* name = mm_root + mm_base */
 		/* destination = mm_root + mm_base = name */
 		mm_base = &me->key[start];
 
-		rv = sun_mount(ap, mnt_root, name, namelen, loc, loclen, options, ctxt);
+		rv = sun_mount(ap, name, name, namelen, loc, loclen, options, ctxt);
 		if (rv == 0) {
-			ret = mount_multi_triggers(ap, me->multi, mnt_root, start, mm_base);
+			ret = mount_multi_triggers(ap, me->multi, name, start, mm_base);
 			if (ret == -1) {
 				error(ap->logopt, MODPREFIX
 					 "failed to mount offset triggers");
-				cleanup_multi_triggers(ap, me, mnt_root, start, mm_base);
+				cleanup_multi_triggers(ap, me, name, start, mm_base);
 				return 1;
 			}
 		} else if (rv < 0) {
-			char *mm_root_base = alloca(strlen(mm_root) + strlen(mm_base) + 1);
+			char mm_root_base[PATH_MAX + 1];
+			unsigned int mm_root_base_len = mm_root_len + strlen(mm_base) + 1;
 	
+			if (mm_root_base_len > PATH_MAX) {
+				warn(ap->logopt, MODPREFIX "path too long");
+				cache_delete_offset_list(me->mc, name);
+				return 1;
+			}
+
 			strcpy(mm_root_base, mm_root);
 			strcat(mm_root_base, mm_base);
 

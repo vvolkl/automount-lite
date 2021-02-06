@@ -2495,24 +2495,27 @@ int mount_multi_triggers(struct autofs_point *ap, struct mapent *me,
 	char *offset = path;
 	struct mapent *oe;
 	struct list_head *pos = NULL;
-	unsigned int fs_path_len;
+	unsigned int root_len = strlen(root);
 	int mounted;
-
-	fs_path_len = start + strlen(base);
-	if (fs_path_len > PATH_MAX)
-		return -1;
 
 	mounted = 0;
 	offset = cache_get_offset(base, offset, start, &me->multi_list, &pos);
 	while (offset) {
-		int plen = fs_path_len + strlen(offset);
+		char key[PATH_MAX + 1];
+		int key_len = root_len + strlen(offset);
 
-		if (plen > PATH_MAX) {
+		if (key_len > PATH_MAX) {
 			warn(ap->logopt, "path loo long");
 			goto cont;
 		}
 
-		oe = cache_lookup_offset(base, offset, start, &me->multi_list);
+		/* The root offset is always mounted seperately so the
+		 * offset path will always be root + offset.
+		 */
+		strcpy(key, root);
+		strcat(key, offset);
+
+		oe = cache_lookup_distinct(me->mc, key);
 		if (!oe || !oe->mapent)
 			goto cont;
 
@@ -2525,12 +2528,8 @@ int mount_multi_triggers(struct autofs_point *ap, struct mapent *me,
 		 */
 		if (ap->state == ST_READMAP && ap->flags & MOUNT_FLAG_REMOUNT) {
 			if (oe->ioctlfd != -1 ||
-			    is_mounted(oe->key, MNTS_REAL)) {
-				char oe_root[PATH_MAX + 1];
-				strcpy(oe_root, root);
-				strcat(oe_root, offset); 
-				mount_multi_triggers(ap, oe, oe_root, strlen(oe_root), base);
-			}
+			    is_mounted(oe->key, MNTS_REAL))
+				mount_multi_triggers(ap, oe, key, strlen(key), base);
 		}
 cont:
 		offset = cache_get_offset(base,
@@ -2584,6 +2583,8 @@ int umount_multi_triggers(struct autofs_point *ap, struct mapent *me, char *root
 	const char o_root[] = "/";
 	const char *mm_base;
 	int left, start;
+	unsigned int root_len;
+	unsigned int mm_base_len;
 
 	left = 0;
 	start = strlen(root);
@@ -2597,11 +2598,28 @@ int umount_multi_triggers(struct autofs_point *ap, struct mapent *me, char *root
 
 	pos = NULL;
 	offset = path;
+	root_len = start;
+	mm_base_len = strlen(mm_base);
 
 	while ((offset = cache_get_offset(mm_base, offset, start, mm_root, &pos))) {
+		char key[PATH_MAX + 1];
+		int key_len = root_len + strlen(offset);
 		char *oe_base;
 
-		oe = cache_lookup_offset(mm_base, offset, start, &me->multi_list);
+		if (mm_base_len > 1)
+			key_len += mm_base_len;
+
+		if (key_len > PATH_MAX) {
+			warn(ap->logopt, "path loo long");
+			continue;
+		}
+
+		strcpy(key, root);
+		if (mm_base_len > 1)
+			strcat(key, mm_base);
+		strcat(key, offset);
+
+		oe = cache_lookup_distinct(me->mc, key);
 		/* root offset is a special case */
 		if (!oe || (strlen(oe->key) - start) == 1)
 			continue;
@@ -2686,13 +2704,14 @@ int clean_stale_multi_triggers(struct autofs_point *ap,
 	char *root;
 	char mm_top[PATH_MAX + 1];
 	char path[PATH_MAX + 1];
-	char buf[MAX_ERR_BUF];
 	char *offset;
 	struct mapent *oe;
 	struct list_head *mm_root, *pos;
 	const char o_root[] = "/";
 	const char *mm_base;
 	int left, start;
+	unsigned int root_len;
+	unsigned int mm_base_len;
 	time_t age;
 
 	if (top)
@@ -2720,14 +2739,30 @@ int clean_stale_multi_triggers(struct autofs_point *ap,
 
 	pos = NULL;
 	offset = path;
+	root_len = start;
+	mm_base_len = strlen(mm_base);
 	age = me->multi->age;
 
 	while ((offset = cache_get_offset(mm_base, offset, start, mm_root, &pos))) {
+		char key[PATH_MAX + 1];
+		int key_len = root_len + strlen(offset);
 		char *oe_base;
-		char *key;
 		int ret;
 
-		oe = cache_lookup_offset(mm_base, offset, start, &me->multi_list);
+		if (mm_base_len > 1)
+			key_len += mm_base_len;
+
+		if (key_len > PATH_MAX) {
+			warn(ap->logopt, "path loo long");
+			continue;
+		}
+
+		strcpy(key, root);
+		if (mm_base_len > 1)
+			strcat(key, mm_base);
+		strcat(key, offset);
+
+		oe = cache_lookup_distinct(me->mc, key);
 		/* root offset is a special case */
 		if (!oe || (strlen(oe->key) - start) == 1)
 			continue;
@@ -2778,14 +2813,6 @@ int clean_stale_multi_triggers(struct autofs_point *ap,
 			}
 		}
 
-		key = strdup(oe->key);
-		if (!key) {
-	                char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
-		        error(ap->logopt, "malloc: %s", estr);
-			left++;
-			continue;
-		}
-
 		debug(ap->logopt, "umount offset %s", oe->key);
 
 		if (umount_autofs_offset(ap, oe)) {
@@ -2800,7 +2827,6 @@ int clean_stale_multi_triggers(struct autofs_point *ap,
 				if (cache_delete_offset(oe->mc, key) == CHE_FAIL)
 					error(ap->logopt,
 					     "failed to delete offset key %s", key);
-				free(key);
 				continue;
 			}
 
@@ -2816,7 +2842,6 @@ int clean_stale_multi_triggers(struct autofs_point *ap,
 					left++;
 					/* But we did origianlly create this */
 					oe->flags |= MOUNT_FLAG_DIR_CREATED;
-					free(key);
 					continue;
 				}
 				/*
@@ -2834,7 +2859,6 @@ int clean_stale_multi_triggers(struct autofs_point *ap,
 				error(ap->logopt,
 				     "failed to delete offset key %s", key);
 		}
-		free(key);
 	}
 
 	return left;
