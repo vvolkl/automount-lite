@@ -6,6 +6,7 @@
 - fix mnts_remove_amdmount() uses wrong list.
 - Fix option for master read wait.
 - eliminate cache_lookup_offset() usage.
+- fix is mounted check on non existent path.
 
 25/01/2021 autofs-5.1.7
 - make bind mounts propagation slave by default.

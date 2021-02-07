@@ -759,6 +759,9 @@ static int dev_ioctl_ismountpoint(unsigned int logopt,
 		int save_errno = errno;
 		free_dev_ioctl_path(param);
 		errno = save_errno;
+		/* Path doesn't exist */
+		if (errno == ENOENT)
+			return 0;
 		return -1;
 	}
 

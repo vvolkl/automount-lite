@@ -1649,8 +1649,18 @@ static int table_is_mounted(const char *mp, unsigned int type)
 	struct mntent mnt_wrk;
 	char buf[PATH_MAX * 3];
 	size_t mp_len = strlen(mp);
+	struct stat st;
 	FILE *tab;
-	int ret = 0;
+	int ret;
+
+	ret = stat(mp, &st);
+	if (ret == -1) {
+		if (errno == ENOENT) {
+			/* Path does not exist */
+			return 0;
+		}
+		ret = 0;
+	}
 
 	if (!mp || !mp_len || mp_len >= PATH_MAX)
 		return 0;
