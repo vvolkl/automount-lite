@@ -864,25 +864,21 @@ static struct mapent *get_offset_parent(struct mapent_cache *mc,
 	return NULL;
 }
 
-int cache_set_parents(struct mapent *mm)
+int cache_set_offset_parent(struct mapent_cache *mc, const char *offset)
 {
-	struct list_head *multi_head, *p;
-	struct mapent *this;
+	struct mapent *this, *parent;
 
-	if (!mm->multi)
+	this = cache_lookup_distinct(mc, offset);
+	if (!this)
+		return 0;
+	if (!this->multi)
 		return 0;
 
-	multi_head = &mm->multi->multi_list;
-
-	list_for_each(p, multi_head) {
-		struct mapent *parent;
-		this = list_entry(p, struct mapent, multi_list);
-		parent = get_offset_parent(mm->mc, this->key);
-		if (parent)
-			this->parent = parent;
-		else
-			this->parent = mm->multi;
-	}
+	parent = get_offset_parent(mc, offset);
+	if (parent)
+		this->parent = parent;
+	else
+		this->parent = this->multi;
 
 	return 1;
 }

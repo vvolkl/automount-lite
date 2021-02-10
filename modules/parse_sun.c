@@ -859,6 +859,10 @@ update_offset_entry(struct autofs_point *ap, const char *name,
 	}
 
 	ret = cache_update_offset(mc, name, m_key, m_mapent, age);
+
+	if (!cache_set_offset_parent(mc, m_key))
+		error(ap->logopt, "failed to set offset parent");
+
 	if (ret == CHE_DUPLICATE) {
 		warn(ap->logopt, MODPREFIX
 		     "syntax error or duplicate offset %s -> %s", path, loc);
@@ -1613,7 +1617,6 @@ dont_expand:
 		 */
 		if (me == me->multi)
 			clean_stale_multi_triggers(ap, me, NULL, NULL);
-		cache_set_parents(me);
 
 		rv = mount_subtree(ap, me, name, NULL, options, ctxt);
 

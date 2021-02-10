@@ -8,6 +8,7 @@
 - eliminate cache_lookup_offset() usage.
 - fix is mounted check on non existent path.
 - simplify cache_get_parent().
+- set offset parent in update_offset_entry().
 
 25/01/2021 autofs-5.1.7
 - make bind mounts propagation slave by default.
