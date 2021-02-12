@@ -1176,7 +1176,7 @@ static int mount_subtree(struct autofs_point *ap, struct mapent *me,
 
 		/* Mount root offset if it exists */
 		ro = cache_lookup_distinct(me->mc, key);
-		if (ro) {
+		if (ro && ro->age == me->multi->age) {
 			char *myoptions, *ro_loc;
 			int namelen = name ? strlen(name) : 0;
 			int ro_len;
@@ -1609,14 +1609,6 @@ dont_expand:
 			free(path);
 			free(myoptions);
 		} while (*p == '/' || (*p == '"' && *(p + 1) == '/'));
-
-		/*
-		 * We've got the ordered list of multi-mount entries so go
-		 * through and remove any stale entries if this is the top
-		 * of the multi-mount and set the parent entry of each.
-		 */
-		if (me == me->multi)
-			clean_stale_multi_triggers(ap, me, NULL, NULL);
 
 		rv = mount_subtree(ap, me, name, NULL, options, ctxt);
 
