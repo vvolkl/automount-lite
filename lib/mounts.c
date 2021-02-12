@@ -2496,6 +2496,146 @@ static int do_mount_autofs_offset(struct autofs_point *ap,
 	return mounted;
 }
 
+static int rmdir_path_offset(struct autofs_point *ap, struct mapent *oe)
+{
+	char *dir, *path;
+	unsigned int split;
+	int ret;
+
+	if (ap->type == LKP_DIRECT)
+		return rmdir_path(ap, oe->key, oe->multi->dev);
+
+	dir = strdup(oe->key);
+
+	if (ap->flags & MOUNT_FLAG_GHOST)
+		split = strlen(ap->path) + strlen(oe->multi->key) + 1;
+	else
+		split = strlen(ap->path);
+
+	dir[split] = '\0';
+	path = &dir[split + 1];
+
+	if (chdir(dir) == -1) {
+		error(ap->logopt, "failed to chdir to %s", dir);
+		free(dir);
+		return -1;
+	}
+
+	ret = rmdir_path(ap, path, ap->dev);
+
+	free(dir);
+
+	if (chdir("/") == -1)
+		error(ap->logopt, "failed to chdir to /");
+
+	return ret;
+}
+
+static int do_umount_offset(struct autofs_point *ap, struct mapent *oe, const char *root);
+
+static int do_umount_multi_triggers(struct autofs_point *ap,
+				    struct mapent *me, const char *root, const char *base)
+{
+	char path[PATH_MAX + 1];
+	char *offset;
+	struct mapent *oe;
+	struct list_head *mm_root, *pos;
+	const char o_root[] = "/";
+	const char *mm_base;
+	int left, start;
+	unsigned int root_len;
+	unsigned int mm_base_len;
+
+	left = 0;
+	start = strlen(root);
+
+	mm_root = &me->multi->multi_list;
+
+	if (!base)
+		mm_base = o_root;
+	else
+		mm_base = base;
+
+	pos = NULL;
+	offset = path;
+	root_len = start;
+	mm_base_len = strlen(mm_base);
+
+	while ((offset = cache_get_offset(mm_base, offset, start, mm_root, &pos))) {
+		char key[PATH_MAX + 1];
+		int key_len = root_len + strlen(offset);
+
+		if (mm_base_len > 1)
+			key_len += mm_base_len;
+
+		if (key_len > PATH_MAX) {
+			warn(ap->logopt, "path loo long");
+			continue;
+		}
+
+		strcpy(key, root);
+		if (mm_base_len > 1)
+			strcat(key, mm_base);
+		strcat(key, offset);
+
+		oe = cache_lookup_distinct(me->mc, key);
+		/* root offset is a special case */
+		if (!oe || (strlen(oe->key) - start) == 1)
+			continue;
+
+		left += do_umount_offset(ap, oe, root);
+	}
+
+	return left;
+}
+
+static int do_umount_offset(struct autofs_point *ap, struct mapent *oe, const char *root)
+{
+	char *oe_base;
+	int left = 0;
+
+	/*
+	 * Check for and umount subtree offsets resulting from
+	 * nonstrict mount fail.
+	 */
+	oe_base = oe->key + strlen(root);
+	left += do_umount_multi_triggers(ap, oe, root, oe_base);
+
+	if (oe->ioctlfd != -1 ||
+	    is_mounted(oe->key, MNTS_REAL)) {
+		left++;
+		return left;
+	}
+
+	debug(ap->logopt, "umount offset %s", oe->key);
+
+	if (umount_autofs_offset(ap, oe)) {
+		warn(ap->logopt, "failed to umount offset");
+		left++;
+	} else {
+		struct stat st;
+		int ret;
+
+		if (!(oe->flags & MOUNT_FLAG_DIR_CREATED))
+			return left;
+
+		/*
+		 * An error due to partial directory removal is
+		 * ok so only try and remount the offset if the
+		 * actual mount point still exists.
+		 */
+		ret = rmdir_path_offset(ap, oe);
+		if (ret == -1 && !stat(oe->key, &st)) {
+			ret = do_mount_autofs_offset(ap, oe, root);
+			if (ret)
+				left++;
+			/* But we did origianlly create this */
+			oe->flags |= MOUNT_FLAG_DIR_CREATED;
+		}
+	}
+	return left;
+}
+
 int mount_multi_triggers(struct autofs_point *ap, struct mapent *me,
 			 const char *root, unsigned int start, const char *base)
 {
@@ -2547,131 +2687,11 @@ cont:
 	return mounted;
 }
 
-static int rmdir_path_offset(struct autofs_point *ap, struct mapent *oe)
-{
-	char *dir, *path;
-	unsigned int split;
-	int ret;
-
-	if (ap->type == LKP_DIRECT)
-		return rmdir_path(ap, oe->key, oe->multi->dev);
-
-	dir = strdup(oe->key);
-
-	if (ap->flags & MOUNT_FLAG_GHOST)
-		split = strlen(ap->path) + strlen(oe->multi->key) + 1;
-	else
-		split = strlen(ap->path);
-
-	dir[split] = '\0';
-	path = &dir[split + 1];
-
-	if (chdir(dir) == -1) {
-		error(ap->logopt, "failed to chdir to %s", dir);
-		free(dir);
-		return -1;
-	}
-
-	ret = rmdir_path(ap, path, ap->dev);
-
-	free(dir);
-
-	if (chdir("/") == -1)
-		error(ap->logopt, "failed to chdir to /");
-
-	return ret;
-}
-
 int umount_multi_triggers(struct autofs_point *ap, struct mapent *me, char *root, const char *base)
 {
-	char path[PATH_MAX + 1];
-	char *offset;
-	struct mapent *oe;
-	struct list_head *mm_root, *pos;
-	const char o_root[] = "/";
-	const char *mm_base;
-	int left, start;
-	unsigned int root_len;
-	unsigned int mm_base_len;
+	int left;
 
-	left = 0;
-	start = strlen(root);
-
-	mm_root = &me->multi->multi_list;
-
-	if (!base)
-		mm_base = o_root;
-	else
-		mm_base = base;
-
-	pos = NULL;
-	offset = path;
-	root_len = start;
-	mm_base_len = strlen(mm_base);
-
-	while ((offset = cache_get_offset(mm_base, offset, start, mm_root, &pos))) {
-		char key[PATH_MAX + 1];
-		int key_len = root_len + strlen(offset);
-		char *oe_base;
-
-		if (mm_base_len > 1)
-			key_len += mm_base_len;
-
-		if (key_len > PATH_MAX) {
-			warn(ap->logopt, "path loo long");
-			continue;
-		}
-
-		strcpy(key, root);
-		if (mm_base_len > 1)
-			strcat(key, mm_base);
-		strcat(key, offset);
-
-		oe = cache_lookup_distinct(me->mc, key);
-		/* root offset is a special case */
-		if (!oe || (strlen(oe->key) - start) == 1)
-			continue;
-
-		/*
-		 * Check for and umount subtree offsets resulting from
-		 * nonstrict mount fail.
-		 */
-		oe_base = oe->key + strlen(root);
-		left += umount_multi_triggers(ap, oe, root, oe_base);
-
-		if (oe->ioctlfd != -1 ||
-		    is_mounted(oe->key, MNTS_REAL)) {
-			left++;
-			continue;
-		}
-
-		debug(ap->logopt, "umount offset %s", oe->key);
-
-		if (umount_autofs_offset(ap, oe)) {
-			warn(ap->logopt, "failed to umount offset");
-			left++;
-		} else {
-			struct stat st;
-			int ret;
-
-			if (!(oe->flags & MOUNT_FLAG_DIR_CREATED))
-				continue;
-
-			/*
-			 * An error due to partial directory removal is
-			 * ok so only try and remount the offset if the
-			 * actual mount point still exists.
-			 */
-			ret = rmdir_path_offset(ap, oe);
-			if (ret == -1 && !stat(oe->key, &st)) {
-				ret = do_mount_autofs_offset(ap, oe, root);
-				if (ret)
-					left++;
-				/* But we did origianlly create this */
-				oe->flags |= MOUNT_FLAG_DIR_CREATED;
-			}
-		}
-	}
+	left = do_umount_multi_triggers(ap, me, root, base);
 
 	if (!left && me->multi == me) {
 		struct mapent_cache *mc = me->mc;
@@ -2871,4 +2891,3 @@ int clean_stale_multi_triggers(struct autofs_point *ap,
 
 	return left;
 }
-
