@@ -793,23 +793,16 @@ static int check_is_multi(const char *mapent)
 }
 
 static int
-update_offset_entry(struct autofs_point *ap, const char *name,
+update_offset_entry(struct autofs_point *ap,
+		    struct mapent_cache *mc, const char *name,
 		    const char *m_root, int m_root_len,
-		    const char *path, const char *myoptions, const char *loc,
-		    time_t age)
+		    const char *path, const char *myoptions,
+		    const char *loc, time_t age)
 {
-	struct map_source *source;
-	struct mapent_cache *mc;
 	char m_key[PATH_MAX + 1];
 	char m_mapent[MAPENT_MAX_LEN + 1];
 	int p_len, m_key_len, m_options_len, m_mapent_len;
 	int ret;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	memset(m_mapent, 0, MAPENT_MAX_LEN + 1);
 
@@ -1574,11 +1567,8 @@ dont_expand:
 			p += l;
 			p = skipspace(p);
 
-			master_source_current_wait(ap->entry);
-			ap->entry->current = source;
-
-			status = update_offset_entry(ap, name,
-						     m_root, m_root_len,
+			status = update_offset_entry(ap, mc,
+						     name, m_root, m_root_len,
 						     path, myoptions, loc, age);
 
 			if (status != CHE_OK) {
