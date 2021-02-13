@@ -611,7 +611,7 @@ force_umount:
 	return rv;
 }
 
-int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *root, const char *offset)
+int mount_autofs_offset(struct autofs_point *ap, struct mapent *me)
 {
 	const char *str_offset = mount_type_str(t_offset);
 	struct ioctl_ops *ops = get_ioctl_ops();
@@ -623,7 +623,6 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *
 	const char *hosts_map_name = "-hosts";
 	const char *map_name = hosts_map_name;
 	const char *type;
-	char mountpoint[PATH_MAX];
 	struct mnt_list *mnt;
 
 	if (ops->version && ap->flags & MOUNT_FLAG_REMOUNT) {
@@ -681,11 +680,8 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *
 			return MOUNT_OFFSET_OK;
 	}
 
-	strcpy(mountpoint, root);
-	strcat(mountpoint, offset);
-
 	/* In case the directory doesn't exist, try to mkdir it */
-	if (mkdir_path(mountpoint, mp_mode) < 0) {
+	if (mkdir_path(me->key, mp_mode) < 0) {
 		if (errno == EEXIST) {
 			/*
 			 * If the mount point directory is a real mount
@@ -694,7 +690,7 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *
 			 * the kernel NFS client.
 			 */
 			if (me->multi != me &&
-			    is_mounted(mountpoint, MNTS_REAL))
+			    is_mounted(me->key, MNTS_REAL))
 				return MOUNT_OFFSET_IGNORE;
 
 			/* 
@@ -714,13 +710,13 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *
 			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 			debug(ap->logopt,
 			     "can't create mount directory: %s, %s",
-			     mountpoint, estr);
+			     me->key, estr);
 			return MOUNT_OFFSET_FAIL;
 		} else {
 			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 			crit(ap->logopt,
 			     "failed to create mount directory: %s, %s",
-			     mountpoint, estr);
+			     me->key, estr);
 			return MOUNT_OFFSET_FAIL;
 		}
 	} else {
@@ -730,56 +726,56 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me, const char *
 
 	debug(ap->logopt,
 	      "calling mount -t autofs " SLOPPY " -o %s automount %s",
-	      mp->options, mountpoint);
+	      mp->options, me->key);
 
 	type = ap->entry->maps->type;
 	if (!type || strcmp(ap->entry->maps->type, "hosts"))
 		map_name = me->mc->map->argv[0];
 
-	ret = mount(map_name, mountpoint, "autofs", MS_MGC_VAL, mp->options);
+	ret = mount(map_name, me->key, "autofs", MS_MGC_VAL, mp->options);
 	if (ret) {
 		crit(ap->logopt,
 		     "failed to mount offset trigger %s at %s",
-		     me->key, mountpoint);
+		     me->key, me->key);
 		goto out_err;
 	}
 
-	ret = stat(mountpoint, &st);
+	ret = stat(me->key, &st);
 	if (ret == -1) {
 		error(ap->logopt,
-		     "failed to stat direct mount trigger %s", mountpoint);
+		     "failed to stat direct mount trigger %s", me->key);
 		goto out_umount;
 	}
 
-	ops->open(ap->logopt, &ioctlfd, st.st_dev, mountpoint);
+	ops->open(ap->logopt, &ioctlfd, st.st_dev, me->key);
 	if (ioctlfd < 0) {
-		crit(ap->logopt, "failed to create ioctl fd for %s", mountpoint);
+		crit(ap->logopt, "failed to create ioctl fd for %s", me->key);
 		goto out_umount;
 	}
 
 	ops->timeout(ap->logopt, ioctlfd, timeout);
 	cache_set_ino_index(me->mc, me->key, st.st_dev, st.st_ino);
 	if (ap->logopt & LOGOPT_DEBUG)
-		notify_mount_result(ap, mountpoint, timeout, str_offset);
+		notify_mount_result(ap, me->key, timeout, str_offset);
 	else
 		notify_mount_result(ap, me->key, timeout, str_offset);
 	ops->close(ap->logopt, ioctlfd);
 
-	mnt = mnts_add_mount(ap, mountpoint, MNTS_OFFSET);
+	mnt = mnts_add_mount(ap, me->key, MNTS_OFFSET);
 	if (!mnt)
 		error(ap->logopt,
 		      "failed to add offset mount %s to mounted list",
-		      mountpoint);
+		      me->key);
 
-	debug(ap->logopt, "mounted trigger %s at %s", me->key, mountpoint);
+	debug(ap->logopt, "mounted trigger %s", me->key);
 
 	return MOUNT_OFFSET_OK;
 
 out_umount:
-	umount(mountpoint);
+	umount(me->key);
 out_err:
-	if (stat(mountpoint, &st) == 0 && me->flags & MOUNT_FLAG_DIR_CREATED)
-		 rmdir_path(ap, mountpoint, st.st_dev);
+	if (stat(me->key, &st) == 0 && me->flags & MOUNT_FLAG_DIR_CREATED)
+		 rmdir_path(ap, me->key, st.st_dev);
 
 	return MOUNT_OFFSET_FAIL;
 }

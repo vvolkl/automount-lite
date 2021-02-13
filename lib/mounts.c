@@ -2481,7 +2481,7 @@ static int do_mount_autofs_offset(struct autofs_point *ap,
 
 	debug(ap->logopt, "mount offset %s at %s", oe->key, root);
 
-	ret = mount_autofs_offset(ap, oe, root, offset);
+	ret = mount_autofs_offset(ap, oe);
 	if (ret >= MOUNT_OFFSET_OK)
 		mounted++;
 	else {
