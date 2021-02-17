@@ -527,7 +527,10 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 	struct mapent_cache *mc;
 	struct mapent *me;
 	unsigned int is_mm_root = 0;
+	int cur_state;
 	int left;
+
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
 
 	me = lookup_source_mapent(ap, path, LKP_DISTINCT);
 	if (!me) {
@@ -548,11 +551,11 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 	left = 0;
 
 	if (me && me->multi) {
-		char root[PATH_MAX];
+		char root[PATH_MAX + 1];
+		char key[PATH_MAX + 1];
+		struct mapent *tmp;
+		int status;
 		char *base;
-		int cur_state;
-
-		pthread_cleanup_push(cache_lock_cleanup, mc);
 
 		if (!strchr(me->multi->key, '/'))
 			/* Indirect multi-mount root */
@@ -567,24 +570,39 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 		else
 			base = me->key + strlen(root);
 
-		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-		/* Lock the closest parent nesting point for umount */
-		cache_multi_writelock(me->parent);
-		if (umount_multi_triggers(ap, me, root, base)) {
+		left = umount_multi_triggers(ap, me, root, base);
+		if (left) {
 			warn(ap->logopt,
 			     "some offset mounts still present under %s", path);
+		}
+
+		strcpy(key, me->key);
+
+		cache_unlock(mc);
+		cache_writelock(mc);
+		tmp = cache_lookup_distinct(mc, key);
+		/* mapent went away while we waited? */
+		if (tmp != me) {
+			cache_unlock(mc);
+			pthread_setcancelstate(cur_state, NULL);
+			return 0;
+		}
+
+		if (!left && is_mm_root) {
+			status = cache_delete_offset_list(mc, me->key);
+			if (status != CHE_OK)
+				warn(ap->logopt, "couldn't delete offset list");
 			left++;
 		}
-		cache_multi_unlock(me->parent);
+
 		if (ap->entry->maps &&
 		    (ap->entry->maps->flags & MAP_FLAG_FORMAT_AMD))
 			cache_pop_mapent(me);
-		pthread_setcancelstate(cur_state, NULL);
-		pthread_cleanup_pop(0);
 	}
-
 	if (me)
 		cache_unlock(mc);
+
+	pthread_setcancelstate(cur_state, NULL);
 
 	if (left || is_autofs_fs)
 		return left;

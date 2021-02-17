@@ -2736,9 +2736,6 @@ int umount_multi_triggers(struct autofs_point *ap, struct mapent *me, char *root
 	left = do_umount_multi_triggers(ap, me, root, base);
 
 	if (!left && me->multi == me) {
-		struct mapent_cache *mc = me->mc;
-		int status;
-
 		/*
 		 * Special case.
 		 * If we can't umount the root container then we can't
@@ -2755,11 +2752,6 @@ int umount_multi_triggers(struct autofs_point *ap, struct mapent *me, char *root
 				return ++left;
 			}
 		}
-
-		/* We're done - clean out the offsets */
-		status = cache_delete_offset_list(mc, me->key);
-		if (status != CHE_OK)
-			warn(ap->logopt, "couldn't delete offset list");
 
 	       /* check for mounted mount entry and remove it if found */
                mnts_remove_mount(root, MNTS_MOUNTED);
