@@ -2491,6 +2491,12 @@ static int do_mount_autofs_offset(struct autofs_point *ap,
 		else {
 			debug(ap->logopt, "ignoring \"nohide\" trigger %s",
 			      oe->key);
+			/*
+			 * Ok, so we shouldn't modify the mapent but
+			 * mount requests are blocked at a point above
+			 * this and expire only uses the mapent key or
+			 * holds the cache write lock.
+			 */
 			free(oe->mapent);
 			oe->mapent = NULL;
 		}
@@ -2634,7 +2640,8 @@ static int do_umount_offset(struct autofs_point *ap, struct mapent *oe, const ch
 			/*
 			 * Ok, so we shouldn't modify the mapent but
 			 * mount requests are blocked at a point above
-			 * this and expire only uses the mapent key.
+			 * this and expire only uses the mapent key or
+			 * holds the cache write lock.
 			 */
 			if (oe->mapent) {
 				free(oe->mapent);
