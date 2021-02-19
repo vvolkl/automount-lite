@@ -650,6 +650,7 @@ static int expire(unsigned int logopt,
 {
 	int ret, retries = EXPIRE_RETRIES;
 	unsigned int may_umount;
+	int save_errno = 0;
 
 	while (retries--) {
 		struct timespec tm = {0, 100000000};
@@ -657,9 +658,11 @@ static int expire(unsigned int logopt,
 		/* Ggenerate expire message for the mount. */
 		ret = ioctl(fd, cmd, arg);
 		if (ret == -1) {
+			save_errno = errno;
+
 			/* Mount has gone away */
 			if (errno == EBADF || errno == EINVAL)
-				return 0;
+				break;
 
 			/*
 			 * Other than EAGAIN is an expire error so continue.
@@ -673,14 +676,16 @@ static int expire(unsigned int logopt,
 		nanosleep(&tm, NULL);
 	}
 
-	may_umount = 0;
-	if (ctl.ops->askumount(logopt, ioctlfd, &may_umount))
-		return -1;
+	if (!ret || save_errno == EAGAIN) {
+		may_umount = 0;
+		if (!ctl.ops->askumount(logopt, ioctlfd, &may_umount)) {
+			if (!may_umount)
+				ret = 1;
+		}
+	}
+	errno = save_errno;
 
-	if (!may_umount)
-		return 1;
-
-	return 0;
+	return ret;
 }
 
 static int dev_ioctl_expire(unsigned int logopt,

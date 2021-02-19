@@ -358,7 +358,6 @@ void *expire_proc_indirect(void *arg)
 	struct expire_args ec;
 	unsigned int how;
 	int offsets, submnts, count;
-	int retries;
 	int ioctlfd, cur_state;
 	int status, ret, left;
 
@@ -496,7 +495,7 @@ void *expire_proc_indirect(void *arg)
 
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
 		ret = ops->expire(ap->logopt, ioctlfd, mnt->mp, how);
-		if (ret)
+		if (ret == 1)
 			left++;
 		pthread_setcancelstate(cur_state, NULL);
 	}
@@ -507,10 +506,11 @@ void *expire_proc_indirect(void *arg)
 	 * so we need to umount or unlink them here.
 	 */
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-	retries = (count_mounts(ap, ap->path, ap->dev) + 1);
-	while (retries--) {
+	while (1) {
 		ret = ops->expire(ap->logopt, ap->ioctlfd, ap->path, how);
-		if (ret)
+		if (ret != 0 && errno == EAGAIN)
+			break;
+		if (ret == 1)
 			left++;
 	}
 	pthread_setcancelstate(cur_state, NULL);

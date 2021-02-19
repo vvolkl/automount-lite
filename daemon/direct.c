@@ -884,7 +884,7 @@ cont:
 			ioctlfd = me->ioctlfd;
 
 			ret = ops->expire(ap->logopt, ioctlfd, mnt->mp, how);
-			if (ret) {
+			if (ret == 1) {
 				left++;
 				pthread_setcancelstate(cur_state, NULL);
 				continue;
@@ -910,7 +910,7 @@ cont:
 
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
 		ret = ops->expire(ap->logopt, ioctlfd, mnt->mp, how);
-		if (ret)
+		if (ret == 1)
 			left++;
 		pthread_setcancelstate(cur_state, NULL);
 	}
