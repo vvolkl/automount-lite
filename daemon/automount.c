@@ -590,9 +590,10 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 
 		if (!left && is_mm_root) {
 			status = cache_delete_offset_list(mc, me->key);
-			if (status != CHE_OK)
+			if (status != CHE_OK) {
 				warn(ap->logopt, "couldn't delete offset list");
-			left++;
+				left++;
+			}
 		}
 
 		if (ap->entry->maps &&
