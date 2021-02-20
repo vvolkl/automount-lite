@@ -1364,6 +1364,9 @@ void mnts_get_expire_list(struct list_head *mnts, struct autofs_point *ap)
 	list_for_each_entry(mnt, &ap->mounts, mount) {
 		struct node *n;
 
+		if (!(mnt->flags & MNTS_MOUNTED))
+			continue;
+
 		__mnts_get_mount(mnt);
 
 		if (!tree) {
