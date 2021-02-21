@@ -108,58 +108,6 @@ void cache_lock_cleanup(void *arg)
 	return;
 }
 
-void cache_multi_readlock(struct mapent *me)
-{
-	int status;
-
-	if (!me)
-		return;
-
-	status = pthread_rwlock_rdlock(&me->multi_rwlock);
-	if (status) {
-		logmsg("mapent cache multi mutex lock failed");
-		fatal(status);
-	}
-	return;
-}
-
-void cache_multi_writelock(struct mapent *me)
-{
-	int status;
-
-	if (!me)
-		return;
-
-	status = pthread_rwlock_wrlock(&me->multi_rwlock);
-	if (status) {
-		logmsg("mapent cache multi mutex lock failed");
-		fatal(status);
-	}
-	return;
-}
-
-void cache_multi_unlock(struct mapent *me)
-{
-	int status;
-
-	if (!me)
-		return;
-
-	status = pthread_rwlock_unlock(&me->multi_rwlock);
-	if (status) {
-		logmsg("mapent cache multi mutex unlock failed");
-		fatal(status);
-	}
-	return;
-}
-
-void cache_multi_lock_cleanup(void *arg)
-{
-	struct mapent *me = (struct mapent *) arg;
-	cache_multi_unlock(me);
-	return;
-}
-
 static inline void ino_index_lock(struct mapent_cache *mc)
 {
 	int status = pthread_mutex_lock(&mc->ino_index_mutex);
@@ -626,7 +574,6 @@ int cache_add(struct mapent_cache *mc, struct map_source *ms, const char *key, c
 	struct mapent *me, *existing = NULL;
 	char *pkey, *pent;
 	u_int32_t hashval = hash(key, mc->size);
-	int status;
 
 	me = (struct mapent *) malloc(sizeof(struct mapent));
 	if (!me)
@@ -664,10 +611,6 @@ int cache_add(struct mapent_cache *mc, struct map_source *ms, const char *key, c
 	me->dev = (dev_t) -1;
 	me->ino = (ino_t) -1;
 	me->flags = 0;
-
-	status = pthread_rwlock_init(&me->multi_rwlock, NULL);
-	if (status)
-		fatal(status);
 
 	/* 
 	 * We need to add to the end if values exist in order to
@@ -924,7 +867,7 @@ int cache_update(struct mapent_cache *mc, struct map_source *ms, const char *key
 	return ret;
 }
 
-/* cache_multi_lock of the multi mount owner must be held by caller */
+/* cache write lock of the multi mount owner must be held by caller */
 int cache_delete_offset(struct mapent_cache *mc, const char *key)
 {
 	u_int32_t hashval = hash(key, mc->size);
@@ -956,9 +899,6 @@ int cache_delete_offset(struct mapent_cache *mc, const char *key)
 	return CHE_FAIL;
 
 delete:
-	status = pthread_rwlock_destroy(&me->multi_rwlock);
-	if (status)
-		fatal(status);
 	list_del(&me->multi_list);
 	ino_index_lock(mc);
 	list_del(&me->ino_index);
@@ -976,7 +916,7 @@ int cache_delete(struct mapent_cache *mc, const char *key)
 {
 	struct mapent *me = NULL, *pred;
 	u_int32_t hashval = hash(key, mc->size);
-	int status, ret = CHE_OK;
+	int ret = CHE_OK;
 	char this[PATH_MAX];
 
 	strcpy(this, key);
@@ -997,9 +937,6 @@ int cache_delete(struct mapent_cache *mc, const char *key)
 				goto done;
 			}
 			pred->next = me->next;
-			status = pthread_rwlock_destroy(&me->multi_rwlock);
-			if (status)
-				fatal(status);
 			ino_index_lock(mc);
 			list_del(&me->ino_index);
 			ino_index_unlock(mc);
@@ -1029,9 +966,6 @@ int cache_delete(struct mapent_cache *mc, const char *key)
 			goto done;
 		}
 		mc->hash[hashval] = me->next;
-		status = pthread_rwlock_destroy(&me->multi_rwlock);
-		if (status)
-			fatal(status);
 		ino_index_lock(mc);
 		list_del(&me->ino_index);
 		ino_index_unlock(mc);

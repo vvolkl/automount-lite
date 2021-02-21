@@ -162,7 +162,6 @@ struct stack {
 struct mapent {
 	struct mapent *next;
 	struct list_head ino_index;
-	pthread_rwlock_t multi_rwlock;
 	struct list_head multi_list;
 	struct mapent_cache *mc;
 	struct map_source *source;
@@ -212,9 +211,6 @@ int cache_set_offset_parent(struct mapent_cache *mc, const char *offset);
 int cache_update(struct mapent_cache *mc, struct map_source *ms, const char *key, const char *mapent, time_t age);
 int cache_delete(struct mapent_cache *mc, const char *key);
 int cache_delete_offset(struct mapent_cache *mc, const char *key);
-void cache_multi_readlock(struct mapent *me);
-void cache_multi_writelock(struct mapent *me);
-void cache_multi_unlock(struct mapent *me);
 int cache_delete_offset_list(struct mapent_cache *mc, const char *key);
 void cache_release(struct map_source *map);
 void cache_clean_null_cache(struct mapent_cache *mc);
