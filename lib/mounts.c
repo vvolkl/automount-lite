@@ -2540,10 +2540,12 @@ static int rmdir_path_offset(struct autofs_point *ap, struct mapent *oe)
 	return ret;
 }
 
-static int do_umount_offset(struct autofs_point *ap, struct mapent *oe, const char *root);
+static int do_umount_offset(struct autofs_point *ap,
+			    struct mapent *oe, const char *root, int start);
 
 static int do_umount_multi_triggers(struct autofs_point *ap,
-				    struct mapent *me, const char *root, const char *base)
+				    struct mapent *me, const char *root,
+				    int start, const char *base)
 {
 	char path[PATH_MAX + 1];
 	char *offset;
@@ -2551,12 +2553,11 @@ static int do_umount_multi_triggers(struct autofs_point *ap,
 	struct list_head *mm_root, *pos;
 	const char o_root[] = "/";
 	const char *mm_base;
-	int left, start;
+	int left;
 	unsigned int root_len;
 	unsigned int mm_base_len;
 
 	left = 0;
-	start = strlen(root);
 
 	mm_root = &me->multi->multi_list;
 
@@ -2592,13 +2593,14 @@ static int do_umount_multi_triggers(struct autofs_point *ap,
 		if (!oe || (strlen(oe->key) - start) == 1)
 			continue;
 
-		left += do_umount_offset(ap, oe, root);
+		left += do_umount_offset(ap, oe, root, start);
 	}
 
 	return left;
 }
 
-static int do_umount_offset(struct autofs_point *ap, struct mapent *oe, const char *root)
+static int do_umount_offset(struct autofs_point *ap,
+			    struct mapent *oe, const char *root, int start)
 {
 	char *oe_base;
 	int left = 0;
@@ -2607,8 +2609,8 @@ static int do_umount_offset(struct autofs_point *ap, struct mapent *oe, const ch
 	 * Check for and umount subtree offsets resulting from
 	 * nonstrict mount fail.
 	 */
-	oe_base = oe->key + strlen(root);
-	left += do_umount_multi_triggers(ap, oe, root, oe_base);
+	oe_base = oe->key + start;
+	left += do_umount_multi_triggers(ap, oe, root, start, oe_base);
 
 	/*
 	 * If an offset that has an active mount has been removed
@@ -2712,7 +2714,7 @@ int mount_multi_triggers(struct autofs_point *ap, struct mapent *me,
 			goto cont;
 		if (oe->age != me->multi->age) {
 			/* Best effort */
-			do_umount_offset(ap, oe, root);
+			do_umount_offset(ap, oe, root, start);
 			goto cont;
 		}
 
@@ -2726,7 +2728,7 @@ int mount_multi_triggers(struct autofs_point *ap, struct mapent *me,
 		if (ap->state == ST_READMAP && ap->flags & MOUNT_FLAG_REMOUNT) {
 			if (oe->ioctlfd != -1 ||
 			    is_mounted(oe->key, MNTS_REAL))
-				mount_multi_triggers(ap, oe, key, strlen(key), base);
+				mount_multi_triggers(ap, oe, key, key_len, base);
 		}
 cont:
 		offset = cache_get_offset(base,
@@ -2738,9 +2740,11 @@ cont:
 
 int umount_multi_triggers(struct autofs_point *ap, struct mapent *me, char *root, const char *base)
 {
-	int left;
+	int left, start;
 
-	left = do_umount_multi_triggers(ap, me, root, base);
+	start = strlen(root);
+
+	left = do_umount_multi_triggers(ap, me, root, start, base);
 
 	if (!left && me->multi == me) {
 		/*
@@ -2753,7 +2757,7 @@ int umount_multi_triggers(struct autofs_point *ap, struct mapent *me, char *root
 			info(ap->logopt, "unmounting dir = %s", root);
 			if (umount_ent(ap, root) &&
 			    is_mounted(root, MNTS_REAL)) {
-				if (mount_multi_triggers(ap, me, root, strlen(root), "/") < 0)
+				if (mount_multi_triggers(ap, me, root, start, "/") < 0)
 					warn(ap->logopt,
 					     "failed to remount offset triggers");
 				return ++left;
