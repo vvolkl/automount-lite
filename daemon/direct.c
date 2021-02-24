@@ -605,9 +605,6 @@ force_umount:
 	} else
 		info(ap->logopt, "umounted offset mount %s", me->key);
 
-	if (!rv)
-		mnts_remove_mount(me->key, MNTS_OFFSET);
-
 	return rv;
 }
 
@@ -760,12 +757,6 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me)
 	else
 		notify_mount_result(ap, me->key, timeout, str_offset);
 	ops->close(ap->logopt, ioctlfd);
-
-	mnt = mnts_add_mount(ap, me->key, MNTS_OFFSET);
-	if (!mnt)
-		error(ap->logopt,
-		      "failed to add offset mount %s to mounted list",
-		      me->key);
 
 	debug(ap->logopt, "mounted trigger %s", me->key);
 
@@ -1214,6 +1205,7 @@ static void *do_mount_direct(void *arg)
 		struct mapent *me;
 		struct statfs fs;
 		unsigned int close_fd = 0;
+		unsigned int flags = MNTS_DIRECT|MNTS_MOUNTED;
 
 		sbmnt = mnts_find_submount(mt.name);
 		if (statfs(mt.name, &fs) == -1 ||
@@ -1232,6 +1224,8 @@ static void *do_mount_direct(void *arg)
 				close_fd = 0;
 			if (!close_fd)
 				me->ioctlfd = mt.ioctlfd;
+			if (me->multi && me->multi != me)
+				flags |= MNTS_OFFSET;
 		}
 		ops->send_ready(ap->logopt, mt.ioctlfd, mt.wait_queue_token);
 		cache_unlock(mt.mc);
@@ -1240,7 +1234,7 @@ static void *do_mount_direct(void *arg)
 
 		info(ap->logopt, "mounted %s", mt.name);
 
-		mnts_set_mounted_mount(ap, mt.name);
+		mnts_set_mounted_mount(ap, mt.name, flags);
 
 		conditional_alarm_add(ap, ap->exp_runfreq);
 	} else {

@@ -1172,7 +1172,7 @@ struct mnt_list *mnts_add_mount(struct autofs_point *ap,
 	this = mnts_get_mount(mp);
 	if (this) {
 		this->flags |= flags;
-		if (list_empty(&this->mount))
+		if ((this->flags & MNTS_MOUNTED) && list_empty(&this->mount))
 			list_add(&this->mount, &ap->mounts);
 	}
 	mnts_hash_mutex_unlock();
@@ -1193,41 +1193,22 @@ void mnts_remove_mount(const char *mp, unsigned int flags)
 	this = mnts_lookup(mp);
 	if (this && this->flags & flags) {
 		this->flags &= ~flags;
-		if (!(this->flags & (MNTS_OFFSET|MNTS_MOUNTED)))
+		if (!(this->flags & MNTS_MOUNTED))
 			list_del_init(&this->mount);
 		__mnts_put_mount(this);
 	}
 	mnts_hash_mutex_unlock();
 }
 
-void mnts_set_mounted_mount(struct autofs_point *ap, const char *name)
+void mnts_set_mounted_mount(struct autofs_point *ap, const char *name, unsigned int flags)
 {
 	struct mnt_list *mnt;
 
-	mnt = mnts_add_mount(ap, name, MNTS_MOUNTED);
+	mnt = mnts_add_mount(ap, name, flags);
 	if (!mnt) {
 		error(ap->logopt,
 		      "failed to add mount %s to mounted list", name);
 		return;
-	}
-
-	/* Offset mount failed but non-strict returns success */
-	if (mnt->flags & MNTS_OFFSET &&
-	    !is_mounted(mnt->mp, MNTS_REAL)) {
-		mnt->flags &= ~MNTS_MOUNTED;
-		mnts_put_mount(mnt);
-	}
-
-	/* Housekeeping.
-	 * Set the base type of the mounted mount.
-	 * MNTS_AUTOFS and MNTS_OFFSET are set at mount time and
-	 * are used during expire.
-	 */
-	if (!(mnt->flags & (MNTS_AUTOFS|MNTS_OFFSET))) {
-		if (ap->type == LKP_INDIRECT)
-			mnt->flags |= MNTS_INDIRECT;
-		else
-			mnt->flags |= MNTS_DIRECT;
 	}
 }
 
@@ -1947,17 +1928,13 @@ static int do_remount_direct(struct autofs_point *ap,
 
 	ret = lookup_nss_mount(ap, NULL, path, strlen(path));
 	if (ret) {
-		struct mnt_list *mnt;
+		unsigned int flags = MNTS_DIRECT|MNTS_MOUNTED;
 
 		/* If it's an offset mount add a mount reference */
-		if (type == t_offset) {
-			mnt = mnts_add_mount(ap, path, MNTS_OFFSET);
-			if (!mnt)
-				error(ap->logopt,
-				      "failed to add mount %s to mounted list", path);
-		}
+		if (type == t_offset)
+			flags |= MNTS_OFFSET;
 
-		mnts_set_mounted_mount(ap, path);
+		mnts_set_mounted_mount(ap, path, flags);
 
 		info(ap->logopt, "re-connected to %s", path);
 
@@ -2032,7 +2009,9 @@ static int do_remount_indirect(struct autofs_point *ap, const unsigned int type,
 
 		ret = lookup_nss_mount(ap, NULL, de[n]->d_name, len);
 		if (ret) {
-			mnts_set_mounted_mount(ap, buf);
+			unsigned int flags = MNTS_INDIRECT|MNTS_MOUNTED;
+
+			mnts_set_mounted_mount(ap, buf, flags);
 
 			info(ap->logopt, "re-connected to %s", buf);
 

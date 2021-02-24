@@ -747,12 +747,14 @@ static void *do_mount_indirect(void *arg)
 	status = lookup_nss_mount(ap, NULL, mt.name, mt.len);
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &state);
 	if (status) {
+		unsigned int flags = MNTS_INDIRECT|MNTS_MOUNTED;
+
 		ops->send_ready(ap->logopt,
 				ap->ioctlfd, mt.wait_queue_token);
 
 		info(ap->logopt, "mounted %s", buf);
 
-		mnts_set_mounted_mount(ap, mt.name);
+		mnts_set_mounted_mount(ap, mt.name, flags);
 
 		conditional_alarm_add(ap, ap->exp_runfreq);
 	} else {

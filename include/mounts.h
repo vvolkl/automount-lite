@@ -131,7 +131,7 @@ struct mnt_list *get_mnt_list(const char *path, int include);
 unsigned int mnts_has_mounted_mounts(struct autofs_point *ap);
 void mnts_get_expire_list(struct list_head *mnts, struct autofs_point *ap);
 void mnts_put_expire_list(struct list_head *mnts);
-void mnts_set_mounted_mount(struct autofs_point *ap, const char *name);
+void mnts_set_mounted_mount(struct autofs_point *ap, const char *name, unsigned int flags);
 int unlink_mount_tree(struct autofs_point *ap, const char *mp);
 void free_mnt_list(struct mnt_list *list);
 int is_mounted(const char *mp, unsigned int type);
