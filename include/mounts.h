@@ -51,10 +51,36 @@ extern const unsigned int t_indirect;
 extern const unsigned int t_direct;
 extern const unsigned int t_offset;
 
+struct mnt_list;
 struct mapent;
+
+struct tree_ops;
+
+struct tree_node {
+	struct tree_ops *ops;
+	struct tree_node *left;
+	struct tree_node *right;
+};
+#define INIT_TREE_NODE(ptr)	((ptr)->ops = NULL, (ptr)->left = NULL, (ptr)->right = NULL)
+
+#define MNT_LIST(n)		(container_of(n, struct mnt_list, node))
+#define MNT_LIST_NODE(ptr)	((struct tree_node *) &((struct mnt_list *) ptr)->node)
+
+typedef struct tree_node *(*tree_new_t) (void *ptr);
+typedef int  (*tree_cmp_t) (struct tree_node *n, void *ptr);
+typedef void (*tree_free_t) (struct tree_node *n);
+
+struct tree_ops {
+	tree_new_t new;
+	tree_cmp_t cmp;
+	tree_free_t free;
+};
+
+typedef int (*tree_work_fn_t) (struct tree_node *n, void *ptr);
 
 struct mnt_list {
 	char *mp;
+	size_t len;
 	unsigned int flags;
 
 	/* Hash of all mounts */
@@ -78,6 +104,9 @@ struct mnt_list {
 	char *amd_opts;
 	unsigned int amd_cache_opts;
 	struct list_head amdmount;
+
+	/* Tree operations */
+	struct tree_node node;
 
 	/*
 	 * List operations ie. get_mnt_list.

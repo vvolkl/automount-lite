@@ -68,6 +68,17 @@ static pthread_mutex_t ext_mount_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 static DEFINE_HASHTABLE(mnts_hash, MNTS_HASH_BITS);
 static pthread_mutex_t mnts_hash_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+static struct tree_node *tree_mnt_new(void *ptr);
+static int tree_mnt_cmp(struct tree_node *n, void *ptr);
+static void tree_mnt_free(struct tree_node *n);
+
+static struct tree_ops mnt_ops = {
+	.new = tree_mnt_new,
+	.cmp = tree_mnt_cmp,
+	.free = tree_mnt_free,
+};
+static struct tree_ops *tree_mnt_ops = &mnt_ops;
+
 unsigned int linux_version_code(void)
 {
 	struct utsname my_utsname;
@@ -904,6 +915,7 @@ static struct mnt_list *mnts_alloc_mount(const char *mp)
 		this = NULL;
 		goto done;
 	}
+	this->len = strlen(mp);
 
 	this->ref = 1;
 	INIT_HLIST_NODE(&this->hash);
@@ -912,6 +924,7 @@ static struct mnt_list *mnts_alloc_mount(const char *mp)
 	INIT_LIST_HEAD(&this->submount_work);
 	INIT_LIST_HEAD(&this->amdmount);
 	INIT_LIST_HEAD(&this->expire);
+	INIT_TREE_NODE(&this->node);
 done:
 	return this;
 }
@@ -1225,91 +1238,58 @@ done:
 	return has_mounted_mounts;
 }
 
-struct tree_node {
-	struct mnt_list *mnt;
-	struct tree_node *left;
-	struct tree_node *right;
-};
-
-static struct tree_node *tree_new(struct mnt_list *mnt)
+static inline struct tree_node *tree_root(struct tree_ops *ops, void *ptr)
 {
-	struct tree_node *n;
-
-	n = malloc(sizeof(struct tree_node));
-	if (!n)
-		return NULL;
-	memset(n, 0, sizeof(struct tree_node));
-	n->mnt = mnt;
-
-	return n;
+	return ops->new(ptr);
 }
 
-static struct tree_node *tree_root(struct mnt_list *mnt)
-{
-	struct tree_node *n;
-
-	n = tree_new(mnt);
-	if (!n) {
-		error(LOGOPT_ANY, "failed to allcate tree root");
-		return NULL;
-	}
-
-	return n;
-}
-
-static struct tree_node *tree_add_left(struct tree_node *n, struct mnt_list *mnt)
+static struct tree_node *tree_add_left(struct tree_node *n, void *ptr)
 {
 	struct tree_node *new;
 
-	new = tree_new(mnt);
-	if (!new) {
-		error(LOGOPT_ANY, "failed to allcate tree node");
-		return NULL;
-	}
+	new = n->ops->new(ptr);
 	n->left = new;
 
-	return n;
+	return new;
 }
 
-static struct tree_node *tree_add_right(struct tree_node *n, struct mnt_list *mnt)
+static struct tree_node *tree_add_right(struct tree_node *n, void *ptr)
 {
 	struct tree_node *new;
 
-	new = tree_new(mnt);
-	if (!new) {
-		error(LOGOPT_ANY, "failed to allcate tree node");
-		return NULL;
-	}
+	new = n->ops->new(ptr);
 	n->right = new;
 
-	return n;
+	return new;
 }
 
-static struct tree_node *tree_add_node(struct tree_node *root, struct mnt_list *mnt)
+static struct tree_node *tree_add_node(struct tree_node *root, void *ptr)
 {
 	struct tree_node *p, *q;
-	unsigned int mp_len;
-
-	mp_len = strlen(mnt->mp);
+	struct tree_ops *ops = root->ops;
+	int eq;
 
 	q = root;
 	p = root;
 
-	while (q && strcmp(mnt->mp, p->mnt->mp)) {
+	while (q) {
 		p = q;
-		if (mp_len < strlen(p->mnt->mp))
+		eq = ops->cmp(p, ptr);
+		if (!eq)
+			break;
+		if (eq < 0)
 			q = p->left;
 		else
 			q = p->right;
 	}
 
-	if (strcmp(mnt->mp, p->mnt->mp) == 0)
-		error(LOGOPT_ANY, "duplicate entry in mounts list");
+	if (!eq)
+		error(LOGOPT_ANY, "cannot add duplicate entry to tree");
 	else {
-		if (mp_len < strlen(p->mnt->mp))
-			return tree_add_left(p, mnt);
+		if (eq < 0)
+			return tree_add_left(p, ptr);
 		else
-			return tree_add_right(p, mnt);
+			return tree_add_right(p, ptr);
 	}
 
 	return NULL;
@@ -1317,26 +1297,92 @@ static struct tree_node *tree_add_node(struct tree_node *root, struct mnt_list *
 
 static void tree_free(struct tree_node *root)
 {
+	struct tree_ops *ops = root->ops;
+
 	if (root->right)
 		tree_free(root->right);
 	if (root->left)
 		tree_free(root->left);
-	free(root);
+	ops->free(root);
 }
 
-static void tree_traverse(struct tree_node *n, struct list_head *mnts)
+static int tree_traverse_inorder(struct tree_node *n, tree_work_fn_t work, void *ptr)
 {
-	if (n->right)
-		tree_traverse(n->right, mnts);
-	list_add_tail(&n->mnt->expire, mnts);
-	if (n->left)
-		tree_traverse(n->left, mnts);
+	int ret;
+
+	if (n->left) {
+		ret = tree_traverse_inorder(n->left, work, ptr);
+		if (!ret)
+			goto done;
+	}
+	ret = work(n, ptr);
+	if (!ret)
+		goto done;
+	if (n->right) {
+		ret = tree_traverse_inorder(n->right, work, ptr);
+		if (!ret)
+			goto done;
+	}
+done:
+	return ret;
+}
+
+static struct tree_node *tree_mnt_root(struct mnt_list *mnt)
+{
+	return tree_root(tree_mnt_ops, mnt);
+}
+
+static struct tree_node *tree_mnt_new(void *ptr)
+{
+	struct tree_node *n = MNT_LIST_NODE(ptr);
+
+	n->ops = tree_mnt_ops;
+	n->left = NULL;
+	n->right = NULL;
+
+	return n;
+}
+
+static int tree_mnt_cmp(struct tree_node *n, void *ptr)
+{
+	struct mnt_list *n_mnt = MNT_LIST(n);
+	size_t n_mnt_len = n_mnt->len;
+	struct mnt_list *mnt = ptr;
+	size_t mnt_len = mnt->len;
+	int eq;
+
+	eq = strcmp(mnt->mp, n_mnt->mp);
+	if (!eq)
+		return 0;
+	return (mnt_len < n_mnt_len) ? -1 : 1;
+}
+
+static void tree_mnt_free(struct tree_node *n)
+{
+	n->ops = NULL;
+	n->left = NULL;
+	n->right = NULL;
+}
+
+static int tree_mnt_expire_list_work(struct tree_node *n, void *ptr)
+{
+	struct mnt_list *mnt = MNT_LIST(n);
+	struct list_head *mnts = ptr;
+
+	/* The expire of the root offset of an offset tree is the same
+	 * as expiring the offset tree root itself (if theree is a root
+	 * offset).
+	 */
+	if (mnt->mp[mnt->len - 1] != '/')
+		list_add(&mnt->expire, mnts);
+
+	return 1;
 }
 
 void mnts_get_expire_list(struct list_head *mnts, struct autofs_point *ap)
 {
-	struct mnt_list *mnt;
 	struct tree_node *tree = NULL;
+	struct mnt_list *mnt;
 
 	mnts_hash_mutex_lock();
 	if (list_empty(&ap->mounts))
@@ -1351,7 +1397,7 @@ void mnts_get_expire_list(struct list_head *mnts, struct autofs_point *ap)
 		__mnts_get_mount(mnt);
 
 		if (!tree) {
-			tree = tree_root(mnt);
+			tree = tree_mnt_root(mnt);
 			if (!tree) {
 				error(LOGOPT_ANY, "failed to create expire tree root");
 				goto done;
@@ -1367,7 +1413,7 @@ void mnts_get_expire_list(struct list_head *mnts, struct autofs_point *ap)
 		}
 	}
 
-	tree_traverse(tree, mnts);
+	tree_traverse_inorder(tree, tree_mnt_expire_list_work, mnts);
 	tree_free(tree);
 done:
 	mnts_hash_mutex_unlock();
