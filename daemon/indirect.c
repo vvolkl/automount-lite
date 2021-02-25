@@ -265,7 +265,7 @@ int umount_autofs_indirect(struct autofs_point *ap, const char *root)
 
 	retries = UMOUNT_RETRIES;
 	while ((rv = umount(mountpoint)) == -1 && retries--) {
-		struct timespec tm = {0, 200000000};
+		struct timespec tm = {0, 50000000};
 		if (errno != EBUSY)
 			break;
 		nanosleep(&tm, NULL);

@@ -140,7 +140,7 @@ struct autofs_point;
 #define NULL_MAP_HASHSIZE	64
 #define NEGATIVE_TIMEOUT	10
 #define POSITIVE_TIMEOUT	120
-#define UMOUNT_RETRIES		8
+#define UMOUNT_RETRIES		16
 #define EXPIRE_RETRIES		3
 
 struct mapent_cache {

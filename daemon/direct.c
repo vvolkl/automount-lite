@@ -150,7 +150,7 @@ int do_umount_autofs_direct(struct autofs_point *ap, struct mapent *me)
 
 	retries = UMOUNT_RETRIES;
 	while ((rv = umount(me->key)) == -1 && retries--) {
-		struct timespec tm = {0, 200000000};
+		struct timespec tm = {0, 50000000};
 		if (errno != EBUSY)
 			break;
 		nanosleep(&tm, NULL);
@@ -573,7 +573,7 @@ int umount_autofs_offset(struct autofs_point *ap, struct mapent *me)
 
 	retries = UMOUNT_RETRIES;
 	while ((rv = umount(me->key)) == -1 && retries--) {
-		struct timespec tm = {0, 200000000};
+		struct timespec tm = {0, 50000000};
 		if (errno != EBUSY)
 			break;
 		nanosleep(&tm, NULL);
