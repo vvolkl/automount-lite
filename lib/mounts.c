@@ -79,6 +79,17 @@ static struct tree_ops mnt_ops = {
 };
 static struct tree_ops *tree_mnt_ops = &mnt_ops;
 
+static struct tree_node *tree_mapent_new(void *ptr);
+static int tree_mapent_cmp(struct tree_node *n, void *ptr);
+static void tree_mapent_free(struct tree_node *n);
+
+static struct tree_ops mapent_ops = {
+	.new = tree_mapent_new,
+	.cmp = tree_mapent_cmp,
+	.free = tree_mapent_free,
+};
+static struct tree_ops *tree_mapent_ops = &mapent_ops;
+
 unsigned int linux_version_code(void)
 {
 	struct utsname my_utsname;
@@ -1429,6 +1440,45 @@ void mnts_put_expire_list(struct list_head *mnts)
 		__mnts_put_mount(mnt);
 	}
 	mnts_hash_mutex_unlock();
+}
+
+struct tree_node *tree_mapent_root(struct mapent *me)
+{
+	return tree_root(tree_mapent_ops, me);
+}
+
+static struct tree_node *tree_mapent_new(void *ptr)
+{
+	struct tree_node *n = MAPENT_NODE(ptr);
+
+	n->ops = tree_mapent_ops;
+	n->left = NULL;
+	n->right = NULL;
+
+	return n;
+}
+
+static int tree_mapent_cmp(struct tree_node *n, void *ptr)
+{
+	struct mapent *n_me = MAPENT(n);
+	size_t n_me_len = n_me->len;
+	struct mapent *me = ptr;
+	size_t me_len = me->len;
+
+	if (strncmp(me->key, n_me->key, n_me_len) == 0) {
+		if (me_len < n_me_len)
+			return -1;
+		else if (me_len > n_me_len)
+			return 1;
+	}
+	return strcmp(me->key, n_me->key);
+}
+
+static void tree_mapent_free(struct tree_node *n)
+{
+	n->ops = NULL;
+	n->left = NULL;
+	n->right = NULL;
 }
 
 /* From glibc decode_name() */

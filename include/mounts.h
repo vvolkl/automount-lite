@@ -66,6 +66,13 @@ struct tree_node {
 #define MNT_LIST(n)		(container_of(n, struct mnt_list, node))
 #define MNT_LIST_NODE(ptr)	((struct tree_node *) &((struct mnt_list *) ptr)->node)
 
+#define MAPENT(n)		(container_of(n, struct mapent, node))
+#define MAPENT_NODE(p)		((struct tree_node *) &((struct mapent *) p)->node)
+#define MAPENT_ROOT(p)		((struct tree_node *) ((struct mapent *) p)->mm_root)
+#define MAPENT_PARENT(p)	((struct tree_node *) ((struct mapent *) p)->mm_parent)
+#define MAPENT_SET_ROOT(p, r)	{ (((struct mapent *) p)->mm_root = (struct tree_node *) r); }
+#define MAPENT_SET_PARENT(p, n)	{ (((struct mapent *) p)->mm_parent = (struct tree_node *) n); }
+
 typedef struct tree_node *(*tree_new_t) (void *ptr);
 typedef int  (*tree_cmp_t) (struct tree_node *n, void *ptr);
 typedef void (*tree_free_t) (struct tree_node *n);
@@ -161,6 +168,7 @@ unsigned int mnts_has_mounted_mounts(struct autofs_point *ap);
 void mnts_get_expire_list(struct list_head *mnts, struct autofs_point *ap);
 void mnts_put_expire_list(struct list_head *mnts);
 void mnts_set_mounted_mount(struct autofs_point *ap, const char *name, unsigned int flags);
+struct tree_node *tree_mapent_root(struct mapent *me);
 int unlink_mount_tree(struct autofs_point *ap, const char *mp);
 void free_mnt_list(struct mnt_list *list);
 int is_mounted(const char *mp, unsigned int type);

@@ -32,6 +32,7 @@
 - remove unused functions cache_dump_multi() and cache_dump_cache().
 - add a len field to struct autofs_point.
 - make tree implementation data independent.
+- add mapent tree implementation.
 
 25/01/2021 autofs-5.1.7
 - make bind mounts propagation slave by default.

@@ -166,10 +166,14 @@ struct mapent {
 	struct mapent_cache *mc;
 	struct map_source *source;
 	/* Need to know owner if we're a multi-mount */
+	struct tree_node *mm_root;
+	struct tree_node *mm_parent;
+	struct tree_node node;
 	struct mapent *multi;
 	/* Parent nesting point within multi-mount */
 	struct mapent *parent;
 	char *key;
+	size_t len;
 	char *mapent;
 	struct stack *stack;
 	time_t age;

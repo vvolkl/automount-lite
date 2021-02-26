@@ -546,17 +546,21 @@ int cache_add(struct mapent_cache *mc, struct map_source *ms, const char *key, c
 	struct mapent *me, *existing = NULL;
 	char *pkey, *pent;
 	u_int32_t hashval = hash(key, mc->size);
+	size_t len;
 
 	me = (struct mapent *) malloc(sizeof(struct mapent));
 	if (!me)
 		return CHE_FAIL;
 
-	pkey = malloc(strlen(key) + 1);
+	len = strlen(key);
+
+	pkey = malloc(len + 1);
 	if (!pkey) {
 		free(me);
 		return CHE_FAIL;
 	}
 	me->key = strcpy(pkey, key);
+	me->len = len;
 
 	if (mapent) {
 		pent = malloc(strlen(mapent) + 1);
@@ -575,6 +579,9 @@ int cache_add(struct mapent_cache *mc, struct map_source *ms, const char *key, c
 	me->status = 0;
 	me->mc = mc;
 	me->source = ms;
+	me->mm_root = NULL;
+	me->mm_parent = NULL;
+	INIT_TREE_NODE(&me->node);
 	INIT_LIST_HEAD(&me->ino_index);
 	INIT_LIST_HEAD(&me->multi_list);
 	me->multi = NULL;
