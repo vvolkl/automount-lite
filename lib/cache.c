@@ -749,8 +749,7 @@ void cache_update_negative(struct mapent_cache *mc,
 }
 
 
-static struct mapent *get_offset_parent(struct mapent_cache *mc,
-					const char *key)
+struct mapent *cache_get_offset_parent(struct mapent_cache *mc, const char *key)
 {
 	struct mapent *me;
 	char *parent, *tail;
@@ -796,7 +795,7 @@ int cache_set_offset_parent(struct mapent_cache *mc, const char *offset)
 	if (!IS_MM(this))
 		return 0;
 
-	parent = get_offset_parent(mc, offset);
+	parent = cache_get_offset_parent(mc, offset);
 	if (parent)
 		this->parent = parent;
 	else

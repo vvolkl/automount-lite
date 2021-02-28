@@ -169,6 +169,7 @@ void mnts_get_expire_list(struct list_head *mnts, struct autofs_point *ap);
 void mnts_put_expire_list(struct list_head *mnts);
 void mnts_set_mounted_mount(struct autofs_point *ap, const char *name, unsigned int flags);
 struct tree_node *tree_mapent_root(struct mapent *me);
+int tree_mapent_add_node(struct mapent_cache *mc, const char *base, const char *key);
 int unlink_mount_tree(struct autofs_point *ap, const char *mp);
 void free_mnt_list(struct mnt_list *list);
 int is_mounted(const char *mp, unsigned int type);

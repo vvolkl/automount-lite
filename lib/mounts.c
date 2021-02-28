@@ -1481,6 +1481,53 @@ static void tree_mapent_free(struct tree_node *n)
 	n->right = NULL;
 }
 
+int tree_mapent_add_node(struct mapent_cache *mc,
+			 const char *root, const char *key)
+{
+	unsigned int logopt = mc->ap->logopt;
+	struct tree_node *tree, *n;
+	struct mapent *base;
+	struct mapent *parent;
+	struct mapent *me;
+
+	base = cache_lookup_distinct(mc, root);
+	if (!base) {
+		error(logopt,
+		     "failed to find multi-mount root for key %s", key);
+		return 0;
+	}
+
+	if (MAPENT_ROOT(base) != MAPENT_NODE(base)) {
+		error(logopt,
+		     "failed to find multi-mount root of offset tree",
+		     key);
+		return 0;
+	}
+	tree = MAPENT_ROOT(base);
+
+	me = cache_lookup_distinct(mc, key);
+	if (!me) {
+		error(logopt,
+		     "failed to find key %s of multi-mount", key);
+		return 0;
+	}
+
+	n = tree_add_node(tree, me);
+	if (!n)
+		return 0;
+
+	MAPENT_SET_ROOT(me, tree)
+
+	/* Set the subtree parent */
+	parent = cache_get_offset_parent(mc, key);
+	if (!parent)
+		MAPENT_SET_PARENT(me, tree)
+	else
+		MAPENT_SET_PARENT(me, MAPENT_NODE(parent))
+
+	return 1;
+}
+
 /* From glibc decode_name() */
 /* Since the values in a line are separated by spaces, a name cannot
  * contain a space.  Therefore some programs encode spaces in names
