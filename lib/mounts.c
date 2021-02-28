@@ -1528,6 +1528,76 @@ int tree_mapent_add_node(struct mapent_cache *mc,
 	return 1;
 }
 
+static int tree_mapent_delete_offset_tree(struct tree_node *root)
+{
+	struct mapent *me = MAPENT(root);
+	unsigned int logopt = me->mc->ap->logopt;
+	int ret = CHE_OK;
+
+	if (root->left) {
+		ret = tree_mapent_delete_offset_tree(root->left);
+		if (!ret)
+			return 0;
+		root->left = NULL;
+	}
+	if (root->right) {
+		ret = tree_mapent_delete_offset_tree(root->right);
+		if (!ret)
+			return 0;
+		root->right = NULL;
+	}
+
+	/* Keep the owner of the multi-mount offset tree and clear
+	 * the root and parent when done.
+	 */
+	if (MAPENT_ROOT(me) != MAPENT_NODE(me)) {
+		struct tree_node *root = MAPENT_ROOT(me);
+
+		debug(logopt, "deleting offset key %s", me->key);
+
+		/* cache_delete won't delete an active offset */
+		MAPENT_SET_ROOT(me, NULL);
+		ret = cache_delete(me->mc, me->key);
+		if (ret != CHE_OK) {
+			MAPENT_SET_ROOT(me, root);
+			warn(logopt, "failed to delete offset %s", me->key);
+		}
+	} else {
+		MAPENT_SET_ROOT(me, NULL);
+		MAPENT_SET_PARENT(me, NULL);
+	}
+
+	return ret == CHE_OK ? 1 : 0;
+}
+
+int tree_mapent_delete_offsets(struct mapent_cache *mc, const char *key)
+{
+	unsigned int logopt = mc->ap->logopt;
+	struct mapent *me;
+
+	me = cache_lookup_distinct(mc, key);
+	if (!me) {
+		error(logopt,
+		     "failed to find multi-mount root for key %s", key);
+		return 0;
+	}
+
+	/* Not offset list owner */
+	if (MAPENT_ROOT(me) != MAPENT_NODE(me)) {
+		error(logopt,
+		     "mapent for key %s is not multi-mount owner", key);
+		return 0;
+	}
+
+	if (!tree_mapent_delete_offset_tree(MAPENT_ROOT(me))) {
+		error(logopt,
+		     "could not delete map entry offsets for key %s", key);
+		return 0;
+	}
+
+	return 1;
+}
+
 /* From glibc decode_name() */
 /* Since the values in a line are separated by spaces, a name cannot
  * contain a space.  Therefore some programs encode spaces in names
