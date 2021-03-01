@@ -2893,7 +2893,7 @@ void set_indirect_mount_tree_catatonic(struct autofs_point *ap)
 
 			/* Only need to set offset mounts catatonic */
 			if (IS_MM(me) && IS_MM_ROOT(me))
-				set_multi_mount_tree_catatonic(ap, me);
+				set_offset_tree_catatonic(ap, me);
 next:
 			me = cache_enumerate(mc, me);
 		}
@@ -2913,7 +2913,7 @@ void set_direct_mount_tree_catatonic(struct autofs_point *ap, struct mapent *me)
 {
 	/* Set offset mounts catatonic for this mapent */
 	if (IS_MM(me) && IS_MM_ROOT(me))
-		set_multi_mount_tree_catatonic(ap, me);
+		set_offset_tree_catatonic(ap, me);
 	set_mount_catatonic(ap, me, me->ioctlfd);
 }
 

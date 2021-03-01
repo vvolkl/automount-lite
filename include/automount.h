@@ -187,10 +187,10 @@ struct mapent {
 	ino_t ino;
 };
 
-#define IS_MM(me)	(me->multi)
-#define IS_MM_ROOT(me)	(me->multi == me)
-#define MM_ROOT(me)	(me->multi)
-#define MM_PARENT(me)	(me->parent)
+#define IS_MM(me)	(me->mm_root)
+#define IS_MM_ROOT(me)	(me->mm_root == &me->node)
+#define MM_ROOT(me)	(MAPENT(me->mm_root))
+#define MM_PARENT(me)	(MAPENT(me->mm_parent))
 
 void cache_lock_cleanup(void *arg);
 void cache_readlock(struct mapent_cache *mc);

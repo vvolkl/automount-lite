@@ -658,7 +658,7 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 			me = cache_lookup_distinct(mc, name);
 			if (me) {
 				if (IS_MM(me))
-					cache_delete_offset_list(mc, name);
+					tree_mapent_delete_offsets(mc, name);
 				cache_delete(mc, name);
 			}
 			cache_unlock(mc);
