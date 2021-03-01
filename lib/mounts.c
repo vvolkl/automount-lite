@@ -2578,6 +2578,21 @@ static int set_mount_catatonic(struct autofs_point *ap, struct mapent *me, int i
 	return 0;
 }
 
+static int set_offset_tree_catatonic_work(struct tree_node *n, void *ptr)
+{
+	struct mapent *me = MAPENT(n);
+	struct autofs_point *ap = me->mc->ap;
+
+	set_mount_catatonic(ap, me, me->ioctlfd);
+
+	return 1;
+}
+
+static void set_offset_tree_catatonic(struct autofs_point *ap, struct mapent *me)
+{
+	tree_traverse_inorder(MAPENT_ROOT(me), set_offset_tree_catatonic_work, NULL);
+}
+
 static void set_multi_mount_tree_catatonic(struct autofs_point *ap, struct mapent *me)
 {
 	if (!list_empty(&me->multi_list)) {
