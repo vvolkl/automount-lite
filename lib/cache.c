@@ -917,20 +917,15 @@ int cache_delete(struct mapent_cache *mc, const char *key)
 	struct mapent *me = NULL, *pred;
 	u_int32_t hashval = hash(key, mc->size);
 	int ret = CHE_OK;
-	char this[PATH_MAX];
-
-	strcpy(this, key);
 
 	me = mc->hash[hashval];
-	if (!me) {
-		ret = CHE_FAIL;
+	if (!me)
 		goto done;
-	}
 
 	while (me->next != NULL) {
 		pred = me;
 		me = me->next;
-		if (strcmp(this, me->key) == 0) {
+		if (strcmp(key, me->key) == 0) {
 			struct stack *s = me->stack;
 			if (me->multi && !list_empty(&me->multi_list)) {
 				ret = CHE_FAIL;
@@ -959,7 +954,7 @@ int cache_delete(struct mapent_cache *mc, const char *key)
 	if (!me)
 		goto done;
 
-	if (strcmp(this, me->key) == 0) {
+	if (strcmp(key, me->key) == 0) {
 		struct stack *s = me->stack;
 		if (me->multi && !list_empty(&me->multi_list)) {
 			ret = CHE_FAIL;
