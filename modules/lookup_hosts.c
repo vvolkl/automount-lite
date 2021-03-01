@@ -177,7 +177,7 @@ static void update_hosts_mounts(struct autofs_point *ap,
 	me = cache_lookup_first(mc);
 	while (me) {
 		/* Hosts map entry not yet expanded or already expired */
-		if (!me->multi)
+		if (!IS_MM(me))
 			goto next;
 
 		debug(ap->logopt, MODPREFIX "get list of exports for %s", me->key);
@@ -200,7 +200,7 @@ next:
 		 * Hosts map entry not yet expanded, already expired
 		 * or not the base of the tree
 		 */
-		if (!me->multi || me->multi != me)
+		if (!IS_MM(me) || !IS_MM_ROOT(me))
 			goto cont;
 
 		debug(ap->logopt, MODPREFIX

@@ -686,7 +686,7 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me)
 			 * a mount that has been automatically mounted by
 			 * the kernel NFS client.
 			 */
-			if (me->multi != me &&
+			if (!IS_MM_ROOT(me) &&
 			    is_mounted(me->key, MNTS_REAL))
 				return MOUNT_OFFSET_IGNORE;
 
@@ -1220,11 +1220,11 @@ static void *do_mount_direct(void *arg)
 			 * for direct mount multi-mounts with no real mount at
 			 * their base so they will be expired.
 			 */
-			if (close_fd && me == me->multi)
+			if (close_fd && IS_MM_ROOT(me))
 				close_fd = 0;
 			if (!close_fd)
 				me->ioctlfd = mt.ioctlfd;
-			if (me->multi && me->multi != me)
+			if (IS_MM(me) && !IS_MM_ROOT(me))
 				flags |= MNTS_OFFSET;
 		}
 		ops->send_ready(ap->logopt, mt.ioctlfd, mt.wait_queue_token);

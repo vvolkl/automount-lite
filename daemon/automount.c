@@ -545,27 +545,27 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 
 	if (me) {
 		mc = me->mc;
-		is_mm_root = (me->multi == me);
+		is_mm_root = IS_MM_ROOT(me);
 	}
 
 	left = 0;
 
-	if (me && me->multi) {
+	if (me && IS_MM(me)) {
 		char root[PATH_MAX + 1];
 		char key[PATH_MAX + 1];
 		struct mapent *tmp;
 		int status;
 		char *base;
 
-		if (!strchr(me->multi->key, '/'))
+		if (!strchr(MM_ROOT(me)->key, '/'))
 			/* Indirect multi-mount root */
 			/* sprintf okay - if it's mounted, it's
 			 * PATH_MAX or less bytes */
-			sprintf(root, "%s/%s", ap->path, me->multi->key);
+			sprintf(root, "%s/%s", ap->path, MM_ROOT(me)->key);
 		else
-			strcpy(root, me->multi->key);
+			strcpy(root, MM_ROOT(me)->key);
 
-		if (is_mm_root)
+		if (IS_MM_ROOT(me))
 			base = NULL;
 		else
 			base = me->key + strlen(root);
@@ -588,7 +588,7 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 			return 0;
 		}
 
-		if (!left && is_mm_root) {
+		if (!left && IS_MM_ROOT(me)) {
 			status = cache_delete_offset_list(mc, me->key);
 			if (status != CHE_OK) {
 				warn(ap->logopt, "couldn't delete offset list");

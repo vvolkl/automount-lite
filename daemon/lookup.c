@@ -748,7 +748,7 @@ int lookup_ghost(struct autofs_point *ap, const char *root)
 					goto next;
 
 				/* It's a busy multi-mount - leave till next time */
-				if (list_empty(&me->multi_list))
+				if (IS_MM(me))
 					error(ap->logopt,
 					      "invalid key %s", me->key);
 				goto next;
@@ -838,12 +838,12 @@ static int lookup_amd_instance(struct autofs_point *ap,
 	char *m_key;
 
 	me = cache_lookup_distinct(map->mc, name);
-	if (!me || !me->multi) {
+	if (!me || !IS_MM(me)) {
 		error(ap->logopt, "expected multi mount entry not found");
 		return NSS_STATUS_UNKNOWN;
 	}
 
-	m_key = malloc(strlen(ap->path) + strlen(me->multi->key) + 2);
+	m_key = malloc(strlen(ap->path) + strlen(MM_ROOT(me)->key) + 2);
 	if (!m_key) {
 		error(ap->logopt,
 		     "failed to allocate storage for search key");
@@ -852,7 +852,7 @@ static int lookup_amd_instance(struct autofs_point *ap,
 
 	strcpy(m_key, ap->path);
 	strcat(m_key, "/");
-	strcat(m_key, me->multi->key);
+	strcat(m_key, MM_ROOT(me)->key);
 
 	mnt = mnts_find_amdmount(m_key);
 	free(m_key);
@@ -1355,7 +1355,7 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 			 * created on demand and managed by expire and don't
 			 * prune the multi-map owner map entry.
 			 */
-			if (*me->key == '/' || me->multi == me) {
+			if (*me->key == '/' || IS_MM_ROOT(me)) {
 				me = cache_enumerate(mc, me);
 				continue;
 			}

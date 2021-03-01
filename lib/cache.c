@@ -374,7 +374,7 @@ struct mapent *cache_lookup_first(struct mapent_cache *mc)
 
 		while (me) {
 			/* Multi mount entries are not primary */
-			if (me->multi && me->multi != me) {
+			if (IS_MM(me) && !IS_MM_ROOT(me)) {
 				me = me->next;
 				continue;
 			}
@@ -397,7 +397,7 @@ struct mapent *cache_lookup_next(struct mapent_cache *mc, struct mapent *me)
 	this = me->next;
 	while (this) {
 		/* Multi mount entries are not primary */
-		if (this->multi && this->multi != this) {
+		if (IS_MM(this) && !IS_MM_ROOT(this)) {
 			this = this->next;
 			continue;
 		}
@@ -413,7 +413,7 @@ struct mapent *cache_lookup_next(struct mapent_cache *mc, struct mapent *me)
 
 			while (this) {
 				/* Multi mount entries are not primary */
-				if (this->multi && this->multi != this) {
+				if (IS_MM(this) && !IS_MM_ROOT(this)) {
 					this = this->next;
 					continue;
 				}
@@ -435,7 +435,7 @@ struct mapent *cache_lookup_key_next(struct mapent *me)
 	next = me->next;
 	while (next) {
 		/* Multi mount entries are not primary */
-		if (me->multi && me->multi != me)
+		if (IS_MM(me) && !IS_MM_ROOT(me))
 			continue;
 		if (!strcmp(me->key, next->key))
 			return next;
@@ -706,7 +706,7 @@ int cache_update_offset(struct mapent_cache *mc, const char *mkey, const char *k
 	me = cache_lookup_distinct(mc, key);
 	if (me) {
 		cache_add_ordered_offset(me, &owner->multi_list);
-		me->multi = owner;
+		MM_ROOT(me) = owner;
 		goto done;
 	}
 	ret = CHE_FAIL;
@@ -814,14 +814,14 @@ int cache_set_offset_parent(struct mapent_cache *mc, const char *offset)
 	this = cache_lookup_distinct(mc, offset);
 	if (!this)
 		return 0;
-	if (!this->multi)
+	if (!IS_MM(this))
 		return 0;
 
 	parent = get_offset_parent(mc, offset);
 	if (parent)
 		this->parent = parent;
 	else
-		this->parent = this->multi;
+		this->parent = MM_ROOT(this);
 
 	return 1;
 }
@@ -879,7 +879,7 @@ int cache_delete_offset(struct mapent_cache *mc, const char *key)
 		return CHE_FAIL;
 
 	if (strcmp(key, me->key) == 0) {
-		if (me->multi && me->multi == me)
+		if (IS_MM(me) && IS_MM_ROOT(me))
 			return CHE_FAIL;
 		mc->hash[hashval] = me->next;
 		goto delete;
@@ -889,7 +889,7 @@ int cache_delete_offset(struct mapent_cache *mc, const char *key)
 		pred = me;
 		me = me->next;
 		if (strcmp(key, me->key) == 0) {
-			if (me->multi && me->multi == me)
+			if (IS_MM(me) && IS_MM_ROOT(me))
 				return CHE_FAIL;
 			pred->next = me->next;
 			goto delete;
@@ -927,7 +927,7 @@ int cache_delete(struct mapent_cache *mc, const char *key)
 		me = me->next;
 		if (strcmp(key, me->key) == 0) {
 			struct stack *s = me->stack;
-			if (me->multi && !list_empty(&me->multi_list)) {
+			if (IS_MM(me)) {
 				ret = CHE_FAIL;
 				goto done;
 			}
@@ -956,7 +956,7 @@ int cache_delete(struct mapent_cache *mc, const char *key)
 
 	if (strcmp(key, me->key) == 0) {
 		struct stack *s = me->stack;
-		if (me->multi && !list_empty(&me->multi_list)) {
+		if (IS_MM(me)) {
 			ret = CHE_FAIL;
 			goto done;
 		}
@@ -995,7 +995,7 @@ int cache_delete_offset_list(struct mapent_cache *mc, const char *key)
 		return CHE_FAIL;
 
 	/* Not offset list owner */
-	if (me->multi != me)
+	if (!IS_MM_ROOT(me))
 		return CHE_FAIL;
 
 	head = &me->multi_list;
@@ -1016,13 +1016,13 @@ int cache_delete_offset_list(struct mapent_cache *mc, const char *key)
 		this = list_entry(next, struct mapent, multi_list);
 		next = next->next;
 		list_del_init(&this->multi_list);
-		this->multi = NULL;
+		MM_ROOT(this) = NULL;
 		debug(logopt, "deleting offset key %s", this->key);
 		status = cache_delete(mc, this->key);
 		if (status == CHE_FAIL) {
 			warn(logopt,
 			     "failed to delete offset %s", this->key);
-			this->multi = me;
+			MM_ROOT(this) = me;
 			/* TODO: add list back in */
 			remain++;
 		}
@@ -1030,7 +1030,7 @@ int cache_delete_offset_list(struct mapent_cache *mc, const char *key)
 
 	if (!remain) {
 		list_del_init(&me->multi_list);
-		me->multi = NULL;
+		MM_ROOT(me) = NULL;
 	}
 
 	if (remain)

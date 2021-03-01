@@ -2163,7 +2163,7 @@ int try_remount(struct autofs_point *ap, struct mapent *me, unsigned int type)
 	} else {
 		me->flags &= ~MOUNT_FLAG_DIR_CREATED;
 		if (type == t_offset) {
-			if (!is_mounted(me->parent->key, MNTS_REAL))
+			if (!is_mounted(MM_PARENT(me)->key, MNTS_REAL))
 				me->flags |= MOUNT_FLAG_DIR_CREATED;
 		}
 	}
@@ -2310,7 +2310,7 @@ void set_indirect_mount_tree_catatonic(struct autofs_point *ap)
 				goto next;
 
 			/* Only need to set offset mounts catatonic */
-			if (me->multi && me->multi == me)
+			if (IS_MM(me) && IS_MM_ROOT(me))
 				set_multi_mount_tree_catatonic(ap, me);
 next:
 			me = cache_enumerate(mc, me);
@@ -2330,7 +2330,7 @@ next:
 void set_direct_mount_tree_catatonic(struct autofs_point *ap, struct mapent *me)
 {
 	/* Set offset mounts catatonic for this mapent */
-	if (me->multi && me->multi == me)
+	if (IS_MM(me) && IS_MM_ROOT(me))
 		set_multi_mount_tree_catatonic(ap, me);
 	set_mount_catatonic(ap, me, me->ioctlfd);
 }
@@ -2490,12 +2490,12 @@ static int rmdir_path_offset(struct autofs_point *ap, struct mapent *oe)
 	int ret;
 
 	if (ap->type == LKP_DIRECT)
-		return rmdir_path(ap, oe->key, oe->multi->dev);
+		return rmdir_path(ap, oe->key, MM_ROOT(oe)->dev);
 
 	dir = strdup(oe->key);
 
 	if (ap->flags & MOUNT_FLAG_GHOST)
-		split = strlen(ap->path) + strlen(oe->multi->key) + 1;
+		split = strlen(ap->path) + strlen(MM_ROOT(oe)->key) + 1;
 	else
 		split = strlen(ap->path);
 
@@ -2690,7 +2690,7 @@ int mount_multi_triggers(struct autofs_point *ap, struct mapent *me,
 		oe = cache_lookup_distinct(me->mc, key);
 		if (!oe || !oe->mapent)
 			goto cont;
-		if (oe->age != me->multi->age) {
+		if (oe->age != MM_ROOT(me)->age) {
 			/* Best effort */
 			do_umount_offset(ap, oe, root, start);
 			goto cont;
@@ -2724,7 +2724,7 @@ int umount_multi_triggers(struct autofs_point *ap, struct mapent *me, char *root
 
 	left = do_umount_multi_triggers(ap, me, root, start, base);
 
-	if (!left && me->multi == me) {
+	if (!left && IS_MM_ROOT(me)) {
 		/*
 		 * Special case.
 		 * If we can't umount the root container then we can't

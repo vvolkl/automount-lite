@@ -28,6 +28,7 @@
 - rename path to m_offset in update_offset_entry().
 - don't pass root to do_mount_autofs_offset().
 - rename tree implementation functions.
+- add some multi-mount macros.
 
 25/01/2021 autofs-5.1.7
 - make bind mounts propagation slave by default.

@@ -826,8 +826,8 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
         if (ap->type == LKP_INDIRECT && *key != '/') {
 		cache_readlock(mc);
 		me = cache_lookup_distinct(mc, key);
-		if (me && me->multi)
-			lkp_key = strdup(me->multi->key);
+		if (me && IS_MM(me))
+			lkp_key = strdup(MM_ROOT(me)->key);
 		else if (!ap->pref)
 			lkp_key = strdup(key);
 		else {

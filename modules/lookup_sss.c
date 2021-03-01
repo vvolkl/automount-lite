@@ -1055,8 +1055,8 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 
 		cache_readlock(mc);
 		me = cache_lookup_distinct(mc, key);
-		if (me && me->multi)
-			lkp_key = strdup(me->multi->key);
+		if (me && IS_MM(me))
+			lkp_key = strdup(MM_ROOT(me)->key);
 		else
 			lkp_key = strdup(key);
 		cache_unlock(mc);

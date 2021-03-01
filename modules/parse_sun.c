@@ -1148,7 +1148,7 @@ static int mount_subtree(struct autofs_point *ap, struct mapent_cache *mc,
 
 	rv = 0;
 
-	mm_key = me->multi->key;
+	mm_key = MM_ROOT(me)->key;
 
 	if (*mm_key == '/') {
 		mm_root = mm_key;
@@ -1162,7 +1162,7 @@ static int mount_subtree(struct autofs_point *ap, struct mapent_cache *mc,
 	}
 	mm_root_len = strlen(mm_root);
 
-	if (me == me->multi) {
+	if (IS_MM_ROOT(me)) {
 		char key[PATH_MAX + 1];
 
 		if (mm_root_len + 1 > PATH_MAX) {
@@ -1179,7 +1179,7 @@ static int mount_subtree(struct autofs_point *ap, struct mapent_cache *mc,
 
 		/* Mount root offset if it exists */
 		ro = cache_lookup_distinct(me->mc, key);
-		if (ro && ro->age == me->multi->age) {
+		if (ro && ro->age == MM_ROOT(me)->age) {
 			char *myoptions, *ro_loc;
 			int namelen = name ? strlen(name) : 0;
 			int ro_len;
@@ -1350,7 +1350,7 @@ int parse_mount(struct autofs_point *ap, const char *name,
 	if (*name == '/') {
 		cache_readlock(mc);
 		me = cache_lookup_distinct(mc, name);
-		if (me && me->multi && me->multi != me) {
+		if (me && IS_MM(me) && !IS_MM_ROOT(me)) {
 			cache_unlock(mc);
 			mapent_len = strlen(mapent) + 1;
 			pmapent = malloc(mapent_len + 1);
@@ -1505,7 +1505,7 @@ dont_expand:
 		}
 
 		/* So we know we're the multi-mount root */
-		if (!me->multi)
+		if (!IS_MM(me))
 			me->multi = me;
 		else {
 			/*
@@ -1630,7 +1630,7 @@ dont_expand:
 		 */
 		cache_readlock(mc);
 		if (*name == '/' &&
-		   (me = cache_lookup_distinct(mc, name)) && me->multi) {
+		   (me = cache_lookup_distinct(mc, name)) && IS_MM(me)) {
 			cache_unlock(mc);
 			loc = strdup(p);
 			if (!loc) {
