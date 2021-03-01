@@ -2453,13 +2453,12 @@ out:
 	return rv;
 }
 
-static int do_mount_autofs_offset(struct autofs_point *ap,
-				  struct mapent *oe, const char *root)
+static int do_mount_autofs_offset(struct autofs_point *ap, struct mapent *oe)
 {
 	int mounted = 0;
 	int ret;
 
-	debug(ap->logopt, "mount offset %s at %s", oe->key, root);
+	debug(ap->logopt, "mount offset %s", oe->key);
 
 	ret = mount_autofs_offset(ap, oe);
 	if (ret >= MOUNT_OFFSET_OK)
@@ -2651,7 +2650,7 @@ static int do_umount_offset(struct autofs_point *ap,
 		 */
 		ret = rmdir_path_offset(ap, oe);
 		if (ret == -1 && !stat(oe->key, &st)) {
-			ret = do_mount_autofs_offset(ap, oe, root);
+			ret = do_mount_autofs_offset(ap, oe);
 			if (ret)
 				left++;
 			/* But we did origianlly create this */
@@ -2697,7 +2696,7 @@ int mount_multi_triggers(struct autofs_point *ap, struct mapent *me,
 			goto cont;
 		}
 
-		mounted += do_mount_autofs_offset(ap, oe, root);
+		mounted += do_mount_autofs_offset(ap, oe);
 
 		/*
 		 * If re-constructing a multi-mount it's necessary to walk
