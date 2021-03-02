@@ -1074,62 +1074,6 @@ next:
 	return (p - ent);
 }
 
-static void cleanup_multi_triggers(struct autofs_point *ap,
-			    struct mapent *me, const char *root, int start,
-			    const char *base)
-{
-	char path[PATH_MAX + 1];
-	char offset[PATH_MAX + 1];
-	char *poffset = offset;
-	struct mapent *oe;
-	struct list_head *mm_root, *pos;
-	const char o_root[] = "/";
-	const char *mm_base;
-	unsigned int root_len;
-	unsigned int mm_base_len;
-
-	mm_root = &me->multi->multi_list;
-
-	if (!base)
-		mm_base = o_root;
-	else
-		mm_base = base;
-
-	pos = NULL;
-	root_len = strlen(root);
-	mm_base_len = strlen(mm_base);
-
-	/* Make sure "none" of the offsets have an active mount. */
-	while ((poffset = cache_get_offset(mm_base, poffset, start, mm_root, &pos))) {
-		unsigned int path_len = root_len + strlen(poffset);
-
-		if (mm_base_len > 1)
-			path_len += mm_base_len;
-
-		if (path_len > PATH_MAX) {
-			warn(ap->logopt, "path loo long");
-			continue;
-		}
-
-		strcpy(path, root);
-		if (mm_base_len > 1)
-			strcat(path, mm_base);
-		strcat(path, poffset);
-
-		oe = cache_lookup_distinct(me->mc, path);
-		/* root offset is a special case */
-		if (!oe || !oe->mapent || (strlen(oe->key) - start) == 1)
-			continue;
-
-		if (umount(path)) {
-			error(ap->logopt, "error recovering from mount fail");
-			error(ap->logopt, "cannot umount offset %s", path);
-		}
-	}
-
-	return;
-}
-
 static int mount_subtree(struct autofs_point *ap, struct mapent_cache *mc,
 			 const char *name, char *loc, char *options, void *ctxt)
 {

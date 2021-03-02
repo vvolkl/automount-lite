@@ -461,30 +461,6 @@ struct mapent *cache_lookup_distinct(struct mapent_cache *mc, const char *key)
 	return NULL;
 }
 
-/* Lookup an offset within a multi-mount entry */
-struct mapent *cache_lookup_offset(const char *prefix, const char *offset, int start, struct list_head *head)
-{
-	struct list_head *p;
-	struct mapent *this;
-	/* Keys for direct maps may be as long as a path name */
-	char o_key[PATH_MAX];
-	/* Avoid "//" at the beginning of paths */
-	const char *path_prefix = strlen(prefix) > 1 ? prefix : "";
-	size_t size;
-
-	/* root offset duplicates "/" */
-	size = snprintf(o_key, sizeof(o_key), "%s%s", path_prefix, offset);
-	if (size >= sizeof(o_key))
-		return NULL;
-
-	list_for_each(p, head) {
-		this = list_entry(p, struct mapent, multi_list);
-		if (!strcmp(&this->key[start], o_key))
-			return this;
-	}
-	return NULL;
-}
-
 /* cache must be read locked by caller */
 static struct mapent *__cache_partial_match(struct mapent_cache *mc,
 					    const char *prefix,
@@ -583,9 +559,6 @@ int cache_add(struct mapent_cache *mc, struct map_source *ms, const char *key, c
 	me->mm_parent = NULL;
 	INIT_TREE_NODE(&me->node);
 	INIT_LIST_HEAD(&me->ino_index);
-	INIT_LIST_HEAD(&me->multi_list);
-	me->multi = NULL;
-	me->parent = NULL;
 	me->ioctlfd = -1;
 	me->dev = (dev_t) -1;
 	me->ino = (ino_t) -1;
@@ -613,33 +586,6 @@ int cache_add(struct mapent_cache *mc, struct map_source *ms, const char *key, c
 		existing->next = me;
 	}
 	return CHE_OK;
-}
-
-/* cache must be write locked by caller */
-static void cache_add_ordered_offset(struct mapent *me, struct list_head *head)
-{
-	struct list_head *p;
-	struct mapent *this;
-
-	list_for_each(p, head) {
-		size_t tlen;
-		int eq;
-
-		this = list_entry(p, struct mapent, multi_list);
-		tlen = strlen(this->key);
-
-		eq = strncmp(this->key, me->key, tlen);
-		if (!eq && tlen == strlen(me->key))
-			return;
-
-		if (eq > 0) {
-			list_add_tail(&me->multi_list, p);
-			return;
-		}
-	}
-	list_add_tail(&me->multi_list, p);
-
-	return;
 }
 
 /* cache must be write locked by caller */
@@ -777,25 +723,6 @@ struct mapent *cache_get_offset_parent(struct mapent_cache *mc, const char *key)
 	return NULL;
 }
 
-int cache_set_offset_parent(struct mapent_cache *mc, const char *offset)
-{
-	struct mapent *this, *parent;
-
-	this = cache_lookup_distinct(mc, offset);
-	if (!this)
-		return 0;
-	if (!IS_MM(this))
-		return 0;
-
-	parent = cache_get_offset_parent(mc, offset);
-	if (parent)
-		this->parent = parent;
-	else
-		this->parent = MM_ROOT(this);
-
-	return 1;
-}
-
 /* cache must be write locked by caller */
 int cache_update(struct mapent_cache *mc, struct map_source *ms, const char *key, const char *mapent, time_t age)
 {
@@ -835,50 +762,6 @@ int cache_update(struct mapent_cache *mc, struct map_source *ms, const char *key
 		me->age = age;
 	}
 	return ret;
-}
-
-/* cache write lock of the multi mount owner must be held by caller */
-int cache_delete_offset(struct mapent_cache *mc, const char *key)
-{
-	u_int32_t hashval = hash(key, mc->size);
-	struct mapent *me = NULL, *pred;
-	int status;
-
-	me = mc->hash[hashval];
-	if (!me)
-		return CHE_FAIL;
-
-	if (strcmp(key, me->key) == 0) {
-		if (IS_MM(me) && IS_MM_ROOT(me))
-			return CHE_FAIL;
-		mc->hash[hashval] = me->next;
-		goto delete;
-	}
-
-	while (me->next != NULL) {
-		pred = me;
-		me = me->next;
-		if (strcmp(key, me->key) == 0) {
-			if (IS_MM(me) && IS_MM_ROOT(me))
-				return CHE_FAIL;
-			pred->next = me->next;
-			goto delete;
-		}
-	}
-
-	return CHE_FAIL;
-
-delete:
-	list_del(&me->multi_list);
-	ino_index_lock(mc);
-	list_del(&me->ino_index);
-	ino_index_unlock(mc);
-	free(me->key);
-	if (me->mapent)
-		free(me->mapent);
-	free(me);
-
-	return CHE_OK;
 }
 
 /* cache must be write locked by caller */
@@ -1054,113 +937,3 @@ struct mapent *cache_enumerate(struct mapent_cache *mc, struct mapent *me)
 
 	return cache_lookup_next(mc, me);
 }
-
-/*
- * Get each offset from list head under prefix.
- * Maintain traversal current position in pos for subsequent calls. 
- * Return each offset into offset.
- */
-/* cache must be read locked by caller */
-char *cache_get_offset(const char *prefix, char *offset, int start,
-			struct list_head *head, struct list_head **pos)
-{
-	struct list_head *next;
-	struct mapent *this;
-	size_t plen = strlen(prefix);
-	size_t len = 0;
-
-	if (*pos == head)
-		return NULL;
-
-	/* Find an offset */
-	*offset = '\0';
-	next = *pos ? (*pos)->next : head->next;
-	while (next != head) {
-		char *offset_start, *pstart, *pend;
-
-		this = list_entry(next, struct mapent, multi_list);
-		*pos = next;
-		next = next->next;
-
-		offset_start = &this->key[start];
-		if (strlen(offset_start) <= plen)
-			continue;
-
-		if (!strncmp(prefix, offset_start, plen)) {
-			struct mapent *np = NULL;
-			char pe[PATH_MAX + 1];
-
-			/* "/" doesn't count for root offset */
-			if (plen == 1)
-				pstart = &offset_start[plen - 1];
-			else
-				pstart = &offset_start[plen];
-
-			/* not part of this sub-tree */
-			if (*pstart != '/')
-				continue;
-
-			/* get next offset */
-			pend = pstart;
-			while (*pend++) {
-				size_t nest_pt_offset;
-
-				if (*pend != '/')
-					continue;
-
-				nest_pt_offset = start + pend - pstart;
-				if (plen > 1)
-					nest_pt_offset += plen;
-				strcpy(pe, this->key);
-				pe[nest_pt_offset] = '\0';
-
-				np = cache_lookup_distinct(this->mc, pe);
-				if (np)
-					break;
-			}
-			if (np)
-				continue;
-			len = pend - pstart - 1;
-			strncpy(offset, pstart, len);
-			offset[len] ='\0';
-			break;
-		}
-	}
-
-	/* Seek to next offset */
-	while (next != head) {
-		char *offset_start, *pstart;
-
-		this = list_entry(next, struct mapent, multi_list);
-
-		offset_start = &this->key[start];
-		if (strlen(offset_start) <= plen + len)
-			break;
-
-		/* "/" doesn't count for root offset */
-		if (plen == 1)
-			pstart = &offset_start[plen - 1];
-		else
-			pstart = &offset_start[plen];
-
-		/* not part of this sub-tree */
-		if (*pstart != '/')
-			break;
-
-		/* new offset */
-		if (!*(pstart + len + 1))
-			break;
-
-		/* compare offset */
-		if (pstart[len] != '/' ||
-		    strlen(pstart) != len ||
-		    strncmp(offset, pstart, len))
-			break;
-
-		*pos = next;
-		next = next->next;
-	}
-
-	return *offset ? offset : NULL;
-}
-

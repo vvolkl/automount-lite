@@ -162,16 +162,13 @@ struct stack {
 struct mapent {
 	struct mapent *next;
 	struct list_head ino_index;
-	struct list_head multi_list;
 	struct mapent_cache *mc;
 	struct map_source *source;
 	/* Need to know owner if we're a multi-mount */
 	struct tree_node *mm_root;
+	/* Parent nesting point within multi-mount */
 	struct tree_node *mm_parent;
 	struct tree_node node;
-	struct mapent *multi;
-	/* Parent nesting point within multi-mount */
-	struct mapent *parent;
 	char *key;
 	size_t len;
 	char *mapent;
@@ -209,7 +206,6 @@ struct mapent *cache_lookup_next(struct mapent_cache *mc, struct mapent *me);
 struct mapent *cache_lookup_key_next(struct mapent *me);
 struct mapent *cache_lookup(struct mapent_cache *mc, const char *key);
 struct mapent *cache_lookup_distinct(struct mapent_cache *mc, const char *key);
-struct mapent *cache_lookup_offset(const char *prefix, const char *offset, int start, struct list_head *head);
 struct mapent *cache_partial_match(struct mapent_cache *mc, const char *prefix);
 struct mapent *cache_partial_match_wild(struct mapent_cache *mc, const char *prefix);
 int cache_add(struct mapent_cache *mc, struct map_source *ms, const char *key, const char *mapent, time_t age);
@@ -217,16 +213,12 @@ int cache_update_offset(struct mapent_cache *mc, const char *mkey, const char *k
 int cache_lookup_negative(struct mapent *me, const char *key);
 void cache_update_negative(struct mapent_cache *mc, struct map_source *ms, const char *key, time_t timeout);
 struct mapent *cache_get_offset_parent(struct mapent_cache *mc, const char *key);
-int cache_set_offset_parent(struct mapent_cache *mc, const char *offset);
 int cache_update(struct mapent_cache *mc, struct map_source *ms, const char *key, const char *mapent, time_t age);
 int cache_delete(struct mapent_cache *mc, const char *key);
-int cache_delete_offset(struct mapent_cache *mc, const char *key);
-int cache_delete_offset_list(struct mapent_cache *mc, const char *key);
 void cache_release(struct map_source *map);
 void cache_clean_null_cache(struct mapent_cache *mc);
 void cache_release_null_cache(struct master *master);
 struct mapent *cache_enumerate(struct mapent_cache *mc, struct mapent *me);
-char *cache_get_offset(const char *prefix, char *offset, int start, struct list_head *head, struct list_head **pos);
 
 /* Utility functions */
 
