@@ -24,34 +24,6 @@
 
 #include "automount.h"
 
-void cache_dump_multi(struct list_head *list)
-{
-	struct list_head *p;
-	struct mapent *me;
-
-	list_for_each(p, list) {
-		me = list_entry(p, struct mapent, multi_list);
-		logmsg("key=%s", me->key);
-	}
-}
-
-void cache_dump_cache(struct mapent_cache *mc)
-{
-	struct mapent *me;
-	unsigned int i;
-
-	for (i = 0; i < mc->size; i++) {
-		me = mc->hash[i];
-		if (me == NULL)
-			continue;
-		while (me) {
-			logmsg("me->key=%s me->multi=%p dev=%ld ino=%ld",
-				me->key, me->multi, me->dev, me->ino);
-			me = me->next;
-		}
-	}
-}
-
 void cache_readlock(struct mapent_cache *mc)
 {
 	int status;
