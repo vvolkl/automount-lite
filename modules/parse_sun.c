@@ -530,7 +530,6 @@ static int sun_mount(struct autofs_point *ap, const char *root,
 	int nonstrict = 1;
 	int use_weight_only = ap->flags & MOUNT_FLAG_USE_WEIGHT_ONLY;
 	int rv, cur_state;
-	char *mountpoint;
 	char *what;
 	char *type;
 
@@ -624,9 +623,6 @@ static int sun_mount(struct autofs_point *ap, const char *root,
 		}
 	}
 
-	mountpoint = alloca(namelen + 1);
-	sprintf(mountpoint, "%.*s", namelen, name);
-
 	type = ap->entry->maps->type;
 	if (type && !strcmp(type, "hosts")) {
 		if (options && *options != '\0') {
@@ -698,9 +694,9 @@ static int sun_mount(struct autofs_point *ap, const char *root,
 		debug(ap->logopt, MODPREFIX
 		      "mounting root %s, mountpoint %s, "
 		      "what %s, fstype %s, options %s",
-		      root, mountpoint, what, fstype, options);
+		      root, name, what, fstype, options);
 
-		rv = mount_nfs->mount_mount(ap, root, mountpoint, strlen(mountpoint),
+		rv = mount_nfs->mount_mount(ap, root, name, namelen,
 					    what, fstype, options, mount_nfs->context);
 	} else {
 		if (!loclen)
@@ -720,11 +716,10 @@ static int sun_mount(struct autofs_point *ap, const char *root,
 		debug(ap->logopt, MODPREFIX
 		      "mounting root %s, mountpoint %s, "
 		      "what %s, fstype %s, options %s",
-		      root, mountpoint, what, fstype, options);
+		      root, name, what, fstype, options);
 
 		/* Generic mount routine */
-		rv = do_mount(ap, root, mountpoint, strlen(mountpoint), what, fstype,
-			      options);
+		rv = do_mount(ap, root, name, namelen, what, fstype, options);
 	}
 	pthread_setcancelstate(cur_state, NULL);
 
