@@ -86,6 +86,7 @@ int master_add_autofs_point(struct master_mapent *entry, unsigned logopt,
 		free(ap);
 		return 0;
 	}
+	ap->len = strlen(ap->path);
 	ap->pref = NULL;
 
 	ap->entry = entry;

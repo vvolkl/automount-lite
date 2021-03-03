@@ -1154,7 +1154,7 @@ static int mount_subtree(struct autofs_point *ap, struct mapent_cache *mc,
 		mm_root = mm_key;
 		start = strlen(mm_key);
 	} else {
-		start = strlen(ap->path) + strlen(mm_key) + 1;
+		start = ap->len + strlen(mm_key) + 1;
 		mm_root = alloca(start + 3);
 		strcpy(mm_root, ap->path);
 		strcat(mm_root, "/");
@@ -1477,7 +1477,7 @@ dont_expand:
 			}
 			strcpy(m_root, name);
 		} else {
-			m_root_len = strlen(ap->path) + name_len + 1;
+			m_root_len = ap->len + name_len + 1;
 			m_root = alloca(m_root_len + 1);
 			if (!m_root) {
 				char *estr = strerror_r(errno, buf, MAX_ERR_BUF);

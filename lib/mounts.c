@@ -1158,7 +1158,7 @@ struct mnt_list *mnts_add_mount(struct autofs_point *ap,
 		if (!mp)
 			goto fail;
 	} else {
-		int len = strlen(ap->path) + strlen(name) + 2;
+		int len = ap->len + strlen(name) + 2;
 
 		mp = malloc(len);
 		if (!mp)
@@ -2495,9 +2495,9 @@ static int rmdir_path_offset(struct autofs_point *ap, struct mapent *oe)
 	dir = strdup(oe->key);
 
 	if (ap->flags & MOUNT_FLAG_GHOST)
-		split = strlen(ap->path) + strlen(MM_ROOT(oe)->key) + 1;
+		split = ap->len + strlen(MM_ROOT(oe)->key) + 1;
 	else
-		split = strlen(ap->path);
+		split = ap->len;
 
 	dir[split] = '\0';
 	path = &dir[split + 1];

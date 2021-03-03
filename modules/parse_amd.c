@@ -147,7 +147,7 @@ static struct substvar *add_lookup_vars(struct autofs_point *ap,
 	struct mapent *me;
 	int len;
 
-	len = strlen(ap->path) + 1 + key_len + 1;
+	len = ap->len + 1 + key_len + 1;
 	if (len > PATH_MAX) {
 		error(ap->logopt, MODPREFIX
 		      "error: lookup key is greater than PATH_MAX");
@@ -1319,7 +1319,7 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 		char *target;
 		size_t len;
 
-		len = strlen(ap->path) + strlen(entry->rhost) + 2;
+		len = ap->len + strlen(entry->rhost) + 2;
 		target = malloc(len);
 		if (!target) {
 			warn(ap->logopt, MODPREFIX
