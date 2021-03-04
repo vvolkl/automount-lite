@@ -89,44 +89,40 @@ static char *get_exports(struct autofs_point *ap, const char *host)
 	char buf[MAX_ERR_BUF];
 	char *mapent;
 	struct exportinfo *exp, *this;
+	size_t hostlen = strlen(host);
+	size_t mapent_len;
 
 	debug(ap->logopt, MODPREFIX "fetchng export list for %s", host);
 
 	exp = rpc_get_exports(host, 10, 0, RPC_CLOSE_NOLINGER);
 
-	mapent = NULL;
+	this = exp;
+	mapent_len = 0;
+	while (this) {
+		mapent_len += hostlen + 2*(strlen(this->dir) + 2) + 3;
+		this = this->next;
+	}
+
+	mapent = malloc(mapent_len + 1);
+	if (!mapent) {
+		char *estr;
+		estr = strerror_r(errno, buf, MAX_ERR_BUF);
+		error(ap->logopt, MODPREFIX "malloc: %s", estr);
+		error(ap->logopt, MODPREFIX "exports lookup failed for %s", host);
+		rpc_exports_free(exp);
+		return NULL;
+	}
+	*mapent = 0;
+
 	this = exp;
 	while (this) {
-		if (mapent) {
-			int len = strlen(mapent) + 1;
-
-			len += strlen(host) + 2*(strlen(this->dir) + 2) + 3;
-			mapent = realloc(mapent, len);
-			if (!mapent) {
-				char *estr;
-				estr = strerror_r(errno, buf, MAX_ERR_BUF);
-				error(ap->logopt, MODPREFIX "malloc: %s", estr);
-				rpc_exports_free(exp);
-				return NULL;
-			}
-			strcat(mapent, " \"");
-			strcat(mapent, this->dir);
-			strcat(mapent, "\"");
-		} else {
-			int len = 2*(strlen(this->dir) + 2) + strlen(host) + 3;
-
-			mapent = malloc(len);
-			if (!mapent) {
-				char *estr;
-				estr = strerror_r(errno, buf, MAX_ERR_BUF);
-				error(ap->logopt, MODPREFIX "malloc: %s", estr);
-				rpc_exports_free(exp);
-				return NULL;
-			}
+		if (!*mapent)
 			strcpy(mapent, "\"");
-			strcat(mapent, this->dir);
-			strcat(mapent, "\"");
-		}
+		else
+			strcat(mapent, " \"");
+		strcat(mapent, this->dir);
+		strcat(mapent, "\"");
+
 		strcat(mapent, " \"");
 		strcat(mapent, host);
 		strcat(mapent, ":");
@@ -136,9 +132,6 @@ static char *get_exports(struct autofs_point *ap, const char *host)
 		this = this->next;
 	}
 	rpc_exports_free(exp);
-
-	if (!mapent)
-		error(ap->logopt, MODPREFIX "exports lookup failed for %s", host);
 
 	return mapent;
 }
