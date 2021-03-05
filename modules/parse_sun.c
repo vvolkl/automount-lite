@@ -1203,15 +1203,7 @@ static int mount_subtree(struct autofs_point *ap, struct mapent *me,
 				free(ro_loc);
 		}
 
-		if (ro && rv == 0) {
-			ret = mount_multi_triggers(ap, me, mm_root, start, mm_base);
-			if (ret == -1) {
-				error(ap->logopt, MODPREFIX
-					 "failed to mount offset triggers");
-				cleanup_multi_triggers(ap, me, mm_root, start, mm_base);
-				return 1;
-			}
-		} else if (rv <= 0) {
+		if ((ro && rv == 0) || rv <= 0) {
 			ret = mount_multi_triggers(ap, me, mm_root, start, mm_base);
 			if (ret == -1) {
 				error(ap->logopt, MODPREFIX
