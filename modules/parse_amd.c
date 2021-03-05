@@ -1177,7 +1177,8 @@ static int do_generic_mount(struct autofs_point *ap, const char *name,
 		 * the automount filesystem.
 		 */
 		if (!is_mounted(entry->fs, MNTS_REAL)) {
-			ret = do_mount(ap, entry->fs, "/", 1,
+			ret = do_mount(ap, entry->fs,
+				       entry->fs, strlen(entry->fs),
 				       target, entry->type, opts);
 			if (ret)
 				goto out;
@@ -1227,7 +1228,8 @@ static int do_nfs_mount(struct autofs_point *ap, const char *name,
 					     mount_nfs->context);
 	} else {
 		if (!is_mounted(entry->fs, MNTS_REAL)) {
-			ret = mount_nfs->mount_mount(ap, entry->fs, "/", 1,
+			ret = mount_nfs->mount_mount(ap, entry->fs,
+						entry->fs, strlen(entry->fs),
 						target, entry->type, opts,
 						mount_nfs->context);
 			if (ret)

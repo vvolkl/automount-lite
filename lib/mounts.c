@@ -371,8 +371,10 @@ int mount_fullpath(char *fullpath, size_t max_len,
 	/* Root offset of multi-mount or direct or offset mount.
 	 * Direct or offset mount, name (or root) is absolute path.
 	 */
-	if (root[last] == '/' || *name == '/')
+	if (root[last] == '/')
 		len = snprintf(fullpath, max_len, "%s", root);
+	else if (*name == '/')
+		len = snprintf(fullpath, max_len, "%s", name);
 	else
 		len = snprintf(fullpath, max_len, "%s/%s", root, name);
 
