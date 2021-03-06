@@ -362,11 +362,14 @@ int check_nfs_mount_version(struct nfs_mount_vers *vers,
 #endif
 
 int mount_fullpath(char *fullpath, size_t max_len,
-		   const char *root, const char *name)
+		   const char *root, size_t root_len, const char *name)
 {
 	int last, len;
 
-	last = strlen(root) - 1;
+	if (root_len)
+		last = root_len - 1;
+	else
+		last = strlen(root) - 1;
 
 	/* Root offset of multi-mount or direct or offset mount.
 	 * Direct or offset mount, name (or root) is absolute path.
@@ -1685,7 +1688,7 @@ void tree_mapent_cleanup_offsets(struct mapent *oe)
 	else {
 		char mp[PATH_MAX + 1];
 
-		if (!mount_fullpath(mp, PATH_MAX, ap->path, oe->key))
+		if (!mount_fullpath(mp, PATH_MAX, ap->path, ap->len, oe->key))
 			error(ap->logopt, "mount path is too long");
 		else
 			tree_mapent_umount_mount(ap, mp);
@@ -1922,7 +1925,7 @@ int tree_mapent_umount_offsets(struct mapent *oe, int nonstrict)
 		 * one of these keys is the root of a multi-mount the mount
 		 * path must be constructed.
 		 */
-		if (!mount_fullpath(mp, PATH_MAX, ap->path, oe->key)) {
+		if (!mount_fullpath(mp, PATH_MAX, ap->path, ap->len, oe->key)) {
 			error(ap->logopt, "mount path is too long");
 			return 0;
 		}

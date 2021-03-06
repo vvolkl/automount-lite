@@ -1089,7 +1089,7 @@ static int mount_subtree(struct autofs_point *ap, struct mapent_cache *mc,
 		struct mapent *ro;
 		size_t len;
 
-		len = mount_fullpath(key, PATH_MAX, ap->path, me->key);
+		len = mount_fullpath(key, PATH_MAX, ap->path, ap->len, me->key);
 		if (!len) {
 			warn(ap->logopt, "path loo long");
 			return 1;
@@ -1359,7 +1359,7 @@ dont_expand:
 		time_t age;
 		int l;
 
-		m_root_len = mount_fullpath(m_root, PATH_MAX, ap->path, name);
+		m_root_len = mount_fullpath(m_root, PATH_MAX, ap->path, ap->len, name);
 		if (!m_root_len) {
 			error(ap->logopt,
 			      MODPREFIX "multi-mount root path too long");

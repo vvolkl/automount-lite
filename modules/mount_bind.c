@@ -122,7 +122,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 		}
 	}
 
-	len = mount_fullpath(fullpath, PATH_MAX, root, name);
+	len = mount_fullpath(fullpath, PATH_MAX, root, 0, name);
 	if (!len) {
 		error(ap->logopt,
 		      MODPREFIX "mount point path too long");
