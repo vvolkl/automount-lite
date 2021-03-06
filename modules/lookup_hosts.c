@@ -87,10 +87,12 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 static char *get_exports(struct autofs_point *ap, const char *host)
 {
 	char buf[MAX_ERR_BUF];
+	char entry[PATH_MAX + 1];
 	char *mapent;
 	struct exportinfo *exp, *this;
 	size_t hostlen = strlen(host);
 	size_t mapent_len;
+	int len, pos;
 
 	debug(ap->logopt, MODPREFIX "fetchng export list for %s", host);
 
@@ -114,21 +116,19 @@ static char *get_exports(struct autofs_point *ap, const char *host)
 	}
 	*mapent = 0;
 
+	pos = 0;
 	this = exp;
+	if (this) {
+		len = sprintf(mapent, "\"%s\" \"%s:%s\"",
+				this->dir, host, this->dir);
+		pos += len;
+		this = this->next;
+	}
+
 	while (this) {
-		if (!*mapent)
-			strcpy(mapent, "\"");
-		else
-			strcat(mapent, " \"");
-		strcat(mapent, this->dir);
-		strcat(mapent, "\"");
-
-		strcat(mapent, " \"");
-		strcat(mapent, host);
-		strcat(mapent, ":");
-		strcat(mapent, this->dir);
-		strcat(mapent, "\"");
-
+		len = sprintf(mapent + pos, " \"%s\" \"%s:%s\"",
+				this->dir, host, this->dir);
+		pos += len;
 		this = this->next;
 	}
 	rpc_exports_free(exp);
