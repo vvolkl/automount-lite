@@ -1354,36 +1354,18 @@ dont_expand:
 	debug(ap->logopt, MODPREFIX "gathered options: %s", options);
 
 	if (check_is_multi(p)) {
-		char *m_root = NULL;
+		char m_root[PATH_MAX + 1];
 		int m_root_len;
 		time_t age;
 		int l;
 
-		/* If name starts with "/" it's a direct mount */
-		if (*name == '/') {
-			m_root_len = name_len;
-			m_root = alloca(m_root_len + 1);
-			if (!m_root) {
-				char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
-				free(options);
-				free(pmapent);
-				logerr(MODPREFIX "alloca: %s", estr);
-				return 1;
-			}
-			strcpy(m_root, name);
-		} else {
-			m_root_len = ap->len + name_len + 1;
-			m_root = alloca(m_root_len + 1);
-			if (!m_root) {
-				char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
-				free(options);
-				free(pmapent);
-				logerr(MODPREFIX "alloca: %s", estr);
-				return 1;
-			}
-			strcpy(m_root, ap->path);
-			strcat(m_root, "/");
-			strcat(m_root, name);
+		m_root_len = mount_fullpath(m_root, PATH_MAX, ap->path, name);
+		if (!m_root_len) {
+			error(ap->logopt,
+			      MODPREFIX "multi-mount root path too long");
+			free(options);
+			free(pmapent);
+			return 1;
 		}
 
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
