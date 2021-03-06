@@ -333,16 +333,20 @@ static int do_readmap_mount(struct autofs_point *ap,
 
 	nc = ap->entry->master->nc;
 
+	cache_writelock(nc);
 	ne = cache_lookup_distinct(nc, me->key);
-	if (!ne) {
+	if (ne)
+		cache_unlock(nc);
+	else {
 		nested = cache_partial_match(nc, me->key);
-		if (nested) {
+		if (!nested)
+			cache_unlock(nc);
+		else {
+			cache_delete(nc, nested->key);
+			cache_unlock(nc);
 			error(ap->logopt,
 			      "removing invalid nested null entry %s",
 			      nested->key);
-			nested = cache_partial_match(nc, me->key);
-			if (nested)
-				cache_delete(nc, nested->key);
 		}
 	}
 
@@ -421,7 +425,7 @@ static void *do_readmap(void *arg)
 {
 	struct autofs_point *ap;
 	struct map_source *map;
-	struct mapent_cache *nc, *mc;
+	struct mapent_cache *mc;
 	struct readmap_args *ra;
 	int status;
 	time_t now;
@@ -466,9 +470,6 @@ static void *do_readmap(void *arg)
 		struct mapent *me;
 		unsigned int append_alarm = !ap->exp_runfreq;
 
-		nc = ap->entry->master->nc;
-		cache_readlock(nc);
-		pthread_cleanup_push(cache_lock_cleanup, nc);
 		master_source_readlock(ap->entry);
 		pthread_cleanup_push(master_source_lock_cleanup, ap->entry);
 		map = ap->entry->maps;
@@ -505,7 +506,6 @@ restart:
 			conditional_alarm_add(ap, seconds);
 		}
 
-		pthread_cleanup_pop(1);
 		pthread_cleanup_pop(1);
 	}
 

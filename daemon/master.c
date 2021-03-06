@@ -1128,12 +1128,14 @@ int master_read_master(struct master *master, time_t age)
 {
 	unsigned int logopt = master->logopt;
 	struct mapent_cache *nc;
+	int ret = 1;
 
 	/*
 	 * We need to clear and re-populate the null map entry cache
 	 * before alowing anyone else to use it.
 	 */
 	wait_for_lookups_and_lock(master);
+	pthread_cleanup_push(master_mutex_lock_cleanup, NULL);
 	if (master->nc) {
 		cache_writelock(master->nc);
 		nc = master->nc;
@@ -1144,7 +1146,8 @@ int master_read_master(struct master *master, time_t age)
 			error(logopt,
 			      "failed to init null map cache for %s",
 			      master->name);
-			return 0;
+			ret = 0;
+			goto done;
 		}
 		cache_writelock(nc);
 		master->nc = nc;
@@ -1160,18 +1163,18 @@ int master_read_master(struct master *master, time_t age)
 		master->read_fail = 0;
 		/* HUP signal sets master->readall == 1 only */
 		if (!master->readall) {
-			master_mutex_unlock();
-			return 0;
+			ret = 0;
+			goto done;
 		} else
 			master_mount_mounts(master, age);
 	}
 
 	if (__master_list_empty(master))
 		warn(logopt, "no mounts in table");
+done:
+	pthread_cleanup_pop(1);
 
-	master_mutex_unlock();
-
-	return 1;
+	return ret;
 }
 
 int master_notify_submount(struct autofs_point *ap, const char *path, enum states state)
@@ -1438,7 +1441,7 @@ int master_mount_mounts(struct master *master, time_t age)
 			continue;
 		}
 
-		cache_readlock(nc);
+		cache_writelock(nc);
 		ne = cache_lookup_distinct(nc, this->path);
 		/*
 		 * If this path matched a nulled entry the master map entry
@@ -1447,8 +1450,8 @@ int master_mount_mounts(struct master *master, time_t age)
 		 */
 		if (ne) {
 			int lineno = ne->age;
-			cache_unlock(nc);
 
+			cache_unlock(nc);
 			/* null entry appears after map entry */
 			if (this->maps->master_line < lineno) {
 				warn(ap->logopt,
@@ -1471,14 +1474,13 @@ int master_mount_mounts(struct master *master, time_t age)
 			master_free_mapent(ap->entry);
 			continue;
 		}
+
 		nested = cache_partial_match(nc, this->path);
 		if (nested) {
 			error(ap->logopt,
 			     "removing invalid nested null entry %s",
 			     nested->key);
-			nested = cache_partial_match(nc, this->path);
-			if (nested)
-				cache_delete(nc, nested->key);
+			cache_delete(nc, nested->key);
 		}
 		cache_unlock(nc);
 cont:

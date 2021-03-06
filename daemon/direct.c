@@ -464,8 +464,6 @@ int mount_autofs_direct(struct autofs_point *ap)
 	pthread_cleanup_push(master_source_lock_cleanup, ap->entry);
 	master_source_readlock(ap->entry);
 	nc = ap->entry->master->nc;
-	cache_readlock(nc);
-	pthread_cleanup_push(cache_lock_cleanup, nc);
 	map = ap->entry->maps;
 	while (map) {
 		time_t timeout;
@@ -484,9 +482,13 @@ int mount_autofs_direct(struct autofs_point *ap)
 		pthread_cleanup_push(cache_lock_cleanup, mc);
 		me = cache_enumerate(mc, NULL);
 		while (me) {
+			cache_writelock(nc);
 			ne = cache_lookup_distinct(nc, me->key);
 			if (ne) {
-				if (map->master_line < ne->age) {
+				unsigned int ne_age = ne->age;
+
+				cache_unlock(nc);
+				if (map->master_line < ne_age) {
 					/* TODO: check return, locking me */
 					do_mount_autofs_direct(ap, me, timeout);
 				}
@@ -495,13 +497,14 @@ int mount_autofs_direct(struct autofs_point *ap)
 			}
 
 			nested = cache_partial_match(nc, me->key);
-			if (nested) {
+			if (!nested)
+				cache_unlock(nc);
+			else {
+				cache_delete(nc, nested->key);
+				cache_unlock(nc);
 				error(ap->logopt,
 				   "removing invalid nested null entry %s",
 				   nested->key);
-				nested = cache_partial_match(nc, me->key);
-				if (nested)
-					cache_delete(nc, nested->key);
 			}
 
 			/* TODO: check return, locking me */
@@ -512,7 +515,6 @@ int mount_autofs_direct(struct autofs_point *ap)
 		pthread_cleanup_pop(1);
 		map = map->next;
 	}
-	pthread_cleanup_pop(1);
 	pthread_cleanup_pop(1);
 
 	return 0;
