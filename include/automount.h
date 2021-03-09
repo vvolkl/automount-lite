@@ -565,7 +565,6 @@ struct autofs_point {
 	enum states state;		/* Current state */
 	int state_pipe[2];		/* State change router pipe */
 	struct autofs_point *parent;	/* Owner of mounts list for submount */
-	pthread_mutex_t mounts_mutex;	/* Protect mount lists */
 	struct list_head mounts;	/* List of autofs mounts at current level */
 	unsigned int submount;		/* Is this a submount */
 	unsigned int submnt_count;	/* Number of submounts */

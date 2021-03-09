@@ -69,7 +69,6 @@ int master_add_autofs_point(struct master_mapent *entry, unsigned logopt,
 			    unsigned nobind, unsigned ghost, int submount)
 {
 	struct autofs_point *ap;
-	int status;
 
 	ap = malloc(sizeof(struct autofs_point));
 	if (!ap)
@@ -128,12 +127,6 @@ int master_add_autofs_point(struct master_mapent *entry, unsigned logopt,
 	INIT_LIST_HEAD(&ap->amdmounts);
 	ap->shutdown = 0;
 
-	status = pthread_mutex_init(&ap->mounts_mutex, NULL);
-	if (status) {
-		free(ap->path);
-		free(ap);
-		return 0;
-	}
 	ap->mode = 0;
 
 	entry->ap = ap;
@@ -143,16 +136,10 @@ int master_add_autofs_point(struct master_mapent *entry, unsigned logopt,
 
 void master_free_autofs_point(struct autofs_point *ap)
 {
-	int status;
-
 	if (!ap)
 		return;
 
 	mnts_remove_amdmounts(ap);
-
-	status = pthread_mutex_destroy(&ap->mounts_mutex);
-	if (status)
-		fatal(status);
 
 	if (ap->pref)
 		free(ap->pref);

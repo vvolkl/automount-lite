@@ -283,8 +283,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	set_exp_timeout(nap, NULL, timeout);
 	nap->exp_runfreq = (timeout + CHECK_RATIO - 1) / CHECK_RATIO;
 
-	mounts_mutex_lock(ap);
-
 	if (source->flags & MAP_FLAG_FORMAT_AMD) {
 		struct mnt_list *mnt;
 
@@ -305,7 +303,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	if (handle_mounts_startup_cond_init(&suc)) {
 		crit(ap->logopt, MODPREFIX
 		     "failed to init startup cond for mount %s", entry->path);
-		mounts_mutex_unlock(ap);
 		master_free_map_source(source, 1);
 		master_free_mapent(entry);
 		return 1;
@@ -316,7 +313,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 		crit(ap->logopt,
 		     MODPREFIX "failed to allocate mount %s", realpath);
 		handle_mounts_startup_cond_destroy(&suc);
-		mounts_mutex_unlock(ap);
 		master_free_map_source(source, 1);
 		master_free_mapent(entry);
 		return 1;
@@ -335,7 +331,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 		     realpath);
 		handle_mounts_startup_cond_destroy(&suc);
 		mnts_remove_submount(nap->path);
-		mounts_mutex_unlock(ap);
 		master_free_map_source(source, 1);
 		master_free_mapent(entry);
 		return 1;
@@ -346,7 +341,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 		if (status) {
 			handle_mounts_startup_cond_destroy(&suc);
 			mnts_remove_submount(nap->path);
-			mounts_mutex_unlock(ap);
 			master_free_map_source(source, 1);
 			master_free_mapent(entry);
 			fatal(status);
@@ -358,7 +352,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 		     MODPREFIX "failed to create submount for %s", realpath);
 		handle_mounts_startup_cond_destroy(&suc);
 		mnts_remove_submount(nap->path);
-		mounts_mutex_unlock(ap);
 		master_free_map_source(source, 1);
 		master_free_mapent(entry);
 		return 1;
@@ -368,7 +361,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	ap->submnt_count++;
 
 	handle_mounts_startup_cond_destroy(&suc);
-	mounts_mutex_unlock(ap);
 
 	return 0;
 }

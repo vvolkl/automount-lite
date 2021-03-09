@@ -1754,7 +1754,6 @@ static void handle_mounts_cleanup(void *arg)
 	 * here.
 	 */
 	if (submount) {
-		mounts_mutex_unlock(ap->parent);
 		master_source_unlock(ap->parent->entry);
 		master_free_mapent_sources(ap->entry, 1);
 		master_free_mapent(ap->entry);
@@ -1792,13 +1791,9 @@ static int submount_source_writelock_nested(struct autofs_point *ap)
 	if (status)
 		goto done;
 
-	mounts_mutex_lock(parent);
-
 	status = pthread_rwlock_trywrlock(&ap->entry->source_lock);
-	if (status) {
-		mounts_mutex_unlock(parent);
+	if (status)
 		master_source_unlock(parent->entry);
-	}
 
 done:
 	if (status && status != EBUSY) {
@@ -1814,7 +1809,6 @@ static void submount_source_unlock_nested(struct autofs_point *ap)
 	struct autofs_point *parent = ap->parent;
 
 	master_source_unlock(ap->entry);
-	mounts_mutex_unlock(parent);
 	master_source_unlock(parent->entry);
 }
 
