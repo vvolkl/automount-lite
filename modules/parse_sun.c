@@ -801,7 +801,20 @@ update_offset_entry(struct autofs_point *ap,
 
 	memset(m_mapent, 0, MAPENT_MAX_LEN + 1);
 
-	/* Internal hosts map may have loc == NULL */
+	if (!loc || !*loc) {
+		const char *type = ap->entry->maps->type;
+
+		/* If it's not the internal hosts map it must have a
+		 * mount location.
+		 */
+		if (!type || strcmp(type, "hosts")) {
+			error(ap->logopt,
+			      MODPREFIX "syntax error in offset %s -> %s",
+			      m_offset, loc);
+			return CHE_FAIL;
+		}
+	}
+
 	if (!*m_offset) {
 		error(ap->logopt,
 		      MODPREFIX "syntax error in offset %s -> %s", m_offset, loc);
