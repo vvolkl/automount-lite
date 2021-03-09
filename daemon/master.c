@@ -143,22 +143,12 @@ int master_add_autofs_point(struct master_mapent *entry, unsigned logopt,
 
 void master_free_autofs_point(struct autofs_point *ap)
 {
-	struct list_head *p, *head;
 	int status;
 
 	if (!ap)
 		return;
 
-	mounts_mutex_lock(ap);
-	head = &ap->amdmounts;
-	p = head->next;
-	while (p != head) {
-		struct mnt_list *mnt = list_entry(p, struct mnt_list, amdmount);
-		p = p->next;
-		ext_mount_remove(mnt->ext_mp);
-		mnts_remove_amdmount(mnt->mp);
-	}
-	mounts_mutex_unlock(ap);
+	mnts_remove_amdmounts(ap);
 
 	status = pthread_mutex_destroy(&ap->mounts_mutex);
 	if (status)

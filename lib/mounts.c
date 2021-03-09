@@ -1144,14 +1144,13 @@ fail:
 	return NULL;
 }
 
-void mnts_remove_amdmount(const char *mp)
+static void __mnts_remove_amdmount(const char *mp)
 {
 	struct mnt_list *this;
 
-	mnts_hash_mutex_lock();
 	this = mnts_lookup(mp);
 	if (!(this && this->flags & MNTS_AMD_MOUNT))
-		goto done;
+		return;
 	this->flags &= ~MNTS_AMD_MOUNT;
 	list_del_init(&this->amdmount);
 	if (this->ext_mp) {
@@ -1172,7 +1171,28 @@ void mnts_remove_amdmount(const char *mp)
 	}
 	this->amd_cache_opts = 0;
 	__mnts_put_mount(this);
-done:
+}
+
+void mnts_remove_amdmount(const char *mp)
+{
+	mnts_hash_mutex_lock();
+	__mnts_remove_amdmount(mp);
+	mnts_hash_mutex_unlock();
+}
+
+void mnts_remove_amdmounts(struct autofs_point *ap)
+{
+	struct list_head *head, *p;
+
+	mnts_hash_mutex_lock();
+	head = &ap->amdmounts;
+	p = head->next;
+	while (p != head) {
+		struct mnt_list *mnt = list_entry(p, struct mnt_list, amdmount);
+		p = p->next;
+		ext_mount_remove(mnt->ext_mp);
+		__mnts_remove_amdmount(mnt->mp);
+	}
 	mnts_hash_mutex_unlock();
 }
 
