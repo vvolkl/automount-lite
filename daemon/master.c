@@ -1119,18 +1119,6 @@ int master_read_master(struct master *master, time_t age)
 	return 1;
 }
 
-int master_submount_list_empty(struct autofs_point *ap)
-{
-	int res = 0;
-
-	mounts_mutex_lock(ap);
-	if (list_empty(&ap->submounts))
-		res = 1;
-	mounts_mutex_unlock(ap);
-
-	return res;
-}
-
 int master_notify_submount(struct autofs_point *ap, const char *path, enum states state)
 {
 	struct mnt_list *this, *sbmnt;

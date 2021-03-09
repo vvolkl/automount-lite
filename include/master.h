@@ -116,7 +116,6 @@ void master_free_mapent_sources(struct master_mapent *, unsigned int);
 void master_free_mapent(struct master_mapent *);
 struct master *master_new(const char *, unsigned int, unsigned int);
 int master_read_master(struct master *, time_t);
-int master_submount_list_empty(struct autofs_point *ap);
 int master_notify_submount(struct autofs_point *, const char *path, enum states);
 void master_notify_state_change(struct master *, int);
 int master_mount_mounts(struct master *, time_t);
