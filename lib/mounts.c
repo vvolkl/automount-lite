@@ -1124,7 +1124,7 @@ void mnts_remove_amdmount(const char *mp)
 	if (!(this && this->flags & MNTS_AMD_MOUNT))
 		goto done;
 	this->flags &= ~MNTS_AMD_MOUNT;
-	list_del_init(&this->submount);
+	list_del_init(&this->amdmount);
 	if (this->ext_mp) {
 		free(this->ext_mp);
 		this->ext_mp = NULL;
