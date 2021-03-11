@@ -82,6 +82,7 @@
 - get rid of strlen call in handle_packet_missing_direct().
 - remove redundant stat call in lookup_ghost().
 - set mapent dev and ino before adding to index.
+- change to use printf functions in amd parser.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

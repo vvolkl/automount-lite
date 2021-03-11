@@ -170,11 +170,9 @@ static struct substvar *add_lookup_vars(struct autofs_point *ap,
 
 	if (*key == '/')
 		strcpy(path, key);
-	else {
-		strcpy(path, ap->path);
-		strcat(path, "/");
-		strcat(path, key);
-	}
+	else
+		sprintf(path, "%s/%s", ap->path, key);
+
 	list = macro_addvar(list, "path", 4, path);
 
 	me = cache_lookup_distinct(source->mc, lkp_key);
@@ -1074,24 +1072,23 @@ static int do_auto_mount(struct autofs_point *ap, const char *name,
 			 struct amd_entry *entry, unsigned int flags)
 {
 	char target[PATH_MAX + 1];
+	int len;
 
 	if (!entry->map_type) {
-		if (strlen(entry->fs) > PATH_MAX) {
+		len = snprintf(target, PATH_MAX, "%s", entry->fs);
+		if (len > PATH_MAX) {
 			error(ap->logopt, MODPREFIX
 			     "error: fs option length is too long");
 			return 0;
 		}
-		strcpy(target, entry->fs);
 	} else {
-		if (strlen(entry->fs) +
-		    strlen(entry->map_type) + 5 > PATH_MAX) {
+		len = snprintf(target, PATH_MAX,
+			       "%s,amd:%s", entry->map_type, entry->fs);
+		if (len > PATH_MAX) {
 			error(ap->logopt, MODPREFIX
 			     "error: fs + maptype options length is too long");
 			return 0;
 		}
-		strcpy(target, entry->map_type);
-		strcat(target, ",amd:");
-		strcat(target, entry->fs);
 	}
 
 	return do_mount(ap, ap->path,
@@ -1214,16 +1211,14 @@ static int do_nfs_mount(struct autofs_point *ap, const char *name,
 	char *opts = (entry->opts && *entry->opts) ? entry->opts : NULL;
 	unsigned int umount = 0;
 	int ret = 0;
+	int len;
 
-	if (strlen(entry->rhost) + strlen(entry->rfs) + 1 > PATH_MAX) {
+	len = snprintf(target, PATH_MAX, "%s:%s", entry->rhost, entry->rfs);
+	if (len > PATH_MAX) {
 		error(ap->logopt, MODPREFIX
 		     "error: rhost + rfs options length is too long");
 		return 1;
 	}
-
-	strcpy(target, entry->rhost);
-	strcat(target, ":");
-	strcat(target, entry->rfs);
 
 	proximity = get_network_proximity(entry->rhost);
 	if (proximity == PROXIMITY_OTHER && entry->remopts && *entry->remopts)
@@ -1326,7 +1321,7 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 	 */
 	if (strcmp(name, entry->rhost)) {
 		char *target;
-		size_t len;
+		int len;
 
 		len = ap->len + strlen(entry->rhost) + 2;
 		target = malloc(len);
@@ -1335,9 +1330,7 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 			     "failed to alloc target to hosts mount base");
 			goto out;
 		}
-		strcpy(target, ap->path);
-		strcat(target, "/");
-		strcat(target, entry->rhost);
+		sprintf(target, "%s/%s", ap->path, entry->rhost);
 		if (entry->path)
 			free(entry->path);
 		entry->path = target;
@@ -1826,7 +1819,7 @@ static void normalize_sublink(unsigned int logopt,
 			      struct amd_entry *entry, struct substvar *sv)
 {
 	char *new;
-	size_t len;
+	int len;
 
 	/* Normalizing sublink requires a non-blank fs option */
 	if (!*entry->fs)
@@ -1840,9 +1833,7 @@ static void normalize_sublink(unsigned int logopt,
 			      "error: couldn't allocate storage for sublink");
 			return;
 		}
-		strcpy(new, entry->fs);
-		strcat(new, "/");
-		strcat(new, entry->sublink);
+		sprintf(new, "%s/%s", entry->fs, entry->sublink);
 		debug(logopt, MODPREFIX
 		      "rfs dequote(\"%.*s\") -> %s",
 		      strlen(entry->sublink), entry->sublink, new);
@@ -1873,9 +1864,7 @@ static void update_prefix(struct autofs_point *ap,
 		len = strlen(ap->pref) + strlen(name) + 2;
 		new = malloc(len);
 		if (new) {
-			strcpy(new, ap->pref);
-			strcat(new, name);
-			strcat(new, "/");
+			sprintf(new, "%s%s/", ap->pref, name);
 			entry->pref = new;
 		}
 	}
