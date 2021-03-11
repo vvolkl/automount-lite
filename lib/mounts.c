@@ -1647,6 +1647,51 @@ int tree_mapent_delete_offsets(struct mapent_cache *mc, const char *key)
 	return 1;
 }
 
+static void tree_mapent_umount_mount(struct autofs_point *ap, const char *mp)
+{
+	if (is_mounted(mp, MNTS_ALL)) {
+		if (umount(mp)) {
+			error(ap->logopt, "error recovering from mount fail");
+			error(ap->logopt, "cannot umount %s", mp);
+		}
+	}
+}
+
+static int tree_mapent_cleanup_offsets_work(struct tree_node *n, void *ptr)
+{
+	struct mapent *oe = MAPENT(n);
+	struct traverse_subtree_context *ctxt = ptr;
+
+	tree_mapent_umount_mount(ctxt->ap, oe->key);
+
+	return 1;
+}
+
+void tree_mapent_cleanup_offsets(struct mapent *oe)
+{
+	struct tree_node *base = MAPENT_NODE(oe);
+	struct traverse_subtree_context ctxt = {
+		.ap = oe->mc->ap,
+		.base = base,
+		.strict = 0,
+	};
+	struct autofs_point *ap = oe->mc->ap;
+
+	tree_mapent_traverse_subtree(base, tree_mapent_cleanup_offsets_work, &ctxt);
+
+	/* Cleanup base mount after offsets have been cleaned up */
+	if (*oe->key == '/')
+		tree_mapent_umount_mount(ap, oe->key);
+	else {
+		char mp[PATH_MAX + 1];
+
+		if (!mount_fullpath(mp, PATH_MAX, ap->path, oe->key))
+			error(ap->logopt, "mount path is too long");
+		else
+			tree_mapent_umount_mount(ap, mp);
+	}
+}
+
 /* From glibc decode_name() */
 /* Since the values in a line are separated by spaces, a name cannot
  * contain a space.  Therefore some programs encode spaces in names
