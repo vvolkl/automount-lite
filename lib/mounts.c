@@ -1528,6 +1528,53 @@ int tree_mapent_add_node(struct mapent_cache *mc,
 	return 1;
 }
 
+static inline int tree_mapent_is_root(struct mapent *oe)
+{
+	/* Offset "/" is a special case, it's looked up and mounted
+	 * seperately because the offset tree may or may not have a
+	 * real mount at the base and the triggers inside it need to
+	 * be mounted in either case. Also the order requires the
+	 * offset at the top of the (sub)tree to be handled after
+	 * the traversal.
+	 */
+	return (oe->key[oe->len - 1] == '/' ||
+	        MAPENT_ROOT(oe) == MAPENT_NODE(oe));
+}
+
+struct traverse_subtree_context {
+	struct autofs_point *ap;
+	struct tree_node *base;
+	int strict;
+};
+
+static int tree_mapent_traverse_subtree(struct tree_node *n, tree_work_fn_t work, void *ptr)
+{
+	struct traverse_subtree_context *ctxt = ptr;
+	struct mapent *oe = MAPENT(n);
+	int ret = 1;
+
+	if (n->left) {
+		ret = tree_mapent_traverse_subtree(n->left, work, ctxt);
+		if (!ret && ctxt->strict)
+			goto done;
+	}
+
+	/* Node is not multi-mount root and is part of current subtree */
+	if (!tree_mapent_is_root(oe) && MAPENT_PARENT(oe) == ctxt->base) {
+		ret = work(n, ctxt);
+		if (!ret && ctxt->strict)
+			goto done;
+	}
+
+	if (n->right) {
+		ret = tree_mapent_traverse_subtree(n->right, work, ctxt);
+		if (!ret && ctxt->strict)
+			goto done;
+	}
+done:
+	return ret;
+}
+
 static int tree_mapent_delete_offset_tree(struct tree_node *root)
 {
 	struct mapent *me = MAPENT(root);
