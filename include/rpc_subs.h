@@ -17,6 +17,7 @@
 #define _RPC_SUBS_H
 
 #include <rpc/rpc.h>
+#include <rpc/types.h>
 #include <rpc/pmap_prot.h>
 #include <linux/nfs.h>
 #include <linux/nfs2.h>
@@ -47,6 +48,17 @@
 
 #define HOST_ENT_BUF_SIZE       2048
 
+struct hostinfo {
+	char *name;
+	struct hostinfo *next;
+};
+
+struct exportinfo {
+	char *dir;
+	struct hostinfo *hosts;
+	struct exportinfo *next;
+};
+
 struct conn_info {
 	const char *host;
 	struct sockaddr *addr;
@@ -71,6 +83,8 @@ int rpc_portmap_getport(struct conn_info *, struct pmap *, unsigned short *);
 int rpc_ping_proto(struct conn_info *);
 int rpc_ping(const char *, int, unsigned int, long, long, unsigned int);
 double monotonic_elapsed(struct timespec, struct timespec);
+struct exportinfo *rpc_get_exports(const char *host, long seconds, long micros, unsigned int option);
+void rpc_exports_free(struct exportinfo *exports);
 const char *get_addr_string(struct sockaddr *, char *, socklen_t);
 
 #endif

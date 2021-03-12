@@ -20,14 +20,6 @@
 #include <sys/stat.h>
 #include <netdb.h>
 
-/* 
- * Avoid annoying compiler noise by using an alternate name for
- * typedef name in mount.h
- */
-#define name __dummy_type_name
-#include "mount.h"
-#undef name
-
 #define MODULE_LOOKUP
 #include "automount.h"
 #include "nsswitch.h"
@@ -42,9 +34,6 @@ struct lookup_context {
 };
 
 int lookup_version = AUTOFS_LOOKUP_VERSION;	/* Required by protocol */
-
-exports rpc_get_exports(const char *host, long seconds, long micros, unsigned int option);
-void rpc_exports_free(exports list);
 
 int lookup_init(const char *mapfmt,
 		int argc, const char *const *argv, void **context)
@@ -99,7 +88,7 @@ static char *get_exports(struct autofs_point *ap, const char *host)
 {
 	char buf[MAX_ERR_BUF];
 	char *mapent;
-	exports exp, this;
+	struct exportinfo *exp, *this;
 
 	debug(ap->logopt, MODPREFIX "fetchng export list for %s", host);
 
@@ -111,7 +100,7 @@ static char *get_exports(struct autofs_point *ap, const char *host)
 		if (mapent) {
 			int len = strlen(mapent) + 1;
 
-			len += strlen(host) + 2*(strlen(this->ex_dir) + 2) + 3;
+			len += strlen(host) + 2*(strlen(this->dir) + 2) + 3;
 			mapent = realloc(mapent, len);
 			if (!mapent) {
 				char *estr;
@@ -121,10 +110,10 @@ static char *get_exports(struct autofs_point *ap, const char *host)
 				return NULL;
 			}
 			strcat(mapent, " \"");
-			strcat(mapent, this->ex_dir);
+			strcat(mapent, this->dir);
 			strcat(mapent, "\"");
 		} else {
-			int len = 2*(strlen(this->ex_dir) + 2) + strlen(host) + 3;
+			int len = 2*(strlen(this->dir) + 2) + strlen(host) + 3;
 
 			mapent = malloc(len);
 			if (!mapent) {
@@ -135,16 +124,16 @@ static char *get_exports(struct autofs_point *ap, const char *host)
 				return NULL;
 			}
 			strcpy(mapent, "\"");
-			strcat(mapent, this->ex_dir);
+			strcat(mapent, this->dir);
 			strcat(mapent, "\"");
 		}
 		strcat(mapent, " \"");
 		strcat(mapent, host);
 		strcat(mapent, ":");
-		strcat(mapent, this->ex_dir);
+		strcat(mapent, this->dir);
 		strcat(mapent, "\"");
 
-		this = this->ex_next;
+		this = this->next;
 	}
 	rpc_exports_free(exp);
 

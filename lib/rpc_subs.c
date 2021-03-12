@@ -41,7 +41,6 @@ const rpcprog_t rpcb_prog = PMAPPROG;
 const rpcvers_t rpcb_version = PMAPVERS;
 #endif
 
-#include "mount.h"
 #include "rpc_subs.h"
 #include "replicated.h"
 #include "automount.h"
@@ -57,6 +56,17 @@ const rpcvers_t rpcb_version = PMAPVERS;
 #define MAX_ERR_BUF	128
 
 #define MAX_NETWORK_LEN		255
+
+#define EXPPATHLEN 1024
+#define EXPNAMELEN 255
+
+#define MOUNTPROG 100005
+
+#define MOUNTVERS	1
+#define MOUNTVERS_NFSV3 3
+#define MOUNTVERS_POSIX 2
+
+#define MOUNTPROC_EXPORT 5
 
 /* Get numeric value of the n bits starting at position p */
 #define getbits(x, p, n)      ((x >> (p + 1 - n)) & ~(~0 << n))
@@ -1102,7 +1112,55 @@ double monotonic_elapsed(struct timespec start, struct timespec end)
 	return t2 - t1;
 }
 
-static int rpc_get_exports_proto(struct conn_info *info, exports *exp)
+static bool_t xdr_host(XDR *xdrs, struct hostinfo *host)
+{
+	if (!xdr_string(xdrs, &host->name, EXPNAMELEN))
+		return FALSE;
+	return TRUE;
+}
+
+static bool_t xdr_hosts(XDR *xdrs, struct hostinfo **hosts)
+{
+	unsigned int size = sizeof(struct hostinfo);
+	char **host;
+
+	host = (char **) hosts;
+	while (1) {
+		if (!xdr_pointer(xdrs, host, size, (xdrproc_t) xdr_host))
+			return FALSE;
+		if (!*host)
+			break;
+		host = (char **) &((struct hostinfo *) *host)->next;
+	}
+	return TRUE;
+}
+
+static bool_t xdr_export(XDR *xdrs, struct exportinfo *export)
+{
+	if (!xdr_string(xdrs, &export->dir, EXPPATHLEN))
+		return FALSE;
+	if (!xdr_hosts(xdrs, &export->hosts))
+		return FALSE;
+	return TRUE;
+}
+
+bool_t xdr_exports(XDR *xdrs, struct exportinfo **exports)
+{
+	unsigned int size = sizeof(struct exportinfo);
+	char **export;
+
+	export = (char **) exports;
+	while (1) {
+		if (!xdr_pointer(xdrs, export, size, (xdrproc_t) xdr_export))
+			return FALSE;
+		if (!*export)
+			break;
+		export = (char **) &((struct exportinfo *) *export)->next;
+	}
+	return TRUE;
+}
+
+static int rpc_get_exports_proto(struct conn_info *info, struct exportinfo **exports)
 {
 	CLIENT *client;
 	enum clnt_stat status;
@@ -1133,7 +1191,7 @@ static int rpc_get_exports_proto(struct conn_info *info, exports *exp)
 	while (1) {
 		status = clnt_call(client, MOUNTPROC_EXPORT,
 				 (xdrproc_t) xdr_void, NULL,
-				 (xdrproc_t) xdr_exports, (caddr_t) exp,
+				 (xdrproc_t) xdr_exports, (caddr_t) exports,
 				 info->timeout);
 		if (status == RPC_SUCCESS)
 			break;
@@ -1168,41 +1226,43 @@ static int rpc_get_exports_proto(struct conn_info *info, exports *exp)
 	return 1;
 }
 
-static void rpc_export_free(exports item)
+static void rpc_export_free(struct exportinfo *export)
 {
-	groups grp;
-	groups tmp;
+	struct hostinfo *host, *tmp;
 
-	if (item->ex_dir)
-		free(item->ex_dir);
+	if (export->dir)
+		free(export->dir);
 
-	grp = item->ex_groups;
-	while (grp) {
-		if (grp->gr_name)
-			free(grp->gr_name);
-		tmp = grp;
-		grp = grp->gr_next;
+	host = export->hosts;
+	while (host) {
+		if (host->name)
+			free(host->name);
+		tmp = host;
+		host = host->next;
 		free(tmp);
 	}
-	free(item);
+	free(export);
 }
 
-void rpc_exports_free(exports list)
+void rpc_exports_free(struct exportinfo *exports)
 {
-	exports tmp;
+	struct exportinfo *export, *tmp;
 
-	while (list) {
-		tmp = list;
-		list = list->ex_next;
+	export = exports;
+	while (export) {
+		tmp = export;
+		export = export->next;
 		rpc_export_free(tmp);
 	}
 	return;
 }
 
-exports rpc_get_exports(const char *host, long seconds, long micros, unsigned int option)
+struct exportinfo *rpc_get_exports(const char *host,
+				   long seconds, long micros,
+				   unsigned int option)
 {
 	struct conn_info info;
-	exports exportlist;
+	struct exportinfo *exports = NULL;
 	struct pmap parms;
 	int status;
 
@@ -1231,11 +1291,9 @@ exports rpc_get_exports(const char *host, long seconds, long micros, unsigned in
 	if (status < 0)
 		goto try_tcp;
 
-	memset(&exportlist, '\0', sizeof(exportlist));
-
-	status = rpc_get_exports_proto(&info, &exportlist);
+	status = rpc_get_exports_proto(&info, &exports);
 	if (status)
-		return exportlist;
+		return exports;
 
 try_tcp:
 	info.proto = IPPROTO_TCP;
@@ -1246,13 +1304,11 @@ try_tcp:
 	if (status < 0)
 		return NULL;
 
-	memset(&exportlist, '\0', sizeof(exportlist));
-
-	status = rpc_get_exports_proto(&info, &exportlist);
+	status = rpc_get_exports_proto(&info, &exports);
 	if (!status)
 		return NULL;
 
-	return exportlist;
+	return exports;
 }
 
 const char *get_addr_string(struct sockaddr *sa, char *name, socklen_t len)
