@@ -87,7 +87,6 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 static char *get_exports(struct autofs_point *ap, const char *host)
 {
 	char buf[MAX_ERR_BUF];
-	char entry[PATH_MAX + 1];
 	char *mapent;
 	struct exportinfo *exp, *this;
 	size_t hostlen = strlen(host);
