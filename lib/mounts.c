@@ -1119,16 +1119,16 @@ struct mnt_list *mnts_add_amdmount(struct autofs_point *ap, struct amd_entry *en
 
 	mnts_hash_mutex_lock();
 	this = mnts_get_mount(entry->path);
-	if (this) {
-		this->ext_mp = ext_mp;
-		this->amd_pref = pref;
-		this->amd_type = type;
-		this->amd_opts = opts;
-		this->amd_cache_opts = entry->cache_opts;
-		this->flags |= MNTS_AMD_MOUNT;
-		if (list_empty(&this->amdmount))
-			list_add_tail(&this->amdmount, &ap->amdmounts);
-	}
+	if (!this)
+		goto fail;
+	this->ext_mp = ext_mp;
+	this->amd_pref = pref;
+	this->amd_type = type;
+	this->amd_opts = opts;
+	this->amd_cache_opts = entry->cache_opts;
+	this->flags |= MNTS_AMD_MOUNT;
+	if (list_empty(&this->amdmount))
+		list_add_tail(&this->amdmount, &ap->amdmounts);
 	mnts_hash_mutex_unlock();
 
 	return this;
