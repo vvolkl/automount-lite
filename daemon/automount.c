@@ -562,6 +562,11 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 			left++;
 		}
 
+		if (me->len > PATH_MAX) {
+			crit(ap->logopt, "me->key too long for buffer");
+			return 1;
+		}
+
 		strcpy(key, me->key);
 
 		cache_unlock(mc);
