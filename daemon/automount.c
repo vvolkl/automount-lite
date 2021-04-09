@@ -1922,6 +1922,8 @@ void *handle_mounts(void *arg)
 	status = pthread_mutex_lock(&suc->mutex);
 	if (status) {
 		logerr("failed to lock startup condition mutex!");
+		if (root)
+			free(root);
 		fatal(status);
 	}
 
