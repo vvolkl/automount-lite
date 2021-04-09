@@ -1526,7 +1526,6 @@ dont_expand:
 			if (!loc) {
 				free(options);
 				free(pmapent);
-				cache_unlock(mc);
 				warn(ap->logopt, MODPREFIX "out of memory");
 				return 1;
 			}
