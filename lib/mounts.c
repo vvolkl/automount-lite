@@ -1205,13 +1205,13 @@ struct mnt_list *mnts_add_mount(struct autofs_point *ap,
 	if (*name == '/') {
 		mp = strdup(name);
 		if (!mp)
-			goto fail;
+			return NULL;
 	} else {
 		int len = ap->len + strlen(name) + 2;
 
 		mp = malloc(len);
 		if (!mp)
-			goto fail;
+			return NULL;
 		strcpy(mp, ap->path);
 		strcat(mp, "/");
 		strcat(mp, name);
@@ -1228,10 +1228,6 @@ struct mnt_list *mnts_add_mount(struct autofs_point *ap,
 	free(mp);
 
 	return this;
-fail:
-	if (mp)
-		free(mp);
-	return NULL;
 }
 
 void mnts_remove_mount(const char *mp, unsigned int flags)
