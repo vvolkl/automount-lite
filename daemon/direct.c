@@ -739,9 +739,13 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me)
 
 	ret = stat(me->key, &st);
 	if (ret == -1) {
+		int save_errno = errno;
+
 		error(ap->logopt,
 		     "failed to stat direct mount trigger %s", me->key);
-		goto out_umount;
+		if (save_errno != ENOENT)
+			goto out_umount;
+		goto out_err;
 	}
 
 	ops->open(ap->logopt, &ioctlfd, st.st_dev, me->key);
