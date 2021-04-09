@@ -662,7 +662,7 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 		/* Check if the autofs mount has browse mode enabled.
 		 * If so re-create the directory entry.
 		 */
-		if (ap->flags | MOUNT_FLAG_GHOST) {
+		if (ap->flags & MOUNT_FLAG_GHOST) {
 			int ret;
 
 			/* If the browse directory create fails log an

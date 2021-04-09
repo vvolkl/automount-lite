@@ -56,6 +56,7 @@
 - fix possible memory leak in mnts_add_amdmount().
 - fix double unlock in parse_mount().
 - add length check in umount_subtree_mounts().
+- fix flags check in umount_multi().
 
 25/01/2021 autofs-5.1.7
 - make bind mounts propagation slave by default.
