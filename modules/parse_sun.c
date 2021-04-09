@@ -974,8 +974,6 @@ static int parse_mapent(const char *ent, char *g_options, char **options, char *
 					estr = strerror_r(errno, buf, MAX_ERR_BUF);
 					error(logopt, MODPREFIX
 					      "concat_options: %s", estr);
-					if (newopt)
-						free(newopt);
 					free(myoptions);
 					return 0;
 				}
