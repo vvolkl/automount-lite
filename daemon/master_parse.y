@@ -155,6 +155,8 @@ file: {
 line:
 	| PATH mapspec
 	{
+		if (path)
+			free(path);
 		path = master_strdup($1);
 		if (!path) {
 			local_free_vars();
