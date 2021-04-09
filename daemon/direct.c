@@ -752,10 +752,7 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me)
 
 	ops->timeout(ap->logopt, ioctlfd, timeout);
 	cache_set_ino_index(me->mc, me->key, st.st_dev, st.st_ino);
-	if (ap->logopt & LOGOPT_DEBUG)
-		notify_mount_result(ap, me->key, timeout, str_offset);
-	else
-		notify_mount_result(ap, me->key, timeout, str_offset);
+	notify_mount_result(ap, me->key, timeout, str_offset);
 	ops->close(ap->logopt, ioctlfd);
 
 	debug(ap->logopt, "mounted trigger %s", me->key);
