@@ -996,7 +996,6 @@ static void master_add_amd_mount_section_mounts(struct master *master, time_t ag
 		source->master_line = 0;
 
 		entry->age = age;
-		entry->current = NULL;
 
 		master_add_mapent(master, entry);
 next:
