@@ -1519,9 +1519,7 @@ int tree_mapent_add_node(struct mapent_cache *mc,
 	}
 
 	if (MAPENT_ROOT(base) != MAPENT_NODE(base)) {
-		error(logopt,
-		     "failed to find multi-mount root of offset tree",
-		     key);
+		error(logopt, "key %s is not multi-mount root", root);
 		return 0;
 	}
 	tree = MAPENT_ROOT(base);
