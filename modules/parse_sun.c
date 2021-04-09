@@ -1105,6 +1105,7 @@ static int mount_subtree(struct autofs_point *ap, struct mapent_cache *mc,
 		len = mount_fullpath(key, PATH_MAX, ap->path, ap->len, me->key);
 		if (!len) {
 			warn(ap->logopt, "path loo long");
+			cache_unlock(mc);
 			return 1;
 		}
 		key[len] = '/';
