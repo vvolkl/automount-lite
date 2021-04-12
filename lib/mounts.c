@@ -1445,8 +1445,10 @@ void mnts_get_expire_list(struct list_head *mnts, struct autofs_point *ap)
 		}
 	}
 
-	tree_traverse_inorder(tree, tree_mnt_expire_list_work, mnts);
-	tree_free(tree);
+	if (tree) {
+		tree_traverse_inorder(tree, tree_mnt_expire_list_work, mnts);
+		tree_free(tree);
+	}
 done:
 	mnts_hash_mutex_unlock();
 }
