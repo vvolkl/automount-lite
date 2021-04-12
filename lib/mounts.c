@@ -788,6 +788,20 @@ char *make_mnt_name_string(char *path)
 	return mnt_name;
 }
 
+static void ext_mount_hash_mutex_lock(void)
+{
+	int status = pthread_mutex_lock(&ext_mount_hash_mutex);
+	if (status)
+		fatal(status);
+}
+
+static void ext_mount_hash_mutex_unlock(void)
+{
+	int status = pthread_mutex_unlock(&ext_mount_hash_mutex);
+	if (status)
+		fatal(status);
+}
+
 static struct ext_mount *ext_mount_lookup(const char *mp)
 {
 	uint32_t hval = hash(mp, HASH_SIZE(ext_mounts_hash));
@@ -806,7 +820,7 @@ int ext_mount_add(const char *path, const char *umount)
 	struct ext_mount *em;
 	int ret = 0;
 
-	pthread_mutex_lock(&ext_mount_hash_mutex);
+	ext_mount_hash_mutex_lock();
 
 	em = ext_mount_lookup(path);
 	if (em) {
@@ -840,7 +854,7 @@ int ext_mount_add(const char *path, const char *umount)
 
 	ret = 1;
 done:
-	pthread_mutex_unlock(&ext_mount_hash_mutex);
+	ext_mount_hash_mutex_unlock();
 	return ret;
 }
 
@@ -849,7 +863,7 @@ int ext_mount_remove(const char *path)
 	struct ext_mount *em;
 	int ret = 0;
 
-	pthread_mutex_lock(&ext_mount_hash_mutex);
+	ext_mount_hash_mutex_lock();
 
 	em = ext_mount_lookup(path);
 	if (!em)
@@ -867,7 +881,7 @@ int ext_mount_remove(const char *path)
 		ret = 1;
 	}
 done:
-	pthread_mutex_unlock(&ext_mount_hash_mutex);
+	ext_mount_hash_mutex_unlock();
 	return ret;
 }
 
@@ -876,13 +890,13 @@ int ext_mount_inuse(const char *path)
 	struct ext_mount *em;
 	int ret = 0;
 
-	pthread_mutex_lock(&ext_mount_hash_mutex);
+	ext_mount_hash_mutex_lock();
 	em = ext_mount_lookup(path);
 	if (!em)
 		goto done;
 	ret = em->ref;
 done:
-	pthread_mutex_unlock(&ext_mount_hash_mutex);
+	ext_mount_hash_mutex_unlock();
 	return ret;
 }
 
