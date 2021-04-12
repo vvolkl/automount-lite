@@ -63,6 +63,7 @@
 - fix arg not used in error print.
 - fix missing lock release in mount_subtree().
 - fix double free in parse_mapent().
+- refactor lookup_prune_one_cache() a bit.
 
 25/01/2021 autofs-5.1.7
 - make bind mounts propagation slave by default.

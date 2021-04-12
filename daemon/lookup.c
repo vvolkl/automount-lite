@@ -1375,7 +1375,6 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 		}
 
 		key = strdup(me->key);
-		me = cache_enumerate(mc, me);
 		/* Don't consider any entries with a wildcard */
 		if (!key || strchr(key, '*')) {
 			if (key)
@@ -1422,6 +1421,7 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 		if (valid)
 			cache_unlock(valid->mc);
 
+		me = cache_enumerate(mc, me);
 		if (me)
 			next_key = strdup(me->key);
 
@@ -1456,6 +1456,24 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 next:
 		cache_readlock(mc);
 		if (next_key) {
+			/* The lock release and reaquire above can mean
+			 * a number of things could happen.
+			 *
+			 * First, mapents could be added between the
+			 * current mapent and the mapent of next_key.
+			 * Don't care about that because there's no
+			 * need to prune newly added entries.
+			 *
+			 * Second, the next mapent data could have
+			 * changed. Don't care about that either since
+			 * we are looking to prune stale map entries
+			 * and don't care when they become stale.
+			 *
+			 * Finally, the mapent of next_key could have
+			 * gone away. Again don't care about this either,
+			 * the loop will exit prematurely so just wait
+			 * until the next prune and try again.
+			 */
 			me = cache_lookup_distinct(mc, next_key);
 			free(next_key);
 		}
