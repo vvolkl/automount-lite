@@ -77,7 +77,9 @@ install: all
 	install -c $(MODS) -m 755 $(INSTALLROOT)$(autofslibdir)
 	-rm -f $(INSTALLROOT)$(autofslibdir)/mount_smbfs.so
 	ln -fs lookup_file.so $(INSTALLROOT)$(autofslibdir)/lookup_files.so
+ifeq ($(YPCLNT), 1)
 	ln -fs lookup_yp.so $(INSTALLROOT)$(autofslibdir)/lookup_nis.so
+endif
 ifeq ($(LDAP), 1)
 	ln -fs lookup_ldap.so $(INSTALLROOT)$(autofslibdir)/lookup_ldaps.so
 endif

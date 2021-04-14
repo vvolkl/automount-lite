@@ -67,6 +67,7 @@
 - cater for empty mounts list in mnts_get_expire_list().
 - add ext_mount_hash_mutex lock helpers.
 - fix amd section mounts map reload.
+- fix dandling symlink creation if nis support is not available.
 
 25/01/2021 autofs-5.1.7
 - make bind mounts propagation slave by default.
