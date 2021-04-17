@@ -404,15 +404,7 @@ err:
 /* Close */
 static int dev_ioctl_close(unsigned int logopt, int ioctlfd)
 {
-	struct autofs_dev_ioctl param;
-
-	init_autofs_dev_ioctl(&param);
-	param.ioctlfd = ioctlfd;
-
-	if (ioctl(ctl.devfd, AUTOFS_DEV_IOCTL_CLOSEMOUNT, &param) == -1)
-		return -1;
-
-	return 0;
+	return close(ioctlfd);
 }
 
 static int ioctl_close(unsigned int logopt, int ioctlfd)
