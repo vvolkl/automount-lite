@@ -2341,12 +2341,13 @@ int parse_mount(struct autofs_point *ap, const char *name,
 		if (!rv) {
 			/*
 			 * If entry->path doesn't match the mnt->mp then
-			 * the mount point path has changed and a new
-			 * mnt_list entry added for it, so remove the
-			 * original.
+			 * it's a "host" map and the mount point path is
+			 * different to the lookup name. Add a new mnt_list
+			 * entry so that both the symlinked name and the
+			 * mount expire.
 			 */
 			if (strcmp(this->path, mnt->mp))
-				mnts_remove_amdmount(this->path);
+				mnts_add_mount(ap, this->rhost, MNTS_INDIRECT|MNTS_MOUNTED);
 			break;
 		}
 		/* Not mounted, remove the mnt_list entry from amdmount list */
