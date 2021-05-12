@@ -1536,8 +1536,17 @@ dont_expand:
 		} while (*p == '/' || (*p == '"' && *(p + 1) == '/'));
 
 		cache_writelock(mc);
+		me = cache_lookup_distinct(mc, name);
+		if (!me) {
+			cache_unlock(mc);
+			free(options);
+			free(pmapent);
+			cleanup_offset_entries(ap, mc, &offsets);
+			pthread_setcancelstate(cur_state, NULL);
+			return 1;
+		}
 		list_for_each_entry_safe(oe, tmp, &offsets, work) {
-			if (!tree_mapent_add_node(mc, name, oe->key))
+			if (!tree_mapent_add_node(mc, MAPENT_ROOT(me), oe->key))
 				error(ap->logopt, "failed to add offset %s to tree", oe->key);
 			list_del_init(&oe->work);
 		}

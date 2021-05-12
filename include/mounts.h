@@ -170,7 +170,7 @@ void mnts_get_expire_list(struct list_head *mnts, struct autofs_point *ap);
 void mnts_put_expire_list(struct list_head *mnts);
 void mnts_set_mounted_mount(struct autofs_point *ap, const char *name, unsigned int flags);
 struct tree_node *tree_mapent_root(struct mapent *me);
-int tree_mapent_add_node(struct mapent_cache *mc, const char *base, const char *key);
+int tree_mapent_add_node(struct mapent_cache *mc, struct tree_node *root, const char *key);
 int tree_mapent_delete_offsets(struct mapent_cache *mc, const char *key);
 void tree_mapent_cleanup_offsets(struct mapent *oe);
 int tree_mapent_mount_offsets(struct mapent *oe, int nonstrict);
