@@ -559,6 +559,7 @@ int cache_add(struct mapent_cache *mc, struct map_source *ms, const char *key, c
 	me->mm_parent = NULL;
 	INIT_TREE_NODE(&me->node);
 	INIT_LIST_HEAD(&me->ino_index);
+	INIT_LIST_HEAD(&me->work);
 	me->ioctlfd = -1;
 	me->dev = (dev_t) -1;
 	me->ino = (ino_t) -1;

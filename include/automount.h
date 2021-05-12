@@ -169,6 +169,7 @@ struct mapent {
 	/* Parent nesting point within multi-mount */
 	struct tree_node *mm_parent;
 	struct tree_node node;
+	struct list_head work;
 	char *key;
 	size_t len;
 	char *mapent;

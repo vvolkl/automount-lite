@@ -789,14 +789,15 @@ static int check_is_multi(const char *mapent)
 
 static int
 update_offset_entry(struct autofs_point *ap,
-		    struct mapent_cache *mc, const char *name,
-		    const char *m_root, int m_root_len,
+		    struct mapent_cache *mc, struct list_head *offsets,
+		    const char *name, const char *m_root, int m_root_len,
 		    const char *m_offset, const char *myoptions,
 		    const char *loc, time_t age)
 {
 	char m_key[PATH_MAX + 1];
 	char m_mapent[MAPENT_MAX_LEN + 1];
 	int o_len, m_key_len, m_options_len, m_mapent_len;
+	struct mapent *me;
 	int ret;
 
 	memset(m_mapent, 0, MAPENT_MAX_LEN + 1);
@@ -862,8 +863,29 @@ update_offset_entry(struct autofs_point *ap,
 	cache_writelock(mc);
 	ret = cache_update_offset(mc, name, m_key, m_mapent, age);
 
-	if (!tree_mapent_add_node(mc, name, m_key))
-		error(ap->logopt, "failed to add offset %s to tree", m_key);
+	me = cache_lookup_distinct(mc, m_key);
+	if (me && list_empty(&me->work)) {
+		struct list_head *last;
+
+		/* Offset entries really need to be in shortest to
+		 * longest path order. If not and the list of offsets
+		 * is large there will be a performace hit.
+		 */
+		list_for_each_prev(last, offsets) {
+			struct mapent *this;
+
+			this = list_entry(last, struct mapent, work);
+			if (me->len >= this->len) {
+				if (last->next == offsets)
+					list_add_tail(&me->work, offsets);
+				else
+					list_add_tail(&me->work, last);
+				break;
+			}
+		}
+		if (list_empty(&me->work))
+			list_add(&me->work, offsets);
+	}
 	cache_unlock(mc);
 
 	if (ret == CHE_DUPLICATE) {
@@ -1209,6 +1231,25 @@ static char *do_expandsunent(const char *src, const char *key,
 	return mapent;
 }
 
+static void cleanup_offset_entries(struct autofs_point *ap,
+				   struct mapent_cache *mc,
+				   struct list_head *offsets)
+{
+	struct mapent *me, *tmp;
+	int ret;
+
+	if (list_empty(offsets))
+		return;
+	cache_writelock(mc);
+	list_for_each_entry_safe(me, tmp, offsets, work) {
+		list_del(&me->work);
+		ret = cache_delete(mc, me->key);
+		if (ret != CHE_OK)
+			crit(ap->logopt, "failed to delete offset %s", me->key);
+	}
+	cache_unlock(mc);
+}
+
 /*
  * syntax is:
  *	[-options] location [location] ...
@@ -1228,7 +1269,8 @@ int parse_mount(struct autofs_point *ap, const char *name,
 	char buf[MAX_ERR_BUF];
 	struct map_source *source;
 	struct mapent_cache *mc;
-	struct mapent *me;
+	struct mapent *me, *oe, *tmp;
+	LIST_HEAD(offsets);
 	char *pmapent, *options;
 	const char *p;
 	int mapent_len, rv = 0;
@@ -1444,9 +1486,7 @@ dont_expand:
 
 			if (!m_offset) {
 				warn(ap->logopt, MODPREFIX "null path or out of memory");
-				cache_writelock(mc);
-				tree_mapent_delete_offsets(mc, name);
-				cache_unlock(mc);
+				cleanup_offset_entries(ap, mc, &offsets);
 				free(options);
 				free(pmapent);
 				pthread_setcancelstate(cur_state, NULL);
@@ -1461,9 +1501,7 @@ dont_expand:
 
 			l = parse_mapent(p, options, &myoptions, &loc, ap->logopt);
 			if (!l) {
-				cache_writelock(mc);
-				tree_mapent_delete_offsets(mc, name);
-				cache_unlock(mc);
+				cleanup_offset_entries(ap, mc, &offsets);
 				free(m_offset);
 				free(options);
 				free(pmapent);
@@ -1474,15 +1512,13 @@ dont_expand:
 			p += l;
 			p = skipspace(p);
 
-			status = update_offset_entry(ap, mc,
+			status = update_offset_entry(ap, mc, &offsets,
 						     name, m_root, m_root_len,
 						     m_offset, myoptions, loc, age);
 
 			if (status != CHE_OK) {
 				warn(ap->logopt, MODPREFIX "error adding multi-mount");
-				cache_writelock(mc);
-				tree_mapent_delete_offsets(mc, name);
-				cache_unlock(mc);
+				cleanup_offset_entries(ap, mc, &offsets);
 				free(m_offset);
 				free(options);
 				free(pmapent);
@@ -1498,6 +1534,14 @@ dont_expand:
 			free(m_offset);
 			free(myoptions);
 		} while (*p == '/' || (*p == '"' && *(p + 1) == '/'));
+
+		cache_writelock(mc);
+		list_for_each_entry_safe(oe, tmp, &offsets, work) {
+			if (!tree_mapent_add_node(mc, name, oe->key))
+				error(ap->logopt, "failed to add offset %s to tree", oe->key);
+			list_del_init(&oe->work);
+		}
+		cache_unlock(mc);
 
 		rv = mount_subtree(ap, mc, name, NULL, options, ctxt);
 
