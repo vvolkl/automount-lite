@@ -1519,19 +1519,10 @@ static void tree_mapent_free(struct tree_node *n)
 }
 
 int tree_mapent_add_node(struct mapent_cache *mc,
-			 struct tree_node *root, const char *key)
+			 struct tree_node *root, struct mapent *me)
 {
-	unsigned int logopt = mc->ap->logopt;
 	struct tree_node *n;
 	struct mapent *parent;
-	struct mapent *me;
-
-	me = cache_lookup_distinct(mc, key);
-	if (!me) {
-		error(logopt,
-		     "failed to find key %s of multi-mount", key);
-		return 0;
-	}
 
 	n = tree_add_node(root, me);
 	if (!n)
@@ -1540,7 +1531,7 @@ int tree_mapent_add_node(struct mapent_cache *mc,
 	MAPENT_SET_ROOT(me, root)
 
 	/* Set the subtree parent */
-	parent = cache_get_offset_parent(mc, key);
+	parent = cache_get_offset_parent(mc, me->key);
 	if (!parent)
 		MAPENT_SET_PARENT(me, root)
 	else

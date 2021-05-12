@@ -1546,7 +1546,7 @@ dont_expand:
 			return 1;
 		}
 		list_for_each_entry_safe(oe, tmp, &offsets, work) {
-			if (!tree_mapent_add_node(mc, MAPENT_ROOT(me), oe->key))
+			if (!tree_mapent_add_node(mc, MAPENT_ROOT(me), oe))
 				error(ap->logopt, "failed to add offset %s to tree", oe->key);
 			list_del_init(&oe->work);
 		}
