@@ -324,11 +324,12 @@ static void do_readmap_cleanup(void *arg)
 	return;
 }
 
-static void do_readmap_mount(struct autofs_point *ap,
+static int do_readmap_mount(struct autofs_point *ap,
 			     struct map_source *map, struct mapent *me, time_t now)
 {
 	struct mapent_cache *nc;
 	struct mapent *ne, *nested, *valid;
+	int ret = 0;
 
 	nc = ap->entry->master->nc;
 
@@ -387,7 +388,7 @@ static void do_readmap_mount(struct autofs_point *ap,
 				cache_unlock(vmc);
 				error(ap->logopt,
 				     "failed to find expected existing valid map entry");
-				return;
+				return ret;
 			}
 			/* Take over the mount if there is one */
 			valid->ioctlfd = me->ioctlfd;
@@ -406,14 +407,14 @@ static void do_readmap_mount(struct autofs_point *ap,
 					ap->exp_runfreq = runfreq;
 			}
 		} else if (!is_mounted(me->key, MNTS_REAL))
-			do_umount_autofs_direct(ap, me);
+			ret = do_umount_autofs_direct(ap, me);
 		else
 			debug(ap->logopt,
 			      "%s is mounted", me->key);
 	} else
 		do_mount_autofs_direct(ap, me, get_exp_timeout(ap, map));
 
-	return;
+	return ret;
 }
 
 static void *do_readmap(void *arg)
@@ -480,9 +481,12 @@ static void *do_readmap(void *arg)
 			mc = map->mc;
 			pthread_cleanup_push(cache_lock_cleanup, mc);
 			cache_readlock(mc);
+restart:
 			me = cache_enumerate(mc, NULL);
 			while (me) {
-				do_readmap_mount(ap, map, me, now);
+				int ret = do_readmap_mount(ap, map, me, now);
+				if (ret == -1)
+					goto restart;
 				me = cache_enumerate(mc, me);
 			}
 			lookup_prune_one_cache(ap, map->mc, now);

@@ -84,11 +84,27 @@ static void mnts_cleanup(void *arg)
 int do_umount_autofs_direct(struct autofs_point *ap, struct mapent *me)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
+	struct mapent_cache *mc = me->mc;
 	char buf[MAX_ERR_BUF];
 	int ioctlfd = -1, rv, left, retries;
+	char key[PATH_MAX + 1];
+	struct mapent *tmp;
 	int opened = 0;
 
-	left = umount_multi(ap, me->key, 0);
+	if (me->len > PATH_MAX) {
+		error(ap->logopt, "path too long");
+		return 1;
+	}
+	strcpy(key, me->key);
+
+	cache_unlock(mc);
+	left = umount_multi(ap, key, 0);
+	cache_readlock(mc);
+	tmp = cache_lookup_distinct(mc, key);
+	if (tmp != me) {
+		error(ap->logopt, "key %s no longer in mapent cache", key);
+		return -1;
+	}
 	if (left) {
 		warn(ap->logopt, "could not unmount %d dirs under %s",
 		     left, me->key);
@@ -213,6 +229,7 @@ int umount_autofs_direct(struct autofs_point *ap)
 		mc = map->mc;
 		pthread_cleanup_push(cache_lock_cleanup, mc);
 		cache_readlock(mc);
+restart:
 		me = cache_enumerate(mc, NULL);
 		while (me) {
 			int error;
@@ -230,6 +247,9 @@ int umount_autofs_direct(struct autofs_point *ap)
 			 * failed umount.
 			 */
 			error = do_umount_autofs_direct(ap, me);
+			/* cache became invalid, restart */
+			if (error == -1)
+				goto restart;
 			if (!error)
 				goto done;
 
