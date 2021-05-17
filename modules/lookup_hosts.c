@@ -84,14 +84,38 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 	return NSS_STATUS_UNKNOWN;
 }
 
+struct work_info {
+	char *mapent;
+	const char *host;
+	int pos;
+};
+
+static int tree_host_work(struct tree_node *n, void *ptr)
+{
+	struct exportinfo *exp = EXPORTINFO(n);
+	struct work_info *wi = ptr;
+	int len;
+
+	if (!wi->pos)
+		len = sprintf(wi->mapent, "\"%s\" \"%s:%s\"",
+				exp->dir, wi->host, exp->dir);
+	else
+		len = sprintf(wi->mapent + wi->pos, " \"%s\" \"%s:%s\"",
+				exp->dir, wi->host, exp->dir);
+	wi->pos += len;
+
+	return 1;
+}
+
 static char *get_exports(struct autofs_point *ap, const char *host)
 {
 	char buf[MAX_ERR_BUF];
 	char *mapent;
 	struct exportinfo *exp, *this;
+	struct tree_node *tree = NULL;
+	struct work_info wi;
 	size_t hostlen = strlen(host);
 	size_t mapent_len;
-	int len, pos;
 
 	debug(ap->logopt, MODPREFIX "fetchng export list for %s", host);
 
@@ -100,7 +124,28 @@ static char *get_exports(struct autofs_point *ap, const char *host)
 	this = exp;
 	mapent_len = 0;
 	while (this) {
+		struct tree_node *n;
+
 		mapent_len += hostlen + 2*(strlen(this->dir) + 2) + 3;
+
+		if (!tree) {
+			tree = tree_host_root(this);
+			if (!tree) {
+				error(ap->logopt, "failed to create exports tree root");
+				rpc_exports_free(exp);
+				return NULL;
+			}
+			goto next;
+		}
+
+		n = tree_host_add_node(tree, this);
+		if (!n) {
+			error(ap->logopt, "failed to add exports tree node");
+			tree_free(tree);
+			rpc_exports_free(exp);
+			return NULL;
+		}
+next:
 		this = this->next;
 	}
 
@@ -115,20 +160,16 @@ static char *get_exports(struct autofs_point *ap, const char *host)
 	}
 	*mapent = 0;
 
-	pos = 0;
-	this = exp;
-	if (this) {
-		len = sprintf(mapent, "\"%s\" \"%s:%s\"",
-				this->dir, host, this->dir);
-		pos += len;
-		this = this->next;
-	}
+	wi.mapent = mapent;
+	wi.host = host;
+	wi.pos = 0;
 
-	while (this) {
-		len = sprintf(mapent + pos, " \"%s\" \"%s:%s\"",
-				this->dir, host, this->dir);
-		pos += len;
-		this = this->next;
+	if (!tree) {
+		free(mapent);
+		mapent = NULL;
+	} else {
+		tree_traverse_inorder(tree, tree_host_work, &wi);
+		tree_free(tree);
 	}
 	rpc_exports_free(exp);
 

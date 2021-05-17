@@ -31,9 +31,9 @@
 #include "master.h"
 #include "macros.h"
 #include "log.h"
+#include "mounts.h"
 #include "rpc_subs.h"
 #include "parse_subs.h"
-#include "mounts.h"
 #include "dev-ioctl-lib.h"
 #include "parse_amd.h"
 

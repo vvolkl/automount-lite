@@ -79,6 +79,17 @@ static struct tree_ops mnt_ops = {
 };
 static struct tree_ops *tree_mnt_ops = &mnt_ops;
 
+static struct tree_node *tree_host_new(void *ptr);
+static int tree_host_cmp(struct tree_node *n, void *ptr);
+static void tree_host_free(struct tree_node *n);
+
+static struct tree_ops host_ops = {
+	.new = tree_host_new,
+	.cmp = tree_host_cmp,
+	.free = tree_host_free,
+};
+static struct tree_ops *tree_host_ops = &host_ops;
+
 static struct tree_node *tree_mapent_new(void *ptr);
 static int tree_mapent_cmp(struct tree_node *n, void *ptr);
 static void tree_mapent_free(struct tree_node *n);
@@ -1341,7 +1352,7 @@ static struct tree_node *tree_add_node(struct tree_node *root, void *ptr)
 	return NULL;
 }
 
-static void tree_free(struct tree_node *root)
+void tree_free(struct tree_node *root)
 {
 	struct tree_ops *ops = root->ops;
 
@@ -1352,7 +1363,7 @@ static void tree_free(struct tree_node *root)
 	ops->free(root);
 }
 
-static int tree_traverse_inorder(struct tree_node *n, tree_work_fn_t work, void *ptr)
+int tree_traverse_inorder(struct tree_node *n, tree_work_fn_t work, void *ptr)
 {
 	int ret;
 
@@ -1477,6 +1488,48 @@ void mnts_put_expire_list(struct list_head *mnts)
 		__mnts_put_mount(mnt);
 	}
 	mnts_hash_mutex_unlock();
+}
+
+struct tree_node *tree_host_root(struct exportinfo *exp)
+{
+	return tree_root(tree_host_ops, exp);
+}
+
+static struct tree_node *tree_host_new(void *ptr)
+{
+	struct tree_node *n = EXPORT_NODE(ptr);
+
+	n->ops = tree_host_ops;
+	n->left = NULL;
+	n->right = NULL;
+
+	return n;
+}
+
+static int tree_host_cmp(struct tree_node *n, void *ptr)
+{
+	struct exportinfo *n_exp = EXPORTINFO(n);
+	size_t n_exp_len = strlen(n_exp->dir);
+	struct exportinfo *exp = ptr;
+	size_t exp_len = strlen(exp->dir);
+	int eq;
+
+	eq = strcmp(exp->dir, n_exp->dir);
+	if (!eq)
+		return 0;
+	return (exp_len < n_exp_len) ? -1 : 1;
+}
+
+static void tree_host_free(struct tree_node *n)
+{
+	n->ops = NULL;
+	n->left = NULL;
+	n->right = NULL;
+}
+
+struct tree_node *tree_host_add_node(struct tree_node *root, struct exportinfo *exp)
+{
+	return tree_add_node(root, exp);
 }
 
 struct tree_node *tree_mapent_root(struct mapent *me)

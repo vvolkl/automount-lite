@@ -23,6 +23,8 @@
 #include <linux/nfs2.h>
 #include <linux/nfs3.h>
 
+#include "automount.h"
+
 #define NFS4_VERSION		4
 
 /* rpc helper subs */
@@ -57,6 +59,7 @@ struct exportinfo {
 	char *dir;
 	struct hostinfo *hosts;
 	struct exportinfo *next;
+	struct tree_node node;
 };
 
 struct conn_info {

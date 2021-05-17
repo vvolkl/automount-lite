@@ -52,6 +52,7 @@ extern const unsigned int t_direct;
 extern const unsigned int t_offset;
 
 struct mnt_list;
+struct exportinfo;
 struct mapent;
 
 struct tree_ops;
@@ -65,6 +66,9 @@ struct tree_node {
 
 #define MNT_LIST(n)		(container_of(n, struct mnt_list, node))
 #define MNT_LIST_NODE(ptr)	((struct tree_node *) &((struct mnt_list *) ptr)->node)
+
+#define EXPORTINFO(n)		(container_of(n, struct exportinfo, node))
+#define EXPORT_NODE(ptr)	((struct tree_node *) &((struct exportinfo *) ptr)->node)
 
 #define MAPENT(n)		(container_of(n, struct mapent, node))
 #define MAPENT_NODE(p)		((struct tree_node *) &((struct mapent *) p)->node)
@@ -166,9 +170,13 @@ struct mnt_list *mnts_add_mount(struct autofs_point *ap, const char *name, unsig
 void mnts_remove_mount(const char *mp, unsigned int flags);
 struct mnt_list *get_mnt_list(const char *path, int include);
 unsigned int mnts_has_mounted_mounts(struct autofs_point *ap);
+int tree_traverse_inorder(struct tree_node *n, tree_work_fn_t work, void *ptr);
+void tree_free(struct tree_node *root);
 void mnts_get_expire_list(struct list_head *mnts, struct autofs_point *ap);
 void mnts_put_expire_list(struct list_head *mnts);
 void mnts_set_mounted_mount(struct autofs_point *ap, const char *name, unsigned int flags);
+struct tree_node *tree_host_root(struct exportinfo *exp);
+struct tree_node *tree_host_add_node(struct tree_node *root, struct exportinfo *exp);
 struct tree_node *tree_mapent_root(struct mapent *me);
 int tree_mapent_add_node(struct mapent_cache *mc, struct tree_node *root, struct mapent *me);
 int tree_mapent_delete_offsets(struct mapent_cache *mc, const char *key);
