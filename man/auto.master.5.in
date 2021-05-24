@@ -265,6 +265,25 @@ accessing /net/myserver will mount exports from myserver on directories below
 NOTE: mounts done from a hosts map will be mounted with the "nosuid,nodev" options
 unless overridden by explicitly specifying the "suid", "dev" options in the
 master map entry.
+.SH BUILTIN MAP \-null
+If "\-null" is given as the map it is used to tell automount(8) to ignore a subsequent
+master map entry with the given path.
+.P
+It can only be used for paths that appear in the master map (or in direct mount maps).
+.P
+An indirect mount map top level mount point path can be nulled. If so no mounts from
+the nulled mount are performed (essentially it isn't mounted).
+.P
+Direct mount map path entries can be nulled. Since they must be present at startup
+they are (notionally) part of the master map.
+.P
+A nulled master map entry path will ignore a single subsequent matching entry. Any
+matching entry following that will be treated as it normally would be. An example
+use of this is allowing local master map entries to override remote ones.
+.P
+NOTE: If a duplicate master map entry path is seen (excluding paths of null entries)
+it will be ignored and noted in the log, that is the first encountered master map
+entry is used unless there is a corresponding null entry.
 .SH LDAP MAPS
 If the map type \fBldap\fP is specified the mapname is of the form
 \fB[//servername/]dn\fP, where the optional \fBservername\fP is
