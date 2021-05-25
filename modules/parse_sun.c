@@ -380,7 +380,8 @@ static int do_init(int argc, const char *const *argv, struct parse_context *ctxt
 			if (!tmp) {
 				char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 				logerr(MODPREFIX "concat_options: %s", estr);
-				free(gbl_options);
+				/* freed in concat_options */
+				ctxt->optstr = NULL;
 			} else
 				ctxt->optstr = tmp;
 		} else {
@@ -492,12 +493,16 @@ static char *concat_options(char *left, char *right)
 	char *ret;
 
 	if (left == NULL || *left == '\0') {
+		if (!right || *right == '\0')
+			return NULL;
 		ret = strdup(right);
 		free(right);
 		return ret;
 	}
 
 	if (right == NULL || *right == '\0') {
+		if (left == NULL || *left == '\0')
+			return NULL;
 		ret = strdup(left);
 		free(left);
 		return ret;
@@ -508,6 +513,8 @@ static char *concat_options(char *left, char *right)
 	if (ret == NULL) {
 		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 		logerr(MODPREFIX "malloc: %s", estr);
+		free(left);
+		free(right);
 		return NULL;
 	}
 
@@ -989,14 +996,13 @@ static int parse_mapent(const char *ent, char *g_options, char **options, char *
 			if (newopt && strstr(newopt, myoptions)) {
 				free(myoptions);
 				myoptions = newopt;
-			} else {
+			} else if (newopt) {
 				tmp = concat_options(myoptions, newopt);
 				if (!tmp) {
 					char *estr;
 					estr = strerror_r(errno, buf, MAX_ERR_BUF);
 					error(logopt, MODPREFIX
 					      "concat_options: %s", estr);
-					free(myoptions);
 					return 0;
 				}
 				myoptions = tmp;
@@ -1358,16 +1364,12 @@ dont_expand:
 			if (mnt_options && noptions && strstr(noptions, mnt_options)) {
 				free(mnt_options);
 				mnt_options = noptions;
-			} else {
+			} else if (noptions) {
 				tmp = concat_options(mnt_options, noptions);
 				if (!tmp) {
 					char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 					error(ap->logopt,
 					      MODPREFIX "concat_options: %s", estr);
-					if (noptions)
-						free(noptions);
-					if (mnt_options)
-						free(mnt_options);
 					free(options);
 					free(pmapent);
 					return 1;
@@ -1387,15 +1389,11 @@ dont_expand:
 			if (options && mnt_options && strstr(mnt_options, options)) {
 				free(options);
 				options = mnt_options;
-			} else {
+			} else if (mnt_options) {
 				tmp = concat_options(options, mnt_options);
 				if (!tmp) {
 					char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 					error(ap->logopt, MODPREFIX "concat_options: %s", estr);
-					if (options)
-						free(options);
-					if (mnt_options)
-						free(mnt_options);
 					free(pmapent);
 					return 1;
 				}
