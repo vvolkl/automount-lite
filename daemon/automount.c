@@ -1116,7 +1116,7 @@ static int get_pkt(struct autofs_point *ap, union autofs_v5_packet_union *pkt)
 				estr = strerror_r(errno, buf, MAX_ERR_BUF);
 				error(ap->logopt,
 				      "read error on state pipe, "
-				      "read %u, error %s",
+				      "read %lu, error %s",
 				      read, estr);
 				st_mutex_unlock();
 				continue;
@@ -1134,7 +1134,7 @@ static int get_pkt(struct autofs_point *ap, union autofs_v5_packet_union *pkt)
 				estr = strerror_r(errno, buf, MAX_ERR_BUF);
 				error(ap->logopt,
 				      "read error on request pipe, "
-				      "read %u, expected %u error %s",
+				      "read %lu, expected %lu error %s",
 				       read, kpkt_len, estr);
 			}
 			return read;
