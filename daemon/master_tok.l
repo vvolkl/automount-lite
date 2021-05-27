@@ -23,6 +23,7 @@
 #endif /* ECHO */
 static void master_echo(void);	/* forward definition */
 #define ECHO master_echo()
+static void master_error(char *s);
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,6 +80,8 @@ char buff[BUFF_LEN];
 char *bptr;
 char *optr = buff;
 unsigned int tlen;
+
+#define STRTYPE_LEN	2048
 
 %}
 
@@ -217,7 +220,13 @@ MODE		(--mode{OPTWS}|--mode{OPTWS}={OPTWS})
 			bptr += tlen;
 			yyless(tlen);
 		} else {
-			strcpy(master_lval.strtype, master_text);
+			if (tlen <= STRTYPE_LEN)
+				strcpy(master_lval.strtype, master_text);
+			else {
+				master_error("MULTITYPE: value too large, truncated");
+				strncpy(master_lval.strtype, master_text, STRTYPE_LEN - 2);
+				master_lval.strtype[STRTYPE_LEN - 1] = 0;
+			}
 			return(MULTITYPE);
 		}
 	}
@@ -239,7 +248,13 @@ MODE		(--mode{OPTWS}|--mode{OPTWS}={OPTWS})
 			bptr += tlen;
 			yyless(tlen);
 		} else {
-			strcpy(master_lval.strtype, master_text);
+			if (tlen <= STRTYPE_LEN)
+				strcpy(master_lval.strtype, master_text);
+			else {
+				master_error("MAPTYPE: value too large, truncated");
+				strncpy(master_lval.strtype, master_text, STRTYPE_LEN - 2);
+				master_lval.strtype[STRTYPE_LEN - 1] = 0;
+			}
 			return(MAPTYPE);
 		}
 	}
@@ -327,12 +342,24 @@ MODE		(--mode{OPTWS}|--mode{OPTWS}={OPTWS})
 	{OPTWS}\\\n{OPTWS} {}
 
 	{DNSERVERSTR} {
-		strcpy(master_lval.strtype, master_text);
+		if (master_leng < STRTYPE_LEN)
+			strcpy(master_lval.strtype, master_text);
+		else {
+			master_error("DNSERVER: value too large, truncated");
+			strncpy(master_lval.strtype, master_text, STRTYPE_LEN - 2);
+			master_lval.strtype[STRTYPE_LEN - 1] = 0;
+		}
 		return DNSERVER;
 	}
 
 	{DNATTRSTR}/"=" {
-		strcpy(master_lval.strtype, master_text);
+		if (master_leng < STRTYPE_LEN)
+			strcpy(master_lval.strtype, master_text);
+		else {
+			master_error("DNATTR: value too large, truncated");
+			strncpy(master_lval.strtype, master_text, STRTYPE_LEN - 2);
+			master_lval.strtype[STRTYPE_LEN - 1] = 0;
+		}
 		return DNATTR;
 	}
 
@@ -341,12 +368,24 @@ MODE		(--mode{OPTWS}|--mode{OPTWS}={OPTWS})
 	}
 
 	{DNNAMESTR1}/","{DNATTRSTR}"=" {
-		strcpy(master_lval.strtype, master_text);
+		if (master_leng < STRTYPE_LEN)
+			strcpy(master_lval.strtype, master_text);
+		else {
+			master_error("DNNAME: value too large, truncated");
+			strncpy(master_lval.strtype, master_text, STRTYPE_LEN - 2);
+			master_lval.strtype[STRTYPE_LEN - 1] = 0;
+		}
 		return DNNAME;
 	}
 
 	{DNNAMESTR2} {
-		strcpy(master_lval.strtype, master_text);
+		if (master_leng < STRTYPE_LEN)
+			strcpy(master_lval.strtype, master_text);
+		else {
+			master_error("DNNAME: value too large, truncated");
+			strncpy(master_lval.strtype, master_text, STRTYPE_LEN - 2);
+			master_lval.strtype[STRTYPE_LEN - 1] = 0;
+		}
 		return DNNAME;
 	}
 
@@ -357,7 +396,13 @@ MODE		(--mode{OPTWS}|--mode{OPTWS}={OPTWS})
 	{WS}"=" |
 	"="{WS} {
 		BEGIN(INITIAL);
-		strcpy(master_lval.strtype, master_text);
+		if (master_leng < STRTYPE_LEN)
+			strcpy(master_lval.strtype, master_text);
+		else {
+			master_error("SPACE: value too large, truncated");
+			strncpy(master_lval.strtype, master_text, STRTYPE_LEN - 2);
+			master_lval.strtype[STRTYPE_LEN - 1] = 0;
+		}
 		return SPACE;
 	}
 
@@ -419,7 +464,13 @@ MODE		(--mode{OPTWS}|--mode{OPTWS}={OPTWS})
 	}
 
 	{OPTIONSTR} {
-		strcpy(master_lval.strtype, master_text);
+		if (master_leng < STRTYPE_LEN)
+			strcpy(master_lval.strtype, master_text);
+		else {
+			master_error("OPTION: value too large, truncated");
+			strncpy(master_lval.strtype, master_text, STRTYPE_LEN - 2);
+			master_lval.strtype[STRTYPE_LEN - 1] = 0;
+		}
 		return(OPTION);
 	}
 
@@ -456,6 +507,12 @@ int master_wrap(void)
 static void master_echo(void)
 {
 	logmsg("%s", master_text);
+	return;
+}
+
+static void master_error(char *s)
+{
+	logmsg("%s");
 	return;
 }
 

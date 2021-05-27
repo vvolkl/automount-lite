@@ -29,6 +29,7 @@
 #include "master.h"
 
 #define MAX_ERR_LEN	512
+#define STRTYPE_LEN	2048
 
 extern struct master *master_list;
 
@@ -79,6 +80,7 @@ static int local_argc;
 static unsigned int propagation;
 
 static char errstr[MAX_ERR_LEN];
+static int errlen;
 
 static unsigned int verbose;
 static unsigned int debug;
@@ -521,10 +523,11 @@ dnattrs: DNATTR EQUAL DNNAME
 		    strcasecmp($1, "ou") &&
 		    strcasecmp($1, "automountMapName") &&
 		    strcasecmp($1, "nisMapName")) {
-			strcpy(errstr, $1);
-			strcat(errstr, "=");
-			strcat(errstr, $3);
-			master_notify(errstr);
+			errlen = snprintf(errstr, MAX_ERR_LEN, "%s=%s", $1, $3);
+			if (errlen < MAX_ERR_LEN)
+				master_notify(errstr);
+			else
+				master_notify("error string too long");
 			YYABORT;
 		}
 		strcpy($$, $1);
@@ -537,10 +540,11 @@ dnattrs: DNATTR EQUAL DNNAME
 		    strcasecmp($1, "ou") &&
 		    strcasecmp($1, "automountMapName") &&
 		    strcasecmp($1, "nisMapName")) {
-			strcpy(errstr, $1);
-			strcat(errstr, "=");
-			strcat(errstr, $3);
-			master_notify(errstr);
+			errlen = snprintf(errstr, MAX_ERR_LEN, "%s=%s", $1, $3);
+			if (errlen < MAX_ERR_LEN)
+				master_notify(errstr);
+			else
+				master_notify("error string too long");
 			YYABORT;
 		}
 		strcpy($$, $1);
@@ -565,10 +569,11 @@ dnattr: DNATTR EQUAL DNNAME
 	{
 		if (!strcasecmp($1, "automountMapName") ||
 		    !strcasecmp($1, "nisMapName")) {
-			strcpy(errstr, $1);
-			strcat(errstr, "=");
-			strcat(errstr, $3);
-			master_notify(errstr);
+			errlen = snprintf(errstr, MAX_ERR_LEN, "%s=%s", $1, $3);
+			if (errlen < MAX_ERR_LEN)
+				master_notify(errstr);
+			else
+				master_notify("error string too long");
 			YYABORT;
 		}
 		strcpy($$, $1);
@@ -579,10 +584,11 @@ dnattr: DNATTR EQUAL DNNAME
 	{
 		if (!strcasecmp($1, "automountMapName") ||
 		    !strcasecmp($1, "nisMapName")) {
-			strcpy(errstr, $1);
-			strcat(errstr, "=");
-			strcat(errstr, $3);
-			master_notify(errstr);
+			errlen = snprintf(errstr, MAX_ERR_LEN, "%s=%s", $1, $3);
+			if (errlen < MAX_ERR_LEN)
+				master_notify(errstr);
+			else
+				master_notify("error string too long");
 			YYABORT;
 		}
 		strcpy($$, $1);
