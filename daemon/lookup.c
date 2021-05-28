@@ -1379,6 +1379,7 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 		if (!key || strchr(key, '*')) {
 			if (key)
 				free(key);
+			me = cache_enumerate(mc, me);
 			continue;
 		}
 
@@ -1386,6 +1387,7 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 		if (!path) {
 			warn(ap->logopt, "can't malloc storage for path");
 			free(key);
+			me = cache_enumerate(mc, me);
 			continue;
 		}
 
@@ -1413,9 +1415,10 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 		}
 		if (!valid &&
 		    is_mounted(path, MNTS_REAL)) {
-			debug(ap->logopt, "prune posponed, %s mounted", path);
+			debug(ap->logopt, "prune postponed, %s mounted", path);
 			free(key);
 			free(path);
+			me = cache_enumerate(mc, me);
 			continue;
 		}
 		if (valid)
