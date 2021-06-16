@@ -1616,7 +1616,7 @@ static int tree_mapent_traverse_subtree(struct tree_node *n, tree_work_fn_t work
 {
 	struct traverse_subtree_context *ctxt = ptr;
 	struct mapent *oe = MAPENT(n);
-	int ret = 1;
+	int ret = -1;
 
 	if (n->left) {
 		ret = tree_mapent_traverse_subtree(n->left, work, ctxt);

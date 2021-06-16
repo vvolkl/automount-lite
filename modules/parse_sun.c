@@ -1181,7 +1181,7 @@ static int mount_subtree(struct autofs_point *ap, struct mapent_cache *mc,
 		 * offsets to be mounted.
 		 */
 		rv = sun_mount(ap, name, name, namelen, loc, loclen, options, ctxt);
-		if (rv == 0) {
+		if (rv <= 0) {
 			ret = tree_mapent_mount_offsets(me, 1);
 			if (!ret) {
 				tree_mapent_cleanup_offsets(me);
