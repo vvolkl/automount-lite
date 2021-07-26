@@ -270,12 +270,8 @@ int alarm_start_handler(void)
 	status = pthread_attr_init(pattrs);
 	if (status)
 		pattrs = NULL;
-	else {
+	else
 		pthread_attr_setdetachstate(pattrs, PTHREAD_CREATE_DETACHED);
-#ifdef _POSIX_THREAD_ATTR_STACKSIZE
-		pthread_attr_setstacksize(pattrs, PTHREAD_STACK_MIN*4);
-#endif
-	}
 
 	status = pthread_condattr_init(&condattrs);
 	if (status)
