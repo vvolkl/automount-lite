@@ -668,9 +668,16 @@ static int sun_mount(struct autofs_point *ap, const char *root,
 		}
 	}
 
+	what = malloc(loclen + 1);
+	if (!what) {
+		char buf[MAX_ERR_BUF];
+		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+		error(ap->logopt, MODPREFIX "malloc: %s", estr);
+		return 1;
+	}
+
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
 	if (!strcmp(fstype, "nfs") || !strcmp(fstype, "nfs4")) {
-		what = alloca(loclen + 1);
 		memcpy(what, loc, loclen);
 		what[loclen] = '\0';
 
@@ -706,10 +713,10 @@ static int sun_mount(struct autofs_point *ap, const char *root,
 		rv = mount_nfs->mount_mount(ap, root, name, namelen,
 					    what, fstype, options, mount_nfs->context);
 	} else {
-		if (!loclen)
+		if (!loclen) {
+			free(what);
 			what = NULL;
-		else {
-			what = alloca(loclen + 1);
+		} else {
 			if (*loc == ':') {
 				loclen--;
 				memcpy(what, loc + 1, loclen);
@@ -728,6 +735,9 @@ static int sun_mount(struct autofs_point *ap, const char *root,
 		/* Generic mount routine */
 		rv = do_mount(ap, root, name, namelen, what, fstype, options);
 	}
+	if (what)
+		free(what);
+
 	pthread_setcancelstate(cur_state, NULL);
 
 	if (nonstrict && rv)

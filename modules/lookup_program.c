@@ -636,7 +636,14 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 			char *ent = NULL;
 
 			if (me->mapent) {
-				ent = alloca(strlen(me->mapent) + 1);
+				ent = malloc(strlen(me->mapent) + 1);
+				if (!ent) {
+					char buf[MAX_ERR_BUF];
+					char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+					error(ap->logopt, MODPREFIX "malloc: %s", estr);
+					cache_unlock(mc);
+					goto out_free;
+				}
 				strcpy(ent, me->mapent);
 			}
 			cache_unlock(mc);
@@ -644,6 +651,8 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 			ap->entry->current = source;
 			ret = ctxt->parse->parse_mount(ap, name,
 				 name_len, ent, ctxt->parse->context);
+			if (ent)
+				free(ent);
 			goto out_free;
 		} else {
 			if (IS_MM(me) && !IS_MM_ROOT(me)) {

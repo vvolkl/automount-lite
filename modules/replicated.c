@@ -1041,25 +1041,18 @@ done:
 	return ret;
 }
 
-static int add_path(struct host *hosts, const char *path, int len)
+static int add_path(struct host *hosts, const char *path)
 {
 	struct host *this;
-	char *tmp, *tmp2;
-
-	tmp = alloca(len + 1);
-	if (!tmp)
-		return 0;
-
-	strncpy(tmp, path, len);
-	tmp[len] = '\0';
+	char *tmp;
 
 	this = hosts;
 	while (this) {
 		if (!this->path) {
-			tmp2 = strdup(tmp);
-			if (!tmp2)
+			tmp = strdup(path);
+			if (!tmp)
 				return 0;
-			this->path = tmp2;
+			this->path = tmp;
 		}
 		this = this->next;
 	}
@@ -1188,7 +1181,7 @@ int parse_location(unsigned logopt, struct host **hosts,
 						}
 					}
 
-					if (!add_path(*hosts, path, strlen(path))) {
+					if (!add_path(*hosts, path)) {
 						free_host_list(hosts);
 						free(str);
 						return 0;

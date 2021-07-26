@@ -254,7 +254,7 @@ int yp_all_master_callback(int status, char *ypkey, int ypkeylen,
 
 	len = ypkeylen + 1 + vallen + 2;
 
-	buffer = alloca(len);
+	buffer = malloc(len);
 	if (!buffer) {
 		error(logopt, MODPREFIX "could not malloc parse buffer");
 		return 0;
@@ -266,6 +266,8 @@ int yp_all_master_callback(int status, char *ypkey, int ypkeylen,
 	strcat(buffer, val);
 
 	master_parse_entry(buffer, timeout, logging, age);
+
+	free(buffer);
 
 	return 0;
 }
@@ -368,7 +370,12 @@ int yp_all_callback(int status, char *ypkey, int ypkeylen,
 		return 0;
 	}
 
-	mapent = alloca(vallen + 1);
+	mapent = malloc(vallen + 1);
+	if (!mapent) {
+		error(logopt, MODPREFIX "could not malloc mapent buffer");
+		free(key);
+		return 0;
+	}
 	strncpy(mapent, val, vallen);
 	*(mapent + vallen) = '\0';
 
@@ -377,6 +384,7 @@ int yp_all_callback(int status, char *ypkey, int ypkeylen,
 	cache_unlock(mc);
 
 	free(key);
+	free(mapent);
 
 	if (ret == CHE_FAIL)
 		return -1;
@@ -904,7 +912,14 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 		}
 		if (me && (me->source == source || *me->key == '/')) {
 			mapent_len = strlen(me->mapent);
-			mapent = alloca(mapent_len + 1);
+			mapent = malloc(mapent_len + 1);
+			if (!mapent) {
+				char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+				error(ap->logopt, MODPREFIX "malloc: %s", estr);
+				cache_unlock(mc);
+				free(lkp_key);
+				return NSS_STATUS_TRYAGAIN;
+			}
 			strcpy(mapent, me->mapent);
 		}
 	}
@@ -929,6 +944,7 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 
 	ret = ctxt->parse->parse_mount(ap, key, key_len,
 				       mapent, ctxt->parse->context);
+	free(mapent);
 	if (ret) {
 		/* Don't update negative cache when re-connecting */
 		if (ap->flags & MOUNT_FLAG_REMOUNT)
