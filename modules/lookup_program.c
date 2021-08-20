@@ -468,6 +468,11 @@ static int match_key(struct autofs_point *ap,
 
 	if (!is_amd_format) {
 		lkp_key = strdup(name);
+		if (!lkp_key) {
+			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+			error(ap->logopt, MODPREFIX "malloc: %s", estr);
+			return NSS_STATUS_UNAVAIL;
+		}
 		lkp_len = name_len;
 	} else {
 		size_t len;
