@@ -238,10 +238,19 @@ int umount_autofs_indirect(struct autofs_point *ap, const char *root)
 	int rv, retries;
 	unsigned int unused;
 
-	if (root)
+	if (root) {
+		if (strlen(root) > PATH_MAX) {
+			error(ap->logopt, "mountpoint path too long");
+			return 1;
+		}
 		strcpy(mountpoint, root);
-	else
+	} else {
+		if (ap->len > PATH_MAX) {
+			error(ap->logopt, "mountpoint path too long");
+			return 1;
+		}
 		strcpy(mountpoint, ap->path);
+	}
 
 	/* If we are trying to shutdown make sure we can umount */
 	rv = ops->askumount(ap->logopt, ap->ioctlfd, &unused);
