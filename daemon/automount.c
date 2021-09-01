@@ -1716,7 +1716,6 @@ void handle_mounts_startup_cond_destroy(void *arg)
 static void handle_mounts_cleanup(void *arg)
 {
 	struct autofs_point *ap;
-	char path[PATH_MAX + 1];
 	char buf[MAX_ERR_BUF];
 	unsigned int clean = 0, submount, logopt;
 	unsigned int pending = 0;
@@ -1726,7 +1725,6 @@ static void handle_mounts_cleanup(void *arg)
 	logopt = ap->logopt;
 	submount = ap->submount;
 
-	strcpy(path, ap->path);
 	if (!submount && strcmp(ap->path, "/-") &&
 	    ap->flags & MOUNT_FLAG_DIR_CREATED)
 		clean = 1;
@@ -1751,8 +1749,8 @@ static void handle_mounts_cleanup(void *arg)
 	/* Don't signal the handler if we have already done so */
 	if (!list_empty(&master_list->completed))
 		pending = 1;
-	master_remove_mapent(ap->entry);
-	master_source_unlock(ap->entry);
+
+	info(logopt, "shut down path %s", ap->path);
 
 	destroy_logpri_fifo(ap);
 
@@ -1768,14 +1766,15 @@ static void handle_mounts_cleanup(void *arg)
 	}
 
 	if (clean) {
-		if (rmdir(path) == -1) {
+		if (rmdir(ap->path) == -1) {
 			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 			warn(logopt, "failed to remove dir %s: %s",
-			     path, estr);
+			     ap->path, estr);
 		}
 	}
 
-	info(logopt, "shut down path %s", path);
+	master_remove_mapent(ap->entry);
+	master_source_unlock(ap->entry);
 
 	/*
 	 * If we are not a submount send a signal to the signal handler
