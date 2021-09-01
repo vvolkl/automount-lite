@@ -241,15 +241,19 @@ int mkdir_path(const char *path, mode_t mode)
 int rmdir_path(struct autofs_point *ap, const char *path, dev_t dev)
 {
 	int len = strlen(path);
-	char buf[PATH_MAX];
+	char buf[PATH_MAX + 1];
 	char *cp;
 	int first = 1;
 	struct stat st;
 	struct statfs fs;
 
+	if (len > PATH_MAX) {
+		error(ap->logopt, "path longer than maximum length");
+		return -1;
+	}
 	strcpy(buf, path);
-	cp = buf + len;
 
+	cp = buf + len;
 	do {
 		*cp = '\0';
 
