@@ -1039,13 +1039,18 @@ int handle_packet_expire_direct(struct autofs_point *ap, autofs_packet_expire_di
 		map = map->next;
 	}
 
-	if (!me) {
+	if (!me || me->len >= PATH_MAX) {
 		/*
 		 * Shouldn't happen as we have been sent this following
 		 * successful thread creation and lookup.
 		 */
-		crit(ap->logopt, "can't find map entry for (%lu,%lu)",
-		    (unsigned long) pkt->dev, (unsigned long) pkt->ino);
+		if (!me)
+			crit(ap->logopt, "can't find map entry for (%lu,%lu)",
+			    (unsigned long) pkt->dev, (unsigned long) pkt->ino);
+		else {
+			cache_unlock(mc);
+			crit(ap->logopt, "lookup key is too long");
+		}
 		master_source_unlock(ap->entry);
 		pthread_setcancelstate(state, NULL);
 		return 1;
@@ -1091,7 +1096,6 @@ int handle_packet_expire_direct(struct autofs_point *ap, autofs_packet_expire_di
 	mt->ap = ap;
 	mt->ioctlfd = me->ioctlfd;
 	mt->mc = mc;
-	/* TODO: check length here */
 	strcpy(mt->name, me->key);
 	mt->dev = me->dev;
 	mt->type = NFY_EXPIRE;
