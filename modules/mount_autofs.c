@@ -50,8 +50,8 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 {
 	struct startup_cond suc;
 	pthread_t thid;
-	char realpath[PATH_MAX];
-	char mountpoint[PATH_MAX];
+	char realpath[PATH_MAX + 1];
+	char mountpoint[PATH_MAX + 1];
 	const char **argv;
 	int argc, status;
 	int nobind = ap->flags & MOUNT_FLAG_NOBIND;
@@ -68,32 +68,53 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	struct mnt_list *mnt;
 	char buf[MAX_ERR_BUF];
 	char *options, *p;
-	int len, ret;
+	int err, ret;
 	int hosts = 0;
 
 	/* Root offset of multi-mount */
-	len = strlen(root);
-	if (root[len - 1] == '/') {
-		strcpy(realpath, ap->path);
-		strcat(realpath, "/");
-		strcat(realpath, name);
-		len--;
-		strncpy(mountpoint, root, len);
-		mountpoint[len] = '\0';
+	if (root[strlen(root) - 1] == '/') {
+		err = snprintf(realpath, PATH_MAX + 1, "%s/%s", ap->path, name);
+		if (err > PATH_MAX) {
+			error(ap->logopt, MODPREFIX "string too long for realpath");
+			return 1;
+		}
+		err = snprintf(mountpoint, PATH_MAX + 1, "%s", root);
+		if (err > PATH_MAX) {
+			error(ap->logopt, MODPREFIX "string too long for mountpoint");
+			return 1;
+		}
+		mountpoint[err - 1] = 0;
 	} else if (*name == '/') {
 		if (ap->flags & MOUNT_FLAG_REMOUNT) {
-			strcpy(mountpoint, name);
-			strcpy(realpath, name);
+			err = snprintf(mountpoint, PATH_MAX + 1, "%s", name);
+			if (err > PATH_MAX) {
+				error(ap->logopt, MODPREFIX "string too long for mountpoint");
+				return 1;
+			}
+			err = snprintf(realpath, PATH_MAX + 1, "%s", name);
+			if (err > PATH_MAX) {
+				error(ap->logopt, MODPREFIX "string too long for realpath");
+				return 1;
+			}
 		} else {
-			strcpy(mountpoint, root);
-			strcpy(realpath, name);
+			err = snprintf(mountpoint, PATH_MAX + 1, "%s", root);
+			if (err > PATH_MAX) {
+				error(ap->logopt, MODPREFIX "string too long for mountpoint");
+				return 1;
+			}
+			err = snprintf(realpath, PATH_MAX + 1, "%s", name);
+			if (err > PATH_MAX) {
+				error(ap->logopt, MODPREFIX "string too long for realpath");
+				return 1;
+			}
 		}
 	} else {
-		strcpy(mountpoint, root);
-		strcat(mountpoint, "/");
+		err = snprintf(mountpoint, PATH_MAX + 1, "%s/%s", root, name);
+		if (err > PATH_MAX) {
+			error(ap->logopt, MODPREFIX "string too long for mountpoint");
+			return 1;
+		}
 		strcpy(realpath, mountpoint);
-		strcat(mountpoint, name);
-		strcat(realpath, name);
 	}
 
 	options = NULL;
