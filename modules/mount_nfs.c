@@ -178,18 +178,20 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 						port = 0;
 				} else if (_strncmp("proto=udp", cp, o_len) == 0 ||
 					   _strncmp("udp", cp, o_len) == 0) {
-					vers &= ~TCP_SUPPORTED;
+					vers &= ~TCP_REQUESTED;
+					vers |= UDP_REQUESTED;
 				} else if (_strncmp("proto=udp6", cp, o_len) == 0 ||
 					   _strncmp("udp6", cp, o_len) == 0) {
-					vers &= ~TCP_SUPPORTED;
-					vers |= UDP6_REQUESTED;
+					vers &= ~(TCP_REQUESTED|TCP6_REQUESTED);
+					vers |= (UDP_REQUESTED|UDP6_REQUESTED);
 				} else if (_strncmp("proto=tcp", cp, o_len) == 0 ||
 					   _strncmp("tcp", cp, o_len) == 0) {
-					vers &= ~UDP_SUPPORTED;
+					vers &= ~UDP_REQUESTED;
+					vers |= TCP_REQUESTED;
 				} else if (_strncmp("proto=tcp6", cp, o_len) == 0 ||
 					   _strncmp("tcp6", cp, o_len) == 0) {
-					vers &= ~UDP_SUPPORTED;
-					vers |= TCP6_REQUESTED;
+					vers &= ~(UDP_REQUESTED|UDP6_REQUESTED);
+					vers |= TCP_REQUESTED|TCP6_REQUESTED;
 				}
 				/* Check for options that also make sense
 				   with bind mounts */
@@ -246,7 +248,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	    mount_default_proto == 4 &&
 	    (vers & NFS_VERS_MASK) != 0 &&
 	    (vers & NFS4_VERS_MASK) != 0 &&
-	    !(vers & UDP6_REQUESTED)) {
+	    !(vers & (UDP_REQUESTED|UDP6_REQUESTED))) {
 		unsigned int v4_probe_ok = 0;
 		struct host *tmp = new_host(hosts->name, 0,
 					    hosts->addr, hosts->addr_len,
