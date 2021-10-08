@@ -291,7 +291,7 @@ static unsigned int get_nfs_info(unsigned logopt, struct host *host,
 
 	rpc_info->proto = proto;
 	if (port < 0) {
-		if (version & NFS4_REQUESTED)
+		if ((version & NFS4_REQUESTED) && (version & TCP_REQUESTED))
 			rpc_info->port = NFS_PORT;
 		else
 			port = 0;
