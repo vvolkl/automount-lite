@@ -1,4 +1,4 @@
-
+19/10/2021 autofs-5.1.8
 - add xdr_exports().
 - remove mount.x and rpcgen dependencies.
 - dont use realloc in host exports list processing.

@@ -22,7 +22,7 @@
 
 Summary: A tool from automatically mounting and umounting filesystems.
 Name: autofs
-%define version 5.1.7
+%define version 5.1.8
 %define release 1
 Version: %{version}
 Release: %{release}
@@ -99,7 +99,7 @@ LDFLAGS="-Wl,-z,now" \
 ./configure --libdir=%{_libdir} \
 	--disable-mount-locking \
 	--enable-ignore-busy \
-	--enable-forced-shutdown \
+	--enable-force-shutdown \
 	--without-hesiod \
 	%{?systemd_configure_arg:} \
 	%{?libtirpc_configure_arg:} \
@@ -216,6 +216,9 @@ fi
 %dir /etc/auto.master.d
 
 %changelog
+* Tue Oct 19 2021 Ian Kent <raven@themaw.net>
+- Update package to version 5.1.8.
+
 * Mon Jan 25 2021 Ian Kent <raven@themaw.net>
 - Update package to version 5.1.7.
 
