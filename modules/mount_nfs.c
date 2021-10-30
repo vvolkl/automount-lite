@@ -92,7 +92,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	mount_default_proto = defaults_get_mount_nfs_default_proto();
 	vers = NFS_VERS_DEFAULT | NFS_PROTO_DEFAULT;
 	if (strcmp(fstype, "nfs4") == 0)
-		vers = NFS4_VERS_DEFAULT | TCP_SUPPORTED;
+		vers = NFS4_VERS_DEFAULT | TCP_SUPPORTED | NFS4_ONLY_REQUESTED;
 	else if (mount_default_proto == 4)
 		vers = vers | NFS4_VERS_DEFAULT;
 
@@ -157,15 +157,16 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 			} else {
 				/* Is any version of NFSv4 in the options */
 				if (_strncmp("vers=4", cp, 6) == 0 ||
-				    _strncmp("nfsvers=4", cp, 9) == 0)
-					vers = NFS4_VERS_MASK | TCP_SUPPORTED;
-				else if (_strncmp("vers=3", cp, o_len) == 0 ||
+				    _strncmp("nfsvers=4", cp, 9) == 0) {
+					vers &= ~(NFS_VERS_MASK);
+					vers |= NFS4_VERS_MASK | TCP_SUPPORTED | NFS4_ONLY_REQUESTED;
+				} else if (_strncmp("vers=3", cp, o_len) == 0 ||
 					 _strncmp("nfsvers=3", cp, o_len) == 0) {
-					vers &= ~(NFS4_VERS_MASK | NFS_VERS_MASK);
+					vers &= ~(NFS4_VERS_MASK | NFS_VERS_MASK | NFS4_ONLY_REQUESTED);
 					vers |= NFS3_REQUESTED;
 				} else if (_strncmp("vers=2", cp, o_len) == 0 ||
 					 _strncmp("nfsvers=2", cp, o_len) == 0) {
-					vers &= ~(NFS4_VERS_MASK | NFS_VERS_MASK);
+					vers &= ~(NFS4_VERS_MASK | NFS_VERS_MASK | NFS4_ONLY_REQUESTED);
 					vers |= NFS2_REQUESTED;
 				} else if (strstr(cp, "port=") == cp &&
 					 o_len - 5 < 25) {

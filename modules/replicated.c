@@ -291,7 +291,7 @@ static unsigned int get_nfs_info(unsigned logopt, struct host *host,
 
 	rpc_info->proto = proto;
 	if (port < 0) {
-		if ((version & NFS4_REQUESTED) && (version & TCP_REQUESTED))
+		if (version & NFS4_REQUESTED && (version & NFS4_ONLY_REQUESTED))
 			rpc_info->port = NFS_PORT;
 		else
 			port = 0;
@@ -525,7 +525,7 @@ static int get_vers_and_cost(unsigned logopt, struct host *host,
 {
 	struct conn_info pm_info, rpc_info;
 	time_t timeout = RPC_TIMEOUT;
-	unsigned int supported, vers = (NFS_VERS_MASK | NFS4_VERS_MASK);
+	unsigned int supported, vers = (NFS_VERS_MASK | NFS4_VERS_MASK | NFS4_ONLY_REQUESTED);
 	int ret = 0;
 
 	if (!check_address_proto(logopt, host, version))
