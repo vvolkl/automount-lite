@@ -683,13 +683,18 @@ int handle_packet_expire_indirect(struct autofs_point *ap, autofs_packet_expire_
 	return 0;
 }
 
-static void mount_send_fail(void *arg)
+static void mount_send_status(void *arg)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
 	struct pending_args *mt = arg;
 	struct autofs_point *ap = mt->ap;
-	ops->send_fail(ap->logopt,
-		       ap->ioctlfd, mt->wait_queue_token, -ENOENT);
+
+	if (mt->status)
+		ops->send_fail(ap->logopt, ap->ioctlfd,
+			       mt->wait_queue_token, mt->status);
+	else
+		ops->send_ready(ap->logopt,
+				ap->ioctlfd, mt->wait_queue_token);
 }
 
 static void *do_mount_indirect(void *arg)
@@ -718,7 +723,8 @@ static void *do_mount_indirect(void *arg)
 
 	pending_mutex_unlock(args);
 
-	pthread_cleanup_push(mount_send_fail, &mt);
+	mt.status = 0;
+	pthread_cleanup_push(mount_send_status, &mt);
 
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &state);
 
@@ -731,9 +737,7 @@ static void *do_mount_indirect(void *arg)
 	len = ncat_path(buf, sizeof(buf), ap->path, mt.name, mt.len);
 	if (!len) {
 		crit(ap->logopt, "path to be mounted is to long");
-		ops->send_fail(ap->logopt,
-			       ap->ioctlfd, mt.wait_queue_token,
-			      -ENAMETOOLONG);
+		mt.status = -ENAMETOOLONG;
 		pthread_setcancelstate(state, NULL);
 		pthread_exit(NULL);
 	}
@@ -742,7 +746,6 @@ static void *do_mount_indirect(void *arg)
 	if (status != -1 && !(S_ISDIR(st.st_mode) && st.st_dev == mt.dev)) {
 		error(ap->logopt,
 		      "indirect trigger not valid or already mounted %s", buf);
-		ops->send_ready(ap->logopt, ap->ioctlfd, mt.wait_queue_token);
 		pthread_setcancelstate(state, NULL);
 		pthread_exit(NULL);
 	}

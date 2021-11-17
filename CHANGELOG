@@ -1,3 +1,5 @@
+- fix kernel mount status notification.
+
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
 - remove mount.x and rpcgen dependencies.
