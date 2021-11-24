@@ -94,7 +94,7 @@ struct startup_cond suc = {
 pthread_key_t key_thread_stdenv_vars;
 pthread_key_t key_thread_attempt_id = (pthread_key_t) 0L;
 
-#define MAX_OPEN_FILES		10240
+#define MAX_OPEN_FILES		20480
 
 int aquire_flag_file(void);
 void release_flag_file(void);
@@ -2486,9 +2486,10 @@ int main(int argc, char *argv[])
 	}
 
 	res = getrlimit(RLIMIT_NOFILE, &rlim);
-	if (res == -1 || rlim.rlim_max <= MAX_OPEN_FILES)  {
+	if (res == -1 || rlim.rlim_cur <= MAX_OPEN_FILES)  {
 		rlim.rlim_cur = MAX_OPEN_FILES;
-		rlim.rlim_max = MAX_OPEN_FILES;
+		if (rlim.rlim_max < MAX_OPEN_FILES)
+			rlim.rlim_max = MAX_OPEN_FILES;
 	}
 	res = setrlimit(RLIMIT_NOFILE, &rlim);
 	if (res)
