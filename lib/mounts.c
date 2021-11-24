@@ -2169,11 +2169,8 @@ struct mnt_list *get_mnt_list(const char *path, int include)
 		return NULL;
 
 	tab = open_fopen_r(_PROC_MOUNTS);
-	if (!tab) {
-		char *estr = strerror_r(errno, buf, PATH_MAX - 1);
-		logerr("fopen: %s", estr);
+	if (!tab)
 		return NULL;
-	}
 
 	while ((mnt = local_getmntent_r(tab, &mnt_wrk, buf, PATH_MAX * 3))) {
 		len = strlen(mnt->mnt_dir);
@@ -2280,11 +2277,8 @@ static int table_is_mounted(const char *mp, unsigned int type)
 		return 0;
 
 	tab = open_fopen_r(_PROC_MOUNTS);
-	if (!tab) {
-		char *estr = strerror_r(errno, buf, PATH_MAX - 1);
-		logerr("fopen: %s", estr);
+	if (!tab)
 		return 0;
-	}
 
 	while ((mnt = local_getmntent_r(tab, &mnt_wrk, buf, PATH_MAX * 3))) {
 		size_t len = strlen(mnt->mnt_dir);

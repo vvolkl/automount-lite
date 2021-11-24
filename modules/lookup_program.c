@@ -214,11 +214,8 @@ static char *lookup_one(struct autofs_point *ap,
 	 * want to send stderr to the syslog, and we don't use spawnl()
 	 * because we need the pipe hooks
 	 */
-	if (open_pipe(pipefd)) {
-		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
-		logerr(MODPREFIX "pipe: %s", estr);
+	if (open_pipe(pipefd))
 		goto out_error;
-	}
 	if (open_pipe(epipefd)) {
 		close(pipefd[0]);
 		close(pipefd[1]);

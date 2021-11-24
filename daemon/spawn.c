@@ -94,7 +94,12 @@ int open_fd(const char *path, int flags)
 #endif
 	fd = open(path, flags);
 	if (fd == -1) {
+		char buf[MAX_ERR_BUF];
+		char *estr;
+
 		open_mutex_unlock();
+		estr = strerror_r(errno, buf, sizeof(buf));
+		logerr("failed to open file: %s", estr);
 		return -1;
 	}
 	check_cloexec(fd);
@@ -113,7 +118,12 @@ int open_fd_mode(const char *path, int flags, int mode)
 #endif
 	fd = open(path, flags, mode);
 	if (fd == -1) {
+		char buf[MAX_ERR_BUF];
+		char *estr;
+
 		open_mutex_unlock();
+		estr = strerror_r(errno, buf, sizeof(buf));
+		logerr("failed to open file: %s", estr);
 		return -1;
 	}
 	check_cloexec(fd);
@@ -123,6 +133,8 @@ int open_fd_mode(const char *path, int flags, int mode)
 
 int open_pipe(int pipefd[2])
 {
+	char buf[MAX_ERR_BUF];
+	char *estr;
 	int ret;
 
 	open_mutex_lock();
@@ -145,6 +157,8 @@ done:
 	return 0;
 err:
 	open_mutex_unlock();
+	estr = strerror_r(errno, buf, sizeof(buf));
+	logerr("failed to open pipe: %s", estr);
 	return -1;
 }
 
@@ -159,7 +173,12 @@ int open_sock(int domain, int type, int protocol)
 #endif
 	fd = socket(domain, type, protocol);
 	if (fd == -1) {
+		char buf[MAX_ERR_BUF];
+		char *estr;
+
 		open_mutex_unlock();
+		estr = strerror_r(errno, buf, sizeof(buf));
+		logerr("failed to open socket: %s", estr);
 		return -1;
 	}
 	check_cloexec(fd);
@@ -184,7 +203,12 @@ FILE *open_fopen_r(const char *path)
 #endif
 	f = fopen(path, "r");
 	if (f == NULL) {
+		char buf[MAX_ERR_BUF];
+		char *estr;
+
 		open_mutex_unlock();
+		estr = strerror_r(errno, buf, sizeof(buf));
+		logerr("failed to open file: %s", estr);
 		return NULL;
 	}
 	check_cloexec(fileno(f));
@@ -209,7 +233,12 @@ FILE *open_setmntent_r(const char *table)
 #endif
 	tab = fopen(table, "r");
 	if (tab == NULL) {
+		char buf[MAX_ERR_BUF];
+		char *estr;
+
 		open_mutex_unlock();
+		estr = strerror_r(errno, buf, sizeof(buf));
+		logerr("failed to open mount table: %s", estr);
 		return NULL;
 	}
 	check_cloexec(fileno(tab));

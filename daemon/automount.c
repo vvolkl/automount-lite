@@ -868,9 +868,6 @@ static int create_logpri_fifo(struct autofs_point *ap)
 
 	fd = open_fd(fifo_name, O_RDWR|O_NONBLOCK);
 	if (fd < 0) {
-		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
-		crit(ap->logopt,
-		     "Failed to open %s: %s", fifo_name, estr);
 		unlink(fifo_name);
 		ret = -1;
 		goto out_free;
