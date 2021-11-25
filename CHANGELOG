@@ -5,6 +5,7 @@
 - fix root offset error handling.
 - fix fix root offset error handling.
 - fix nonstrict fail handling of last offset mount.
+- dont fail on duplicate offset entry tree add.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

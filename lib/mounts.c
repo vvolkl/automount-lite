@@ -1341,7 +1341,7 @@ static struct tree_node *tree_add_node(struct tree_node *root, void *ptr)
 	}
 
 	if (!eq)
-		error(LOGOPT_ANY, "cannot add duplicate entry to tree");
+		return p;
 	else {
 		if (eq < 0)
 			return tree_add_left(p, ptr);
@@ -1515,8 +1515,10 @@ static int tree_host_cmp(struct tree_node *n, void *ptr)
 	int eq;
 
 	eq = strcmp(exp->dir, n_exp->dir);
-	if (!eq)
+	if (!eq) {
+		error(LOGOPT_ANY, "duplicate entry %s ignored", exp->dir);
 		return 0;
+	}
 	return (exp_len < n_exp_len) ? -1 : 1;
 }
 
