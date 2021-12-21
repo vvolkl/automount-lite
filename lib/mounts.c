@@ -1940,7 +1940,7 @@ static int tree_mapent_mount_offsets_work(struct tree_node *n, void *ptr)
 			tree_mapent_mount_offsets(oe, !ctxt->strict);
 	}
 
-	return ret;
+	return (ctxt->strict ? ret : 1);
 }
 
 int tree_mapent_mount_offsets(struct mapent *oe, int nonstrict)
