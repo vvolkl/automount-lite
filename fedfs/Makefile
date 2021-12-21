@@ -23,12 +23,12 @@ LDFLAGS += -rdynamic
 all: mount.fedfs fedfs-map-nfs4
 
 mount.fedfs: $(mount_fedfs_OBJ) $(fedfs-getsrvinfo_OBJ) $(HDRS)
-	$(CC) -o mount.fedfs \
+	$(CC) $(DAEMON_LDFLAGS) -o mount.fedfs \
 	       $(mount_fedfs_OBJ) $(fedfs-getsrvinfo_OBJ) \
 	       $(LDFLAGS) $(LIBRESOLV) $(LIBS)
 
 fedfs-map-nfs4: $(fedfs-map-nfs4_OBJ) $(fedfs-getsrvinfo_OBJ) $(HDRS)
-	$(CC) -o fedfs-map-nfs4 \
+	$(CC) $(DAEMON_LDFLAGS) -o fedfs-map-nfs4 \
 	       $(fedfs-map-nfs4_OBJ) $(fedfs-getsrvinfo_OBJ) \
 	       $(LDFLAGS) $(LIBRESOLV) $(LIBS)
 
