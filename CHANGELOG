@@ -2,6 +2,7 @@
 - fix fedfs build flags.
 - fix set open file limit.
 - improve descriptor open error reporting.
+- fix root offset error handling.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

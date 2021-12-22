@@ -1142,6 +1142,9 @@ static int mount_subtree(struct autofs_point *ap, struct mapent_cache *mc,
 		if (!len) {
 			warn(ap->logopt, "path loo long");
 			cache_unlock(mc);
+			cache_writelock(mc);
+			tree_mapent_delete_offsets(mc, name);
+			cache_unlock(mc);
 			return 1;
 		}
 		key[len] = '/';
@@ -1186,6 +1189,9 @@ static int mount_subtree(struct autofs_point *ap, struct mapent_cache *mc,
 				cache_unlock(mc);
 				error(ap->logopt, MODPREFIX
 					 "failed to mount offset triggers");
+				cache_writelock(mc);
+				tree_mapent_delete_offsets(mc, name);
+				cache_unlock(mc);
 				return 1;
 			}
 		}

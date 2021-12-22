@@ -1167,6 +1167,7 @@ static void *do_mount_direct(void *arg)
 	struct ioctl_ops *ops = get_ioctl_ops();
 	struct pending_args *args, mt;
 	struct autofs_point *ap;
+	struct mapent *me;
 	struct stat st;
 	int status, state;
 
@@ -1230,7 +1231,6 @@ static void *do_mount_direct(void *arg)
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &state);
 	if (status) {
 		struct mnt_list *sbmnt;
-		struct mapent *me;
 		struct statfs fs;
 		unsigned int close_fd = 0;
 		unsigned int flags = MNTS_DIRECT|MNTS_MOUNTED;
@@ -1271,6 +1271,14 @@ static void *do_mount_direct(void *arg)
 			       mt.ioctlfd, mt.wait_queue_token, -ENOENT);
 		ops->close(ap->logopt, mt.ioctlfd);
 		info(ap->logopt, "failed to mount %s", mt.name);
+
+		/* If this is a multi-mount subtree mount failure
+		 * ensure the tree continues to expire.
+		 */
+		me = cache_lookup_distinct(mt.mc, mt.name);
+		if (me && IS_MM(me) && !IS_MM_ROOT(me))
+			conditional_alarm_add(ap, ap->exp_runfreq);
+		cache_unlock(mt.mc);
 	}
 	pthread_setcancelstate(state, NULL);
 
