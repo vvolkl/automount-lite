@@ -48,6 +48,16 @@
 #endif
 #endif
 
+#ifndef __SWORD_TYPE
+#if __WORDSIZE == 32
+# define __SWORD_TYPE	int
+#elif __WORDSIZE == 64
+# define __SWORD_TYPE	long int
+#else
+#error
+#endif
+#endif
+
 const char *program;		/* Initialized with argv[0] */
 const char *version = VERSION_STRING;	/* Program version */
 const char *libdir = AUTOFS_LIB_DIR;	/* Location of library modules */

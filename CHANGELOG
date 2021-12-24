@@ -23,6 +23,7 @@
 - musl: avoid internal stat.h definitions.
 - musl: add missing include to hash.h for _WORDSIZE.
 - musl: add missing include to log.h for pid_t.
+- musl: define _SWORD_TYPE.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
