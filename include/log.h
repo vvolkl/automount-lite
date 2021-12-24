@@ -17,6 +17,8 @@
 #ifndef LOG_H
 #define LOG_H
 
+#include <unistd.h>
+
 /* Define logging functions */
 
 #define LOGOPT_NONE	0x0000
