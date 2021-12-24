@@ -24,6 +24,10 @@
 #include <netdb.h>
 #include "list.h"
 
+#ifndef _PATH_NSSWITCH_CONF
+#define _PATH_NSSWITCH_CONF "/dev/null"
+#endif
+
 #define NSSWITCH_FILE _PATH_NSSWITCH_CONF
 
 enum nsswitch_status {
