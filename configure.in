@@ -262,7 +262,7 @@ if test -z "$HAVE_HESIOD" -o "$HAVE_HESIOD" != "0"
 then
 	HAVE_HESIOD=0
 	AF_CHECK_LIBHESIOD()
-	if test "$HAVE_HESIOD" == "1"; then
+	if test "$HAVE_HESIOD" = "1"; then
 		AC_DEFINE(WITH_HESIOD,1,
 			[Define if using Hesiod as a source of automount maps])
 	fi
@@ -337,11 +337,11 @@ AC_ARG_WITH(sasl,
 		SASL_FLAGS="-I${withval}/include"
 	fi
 )
-if test -z "$HAVE_SASL" -o "$HAVE_SASL" != "0" -a "$HAVE_LIBXML" == "1"
+if test -z "$HAVE_SASL" -o "$HAVE_SASL" != "0" -a "$HAVE_LIBXML" = "1"
 then
 	HAVE_SASL=0
 	AC_CHECK_LIB(sasl2, sasl_client_start, HAVE_SASL=1 LIBSASL="$LIBSASL -lsasl2", , -lsasl2 $LIBS)
-	if test "$HAVE_SASL" == "1"; then
+	if test "$HAVE_SASL" = "1"; then
 		AC_DEFINE(WITH_SASL,1,
 			[Define if using SASL authentication with the LDAP module])
 	fi
