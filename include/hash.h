@@ -3,6 +3,7 @@
 /* Fast hashing routine for ints,  longs and pointers.
    (C) 2002 Nadia Yvette Chambers, IBM */
 
+#include <linux/stddef.h>
 #include <sys/types.h>
 #include <stdint.h>
 
