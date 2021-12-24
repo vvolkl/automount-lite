@@ -20,6 +20,7 @@
 - fix bashism in configure.
 - musl: fix missing include in hash.h.
 - musl: define fallback dummy NSS config path
+- musl: avoid internal stat.h definitions.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

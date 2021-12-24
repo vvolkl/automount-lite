@@ -247,7 +247,7 @@ static struct lookup_mod *nss_open_lookup(const char *format, int argc, const ch
 				continue;
 			}
 
-			if (st.st_mode & __S_IEXEC)
+			if (st.st_mode & S_IEXEC)
 				type = src_prog;
 			else
 				type = src_file;
@@ -452,7 +452,7 @@ int lookup_reinit(const char *my_mapfmt,
 					continue;
 				}
 
-				if (st.st_mode & __S_IEXEC)
+				if (st.st_mode & S_IEXEC)
 					type = src_prog;
 				else
 					type = src_file;

@@ -397,7 +397,7 @@ static int read_file_source_instance(struct autofs_point *ap, struct map_source 
 		return NSS_STATUS_NOTFOUND;
 	}
 
-	if (st.st_mode & __S_IEXEC)
+	if (st.st_mode & S_IEXEC)
 		type = src_prog;
 	else
 		type = src_file;
@@ -930,7 +930,7 @@ static int lookup_name_file_source_instance(struct autofs_point *ap, struct map_
 		return NSS_STATUS_NOTFOUND;
 	}
 
-	if (st.st_mode & __S_IEXEC)
+	if (st.st_mode & S_IEXEC)
 		type = src_prog;
 	else
 		type = src_file;
@@ -1077,7 +1077,7 @@ static struct map_source *lookup_get_map_source(struct master_mapent *entry)
 	if (!S_ISREG(st.st_mode))
 		return NULL;
 
-	if (st.st_mode & __S_IEXEC)
+	if (st.st_mode & S_IEXEC)
 		type = "program";
 	else
 		type = "file";
