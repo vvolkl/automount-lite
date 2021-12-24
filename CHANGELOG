@@ -21,6 +21,7 @@
 - musl: fix missing include in hash.h.
 - musl: define fallback dummy NSS config path
 - musl: avoid internal stat.h definitions.
+- musl: add missing include to hash.h for _WORDSIZE.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
