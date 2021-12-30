@@ -710,7 +710,7 @@ struct mapent *cache_get_offset_parent(struct mapent_cache *mc, const char *key)
 		*tail = 0;
 
 		tail--;
-		if (tail == parent)
+		if (tail <= parent)
 			break;
 
 		me = cache_lookup_distinct(mc, parent);
