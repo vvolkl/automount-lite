@@ -1195,6 +1195,8 @@ static int rpc_get_exports_proto(struct conn_info *info, struct exportinfo **exp
 				 info->timeout);
 		if (status == RPC_SUCCESS)
 			break;
+		if (status == RPC_SYSTEMERROR)
+			break;
 		if (++vers_entry > 2)
 			break;
 		CLNT_CONTROL(client, CLSET_VERS,

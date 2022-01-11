@@ -7,6 +7,7 @@
 - fix nonstrict fail handling of last offset mount.
 - dont fail on duplicate offset entry tree add.
 - fix loop under run in cache_get_offset_parent().
+- bailout on rpc systemerror.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
