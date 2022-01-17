@@ -1666,16 +1666,26 @@ static int tree_mapent_delete_offset_tree(struct tree_node *root)
 	 */
 	if (MAPENT_ROOT(me) != MAPENT_NODE(me)) {
 		struct tree_node *root = MAPENT_ROOT(me);
+		char *key;
 
-		debug(logopt, "deleting offset key %s", me->key);
+		key = strdup(me->key);
+		if (!key) {
+			char buf[MAX_ERR_BUF];
+			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+			error(logopt, "strdup: %s", estr);
+			return 0;
+		}
+
+		debug(logopt, "deleting offset key %s", key);
 
 		/* cache_delete won't delete an active offset */
 		MAPENT_SET_ROOT(me, NULL);
-		ret = cache_delete(me->mc, me->key);
+		ret = cache_delete(me->mc, key);
 		if (ret != CHE_OK) {
 			MAPENT_SET_ROOT(me, root);
-			warn(logopt, "failed to delete offset %s", me->key);
+			warn(logopt, "failed to delete offset %s", key);
 		}
+		free(key);
 	} else {
 		MAPENT_SET_ROOT(me, NULL);
 		MAPENT_SET_PARENT(me, NULL);
