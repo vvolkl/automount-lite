@@ -564,6 +564,7 @@ int cache_add(struct mapent_cache *mc, struct map_source *ms, const char *key, c
 	me->dev = (dev_t) -1;
 	me->ino = (ino_t) -1;
 	me->flags = 0;
+	me->next = NULL;
 
 	/* 
 	 * We need to add to the end if values exist in order to
@@ -583,7 +584,6 @@ int cache_add(struct mapent_cache *mc, struct map_source *ms, const char *key, c
 
 			existing = next;
 		}
-		me->next = existing->next;
 		existing->next = me;
 	}
 	return CHE_OK;

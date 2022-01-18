@@ -9,6 +9,7 @@
 - fix loop under run in cache_get_offset_parent().
 - bailout on rpc systemerror.
 - fix nfsv4 only mounts should not use rpcbind.
+- simplify cache_add() a little.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
