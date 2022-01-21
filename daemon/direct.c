@@ -1275,6 +1275,7 @@ static void *do_mount_direct(void *arg)
 		/* If this is a multi-mount subtree mount failure
 		 * ensure the tree continues to expire.
 		 */
+		cache_readlock(mt.mc);
 		me = cache_lookup_distinct(mt.mc, mt.name);
 		if (me && IS_MM(me) && !IS_MM_ROOT(me))
 			conditional_alarm_add(ap, ap->exp_runfreq);
