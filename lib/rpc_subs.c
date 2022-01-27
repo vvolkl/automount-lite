@@ -1151,8 +1151,13 @@ bool_t xdr_exports(XDR *xdrs, struct exportinfo **exports)
 
 	export = (char **) exports;
 	while (1) {
-		if (!xdr_pointer(xdrs, export, size, (xdrproc_t) xdr_export))
+		if (!xdr_pointer(xdrs, export, size, (xdrproc_t) xdr_export)) {
+			if (*exports) {
+				rpc_exports_free(*exports);
+				*exports = NULL;
+			}
 			return FALSE;
+		}
 		if (!*export)
 			break;
 		export = (char **) &((struct exportinfo *) *export)->next;

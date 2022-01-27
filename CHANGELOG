@@ -11,6 +11,7 @@
 - fix nfsv4 only mounts should not use rpcbind.
 - simplify cache_add() a little.
 - fix use after free in tree_mapent_delete_offset_tree().
+- fix memory leak in xdr_exports().
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
