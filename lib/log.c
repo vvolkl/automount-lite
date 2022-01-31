@@ -38,6 +38,9 @@ static char *prepare_attempt_prefix(const char *msg)
 	char buffer[ATTEMPT_ID_SIZE + 1];
 	char *prefixed_msg = NULL;
 
+	if (!key_thread_attempt_id)
+		return NULL;
+
 	attempt_id = pthread_getspecific(key_thread_attempt_id);
 	if (attempt_id) {
 		int len = sizeof(buffer) + 1 + strlen(msg) + 1;

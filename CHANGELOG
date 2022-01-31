@@ -12,6 +12,7 @@
 - simplify cache_add() a little.
 - fix use after free in tree_mapent_delete_offset_tree().
 - fix memory leak in xdr_exports().
+- avoid calling pthread_getspecific() with NULL key_thread_attempt_id.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
