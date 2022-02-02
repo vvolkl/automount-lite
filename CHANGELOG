@@ -25,6 +25,7 @@
 - musl: add missing include to log.h for pid_t.
 - musl: define _SWORD_TYPE.
 - add autofs_strerror_r() helper for musl.
+- update configure.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
