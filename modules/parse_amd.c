@@ -425,6 +425,7 @@ static int sel_in_network(struct autofs_point *ap,
 	return ret;
 }
 
+#ifdef HAVE_INNETGR
 static int sel_netgrp(struct autofs_point *ap,
 		      struct selector *s, struct substvar *sv)
 {
@@ -489,6 +490,7 @@ out:
 
 	return ret;
 }
+#endif
 
 static int eval_selector(struct autofs_point *ap,
 			 struct amd_entry *this, struct substvar *sv)
@@ -628,7 +630,12 @@ static int eval_selector(struct autofs_point *ap,
 		switch (s->sel->selector) {
 		case SEL_NETGRP:
 		case SEL_NETGRPD:
+#ifndef HAVE_INNETGR
+			error(logopt, MODPREFIX
+			      "netgroups not available, function innetgr(3) not available");
+#else
 			ret = sel_netgrp(ap, s, sv);
+#endif
 			break;
 
 		default:

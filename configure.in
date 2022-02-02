@@ -169,7 +169,7 @@ AF_CHECK_SSS_LIB(SSS_AUTOFS, libsss_autofs.so)
 AC_SUBST(HAVE_SSS_AUTOFS)
 AC_SUBST(sssldir)
 
-AC_CHECK_FUNCS(pipe2)
+AC_CHECK_FUNCS(pipe2 innetgr)
 
 #
 # Newer mounts have the -s (sloppy) option to ignore unknown options,
