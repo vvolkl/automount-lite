@@ -367,3 +367,13 @@ pid_t log_pidinfo(struct autofs_point *ap, pid_t pid, char *label) {
 
 	return ppid;
 }
+
+#ifndef __GLIBC__
+# undef strerror_r
+char *autofs_strerror_r(int errnum, char *buf, size_t buflen) {
+	int s = strerror_r(errnum, buf, buflen);
+	if (s)
+		return NULL;
+	return buf;
+}
+#endif

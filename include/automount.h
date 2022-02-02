@@ -43,6 +43,11 @@
 
 #define ENABLE_CORES	1
 
+#ifndef __GLIBC__
+# define strerror_r(N,B,S) autofs_strerror_r(N,B,S)
+char *autofs_strerror_r(int errnum, char *buf, size_t buflen);  /* GNU */
+#endif
+
 /* We MUST have the paths to mount(8) and umount(8) */
 #ifndef HAVE_MOUNT
 #error Failed to locate mount(8)!
