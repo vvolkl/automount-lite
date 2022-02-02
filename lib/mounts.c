@@ -2385,11 +2385,17 @@ void set_tsd_user_vars(unsigned int logopt, uid_t uid, gid_t gid)
 
 	/* Try to get passwd info */
 
+	/* sysconf may return -1 with unchanged errno to indicate unlimited
+	 * size, same for the call for _SC_GETGR_R_SIZE_MAX  below
+	 */
+	errno = 0;
 	tmplen = sysconf(_SC_GETPW_R_SIZE_MAX);
-	if (tmplen < 0) {
+	if (tmplen < 0 && errno != 0) {
 		error(logopt, "failed to get buffer size for getpwuid_r");
 		goto free_tsv;
 	}
+	if (tmplen < 0)
+		tmplen = 1024;	/* assume something reasonable */
 
 	pw_tmp = malloc(tmplen + 1);
 	if (!pw_tmp) {
@@ -2422,11 +2428,14 @@ void set_tsd_user_vars(unsigned int logopt, uid_t uid, gid_t gid)
 
 	/* Try to get group info */
 
+	errno = 0;
 	grplen = sysconf(_SC_GETGR_R_SIZE_MAX);
-	if (grplen < 0) {
+	if (grplen < 0 && errno != 0) {
 		error(logopt, "failed to get buffer size for getgrgid_r");
 		goto free_tsv_home;
 	}
+	if (grplen < 0)
+		grplen = 1024;
 
 	gr_tmp = NULL;
 	status = ERANGE;
