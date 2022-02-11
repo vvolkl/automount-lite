@@ -1843,7 +1843,7 @@ static int tree_mapent_umount_offset(struct mapent *oe, void *ptr)
 	 * Check for and umount subtree offsets resulting from
 	 * nonstrict mount fail.
 	 */
-	ret = tree_mapent_umount_offsets(oe, ctxt->strict);
+	ret = tree_mapent_umount_offsets(oe);
 	if (!ret)
 		return 0;
 
@@ -1975,14 +1975,14 @@ static int tree_mapent_umount_offsets_work(struct tree_node *n, void *ptr)
 	return tree_mapent_umount_offset(oe, ptr);
 }
 
-int tree_mapent_umount_offsets(struct mapent *oe, int nonstrict)
+int tree_mapent_umount_offsets(struct mapent *oe)
 {
 	struct tree_node *base = MAPENT_NODE(oe);
 	struct autofs_point *ap = oe->mc->ap;
 	struct traverse_subtree_context ctxt = {
 		.ap = ap,
 		.base = base,
-		.strict = !nonstrict,
+		.strict = 1,
 	};
 	int ret;
 

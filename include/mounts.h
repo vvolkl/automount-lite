@@ -182,7 +182,7 @@ int tree_mapent_add_node(struct mapent_cache *mc, struct tree_node *root, struct
 int tree_mapent_delete_offsets(struct mapent_cache *mc, const char *key);
 void tree_mapent_cleanup_offsets(struct mapent *oe);
 int tree_mapent_mount_offsets(struct mapent *oe, int nonstrict);
-int tree_mapent_umount_offsets(struct mapent *oe, int nonstrict);
+int tree_mapent_umount_offsets(struct mapent *oe);
 int unlink_mount_tree(struct autofs_point *ap, const char *mp);
 void free_mnt_list(struct mnt_list *list);
 int is_mounted(const char *mp, unsigned int type);

@@ -14,6 +14,7 @@
 - fix memory leak in xdr_exports().
 - avoid calling pthread_getspecific() with NULL key_thread_attempt_id.
 - fix sysconf(3) return handling.
+- remove nonstrict parameter from tree_mapent_umount_offsets().
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

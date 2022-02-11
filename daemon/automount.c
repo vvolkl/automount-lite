@@ -558,7 +558,7 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 		struct mapent *tmp;
 		int ret;
 
-		ret = tree_mapent_umount_offsets(me, 1);
+		ret = tree_mapent_umount_offsets(me);
 		if (!ret) {
 			warn(ap->logopt,
 			     "some offset mounts still present under %s", path);
