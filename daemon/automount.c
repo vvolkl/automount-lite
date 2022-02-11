@@ -609,8 +609,7 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 		struct mnt_list *mnt;
 
 		debug(ap->logopt, "unmounting dir = %s", path);
-		if (umount_ent(ap, path) &&
-		    is_mounted(path, MNTS_REAL)) {
+		if (umount_ent(ap, path)) {
 			warn(ap->logopt, "could not umount dir %s", path);
 			left++;
 			goto done;

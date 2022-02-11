@@ -1869,8 +1869,7 @@ static int tree_mapent_umount_offset(struct mapent *oe, void *ptr)
 	 */
 	if (oe->ioctlfd != -1 ||
 	    is_mounted(oe->key, MNTS_REAL)) {
-		if (umount_ent(ap, oe->key) &&
-		    is_mounted(oe->key, MNTS_REAL)) {
+		if (umount_ent(ap, oe->key)) {
 			debug(ap->logopt,
 			      "offset %s has active mount, invalidate",
 			      oe->key);
@@ -2010,8 +2009,7 @@ int tree_mapent_umount_offsets(struct mapent *oe)
 		 */
 		if (is_mounted(mp, MNTS_REAL)) {
 			info(ap->logopt, "unmounting dir = %s", mp);
-			if (umount_ent(ap, mp) &&
-			    is_mounted(mp, MNTS_REAL)) {
+			if (umount_ent(ap, mp)) {
 				if (!tree_mapent_mount_offsets(oe, 1))
 					warn(ap->logopt,
 					     "failed to remount offset triggers");
@@ -2982,6 +2980,7 @@ void set_direct_mount_tree_catatonic(struct autofs_point *ap, struct mapent *me)
 
 int umount_ent(struct autofs_point *ap, const char *path)
 {
+	unsigned int mounted;
 	int rv;
 
 	if (ap->state != ST_SHUTDOWN_FORCE)
@@ -2992,6 +2991,8 @@ int umount_ent(struct autofs_point *ap, const char *path)
 		info(ap->logopt, "forcing umount of %s", path);
 		rv = spawn_umount(ap->logopt, "-l", path, NULL);
 	}
+
+	mounted = is_mounted(path, MNTS_REAL);
 
 	if (rv && (ap->state == ST_SHUTDOWN_FORCE || ap->state == ST_SHUTDOWN)) {
 		/*
@@ -3004,20 +3005,20 @@ int umount_ent(struct autofs_point *ap, const char *path)
 		 * so that we do not try to call rmdir_path on the
 		 * directory.
 		 */
-		if (is_mounted(path, MNTS_REAL)) {
+		if (mounted) {
 			crit(ap->logopt,
 			     "the umount binary reported that %s was "
 			     "unmounted, but there is still something "
 			     "mounted on this path.", path);
-			rv = -1;
+			mounted = -1;
 		}
 	}
 
-	/* On success, check for mounted mount and remove it if found */
-	if (!rv)
+	/* If mount is gone remove it from mounted mounts list. */
+	if (!mounted)
 		mnts_remove_mount(path, MNTS_MOUNTED);
 
-	return rv;
+	return mounted;
 }
 
 int umount_amd_ext_mount(struct autofs_point *ap, const char *path)
