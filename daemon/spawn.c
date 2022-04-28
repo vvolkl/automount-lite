@@ -26,6 +26,7 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/mount.h>
+#include <pwd.h>
 
 #include "automount.h"
 
@@ -335,6 +336,10 @@ static int do_spawn(unsigned logopt, unsigned int wait,
 	struct thread_stdenv_vars *tsv;
 	pid_t euid = 0;
 	gid_t egid = 0;
+	gid_t *groups = NULL;
+	gid_t *saved_groups = NULL;
+	int ngroups = 0;
+	int nsaved_groups = 0;
 
 	if (open_pipe(pipefd))
 		return -1;
@@ -357,6 +362,31 @@ static int do_spawn(unsigned logopt, unsigned int wait,
 	}
 
 	open_mutex_lock();
+
+	if (euid) {
+		struct passwd *pwd;
+
+		pwd = getpwuid(getuid());
+		if (!pwd)
+			fprintf(stderr,
+				"warning: getpwuid: can't get current username\n");
+		else {
+			/* get number of groups for current gid */
+			getgrouplist(pwd->pw_name, getgid(), NULL, &nsaved_groups);
+			saved_groups = malloc(nsaved_groups * sizeof(gid_t));
+
+			/* get current gid groups list */
+			getgrouplist(pwd->pw_name, getgid(), saved_groups, &nsaved_groups);
+		}
+
+		/* get number of groups of mount triggering process */
+		getgrouplist(tsv->user, egid, NULL, &ngroups);
+		groups = malloc(ngroups * sizeof(gid_t));
+
+		/* get groups list of mount triggering process */
+		getgrouplist(tsv->user, egid, groups, &ngroups);
+	}
+
 	f = fork();
 	if (f == 0) {
 		char **pargv = (char **) argv;
@@ -398,10 +428,13 @@ static int do_spawn(unsigned logopt, unsigned int wait,
 				if (!tsv->user)
 					fprintf(stderr,
 						"warning: can't init groups\n");
-				else if (initgroups(tsv->user, egid) == -1)
-					fprintf(stderr,
-						"warning: initgroups: %s\n",
-						strerror(errno));
+				else if (groups) {
+					if (setgroups(ngroups, groups) == -1)
+						fprintf(stderr,
+							"warning: setgroups: %s\n",
+							strerror(errno));
+					free(groups);
+				}
 
 				if (setegid(egid) == -1)
 					fprintf(stderr,
@@ -436,6 +469,11 @@ static int do_spawn(unsigned logopt, unsigned int wait,
 					strerror(errno));
 			if (pgrp >= 0)
 				setpgid(0, pgrp);
+			/* Reset groups for trigger of trailing mount */
+			if (euid && saved_groups) {
+				setgroups(nsaved_groups, saved_groups);
+				free(saved_groups);
+			}
 
 			/*
 			 * The kernel leaves mount type autofs alone because
@@ -473,6 +511,11 @@ done:
 		sigaddset(&tmpsig, SIGCHLD);
 		pthread_sigmask(SIG_SETMASK, &tmpsig, NULL);
 		open_mutex_unlock();
+
+		if (groups)
+			free(groups);
+		if (saved_groups)
+			free(saved_groups);
 
 		close(pipefd[1]);
 
