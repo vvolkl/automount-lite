@@ -27,6 +27,7 @@
 - add autofs_strerror_r() helper for musl.
 - update configure.
 - handle innetgr() not present in musl.
+- fix missing unlock in sasl_do_kinit_ext_cc().
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

@@ -721,6 +721,10 @@ sasl_do_kinit_ext_cc(unsigned logopt, struct lookup_context *ctxt)
 
 	debug(logopt, "Kerberos authentication was successful!");
 
+	status = pthread_mutex_unlock(&krb5cc_mutex);
+	if (status)
+		fatal(status);
+
 	return 0;
 
 out_cleanup_def_princ:
