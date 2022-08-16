@@ -233,6 +233,151 @@ get_server_SASL_mechanisms(unsigned logopt, LDAP *ld)
 	return mechanisms;
 }
 
+#ifdef WITH_LDAP_CYRUS_SASL
+typedef struct autofs_ldap_sasl_defaults_s {
+	char *mech;
+	char *realm;
+	char *authcid;
+	char *passwd;
+	char *authzid;
+} ldapSASLdefaults;
+
+
+void autofs_ldap_sasl_freedefs(void *defaults)
+{
+	ldapSASLdefaults *defs = defaults;
+
+	assert(defs != NULL);
+
+	if (defs->mech)
+		ber_memfree(defs->mech);
+	if (defs->realm)
+		ber_memfree(defs->realm);
+	if (defs->authcid)
+		ber_memfree(defs->authcid);
+	if (defs->passwd)
+		ber_memfree(defs->passwd);
+	if (defs->authzid)
+		ber_memfree(defs->authzid);
+
+	ber_memfree(defs);
+}
+
+void *
+autofs_ldap_sasl_defaults(LDAP *ld,
+			  char *mech,
+			  char *realm,
+			  char *authcid,
+			  char *passwd,
+			  char *authzid)
+{
+	ldapSASLdefaults *defaults;
+
+	defaults = ber_memalloc(sizeof(ldapSASLdefaults));
+
+	if (defaults == NULL)
+		return NULL;
+
+	defaults->mech = mech ? ber_strdup(mech) : NULL;
+	defaults->realm = realm ? ber_strdup(realm) : NULL;
+	defaults->authcid = authcid ? ber_strdup(authcid) : NULL;
+	defaults->passwd = passwd ? ber_strdup(passwd) : NULL;
+	defaults->authzid = authzid ? ber_strdup(authzid) : NULL;
+
+	if (defaults->mech == NULL)
+		ldap_get_option(ld, LDAP_OPT_X_SASL_MECH, &defaults->mech);
+	if (defaults->realm == NULL)
+		ldap_get_option(ld, LDAP_OPT_X_SASL_REALM, &defaults->realm);
+	if (defaults->authcid == NULL)
+		ldap_get_option(ld, LDAP_OPT_X_SASL_AUTHCID, &defaults->authcid);
+	if (defaults->authzid == NULL)
+		ldap_get_option(ld, LDAP_OPT_X_SASL_AUTHZID, &defaults->authzid);
+
+	return defaults;
+}
+
+static int
+interaction(unsigned flags,
+	    sasl_interact_t *interact,
+	    ldapSASLdefaults *defaults)
+{
+	switch (interact->id) {
+	case SASL_CB_GETREALM:
+		if (defaults->realm)
+			interact->result = defaults->realm;
+		else if (interact->defresult)
+			interact->result = interact->defresult;
+		else
+			interact->result = "";
+		interact->len = strlen(interact->result);
+		break;
+
+	case SASL_CB_USER:
+		if (defaults->authzid)
+			interact->result = defaults->authzid;
+		else if (interact->defresult)
+			interact->result = interact->defresult;
+		else
+			interact->result = "";
+		interact->len = strlen(interact->result);
+		break;
+
+	case SASL_CB_PASS:
+		if (defaults->passwd)
+			interact->result = defaults->passwd;
+		else if (interact->defresult)
+			interact->result = interact->defresult;
+		else
+			interact->result = "";
+		interact->len = strlen(interact->result);
+		break;
+
+	case SASL_CB_AUTHNAME:
+		if (defaults->authcid)
+			interact->result = defaults->authcid;
+		else if (interact->defresult)
+			interact->result = interact->defresult;
+		else
+			interact->result = "";
+		interact->len = strlen(interact->result);
+		break;
+	}
+
+	return LDAP_SUCCESS;
+}
+
+int
+autofs_ldap_sasl_interact(LDAP *ld,
+			  unsigned flags,
+			  void *defaults,
+			  void *interact)
+{
+	ldapSASLdefaults *deflts = (ldapSASLdefaults*) defaults;
+	sasl_interact_t *in = (sasl_interact_t*) interact;
+	int rc = LDAP_SUCCESS;
+
+	if (!ld)
+		return LDAP_PARAM_ERROR;
+
+	while (in->id != SASL_CB_LIST_END) {
+		switch (in->id) {
+		case SASL_CB_NOECHOPROMPT:
+		case SASL_CB_ECHOPROMPT:
+			return LDAP_UNAVAILABLE;
+
+		default:
+			rc = interaction(flags, in, deflts);
+			if (rc)
+				return rc;
+			break;
+		}
+		in++;
+	}
+
+	return rc;
+}
+#endif
+
 /*
  *  Returns 0 upon successful connect, -1 on failure.
  */
@@ -994,11 +1139,12 @@ void autofs_sasl_dispose(struct ldap_conn *conn, struct lookup_context *ctxt)
 		return;
 	}
 
+#ifndef WITH_LDAP_CYRUS_SASL
 	if (conn && conn->sasl_conn) {
 		sasl_dispose(&conn->sasl_conn);
 		conn->sasl_conn = NULL;
 	}
-
+#endif
 	if (ctxt->kinit_successful) {
 		if (--krb5cc_in_use || ctxt->client_cc)
 			ret = krb5_cc_close(ctxt->krb5ctxt, ctxt->krb5_ccache);
@@ -1099,7 +1245,9 @@ int autofs_sasl_client_init(unsigned logopt)
  */
 void autofs_sasl_done(void)
 {
+#ifndef WITH_LDAP_CYRUS_SASL
 	sasl_done();
+#endif
 	return;
 }
 

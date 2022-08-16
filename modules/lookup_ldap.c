@@ -223,11 +223,13 @@ int __unbind_ldap_connection(unsigned logopt,
 	if (ctxt->use_tls == LDAP_TLS_RELEASE)
 		ctxt->use_tls = LDAP_TLS_INIT;
 #ifdef WITH_SASL
+#ifndef WITH_LDAP_CYRUS_SASL
 	if (ctxt->auth_required & LDAP_NEED_AUTH)
 		autofs_sasl_unbind(conn, ctxt);
 	/* No, sasl_dispose does not release the ldap connection
 	 * unless it's using sasl EXTERNAL
 	 */
+#endif
 #endif
 	if (conn->ldap) {
 		rv = ldap_unbind_ext(conn->ldap, NULL, NULL);
@@ -574,15 +576,146 @@ static int do_bind(unsigned logopt, struct ldap_conn *conn,
 		   const char *uri, struct lookup_context *ctxt)
 {
 	char *host = NULL, *nhost;
-	int rv;
+	int rv, result;
 
 #ifdef WITH_SASL
+#ifdef WITH_LDAP_CYRUS_SASL
+	unsigned int sasl_flags = LDAP_SASL_AUTOMATIC;
+	LDAPMessage *ldap_res = NULL;
+	const char *chosen_mech = NULL;
+	const char *rmech = NULL;
+	char *part_dn = NULL;
+	char *info = NULL;
+	int msgid, err;
+	void *defaults;
+	char *data;
+	ber_len_t *ssf;
+
+#endif
 	debug(logopt, MODPREFIX "auth_required: %d, sasl_mech %s",
 	      ctxt->auth_required, ctxt->sasl_mech);
 
 	if (ctxt->auth_required & LDAP_NEED_AUTH) {
+#ifndef WITH_LDAP_CYRUS_SASL
 		rv = autofs_sasl_bind(logopt, conn, ctxt);
 		debug(logopt, MODPREFIX "autofs_sasl_bind returned %d", rv);
+#else
+		if (ctxt->sasl_mech && !strncmp(ctxt->sasl_mech, "GSSAPI", 6)) {
+			rv = sasl_do_kinit(logopt, ctxt);
+			if (rv != 0)
+				return 0;
+			sasl_flags = LDAP_SASL_QUIET;
+		}
+
+		debug(logopt, "Attempting sasl bind with mechanism %s", ctxt->sasl_mech);
+
+		if (ctxt->auth_required & LDAP_AUTH_AUTODETECT) {
+			if (ctxt->sasl_mech) {
+				free(ctxt->sasl_mech);
+				ctxt->sasl_mech = NULL;
+			}
+		}
+
+		/*
+		 *  If LDAP_AUTH_AUTODETECT is set, it means that there was no
+		 *  mechanism specified in the configuration file or auto
+		 *  selection has been requested, so try to auto-select an
+		 *  auth mechanism.
+		 */
+
+		defaults = autofs_ldap_sasl_defaults(conn->ldap, ctxt->sasl_mech, NULL,
+						     ctxt->user, ctxt->secret, NULL);
+		do {
+			rv = ldap_sasl_interactive_bind(conn->ldap, NULL,
+							ctxt->sasl_mech, NULL, NULL,
+							sasl_flags,
+							autofs_ldap_sasl_interact,
+							defaults, ldap_res,
+							&rmech, &msgid);
+
+			if (rmech)
+				chosen_mech = rmech;
+
+			if (rv != LDAP_SASL_BIND_IN_PROGRESS)
+				break;
+
+			if (ldap_res) {
+				ldap_msgfree(ldap_res);
+				ldap_res = NULL;
+			}
+
+			if (ldap_result(conn->ldap, msgid, LDAP_MSG_ALL, NULL, &ldap_res) == -1 || !ldap_res) {
+				ldap_get_option(conn->ldap, LDAP_OPT_RESULT_CODE, (void*) &err);
+				ldap_get_option(conn->ldap, LDAP_OPT_DIAGNOSTIC_MESSAGE, (void*) &info);
+				error(logopt, MODPREFIX "ldap_sasl_interactive_bind failed with error %d",
+				      err);
+				debug(logopt, "ldap_sasl_interactive_bind: %s", info);
+				ldap_memfree(info);
+				if (ldap_res)
+					ldap_msgfree(ldap_res);
+				return 0;
+			}
+		} while (rv == LDAP_SASL_BIND_IN_PROGRESS);
+
+		autofs_ldap_sasl_freedefs(defaults);
+
+		if (rv != LDAP_SUCCESS) {
+			ldap_get_option(conn->ldap, LDAP_OPT_DIAGNOSTIC_MESSAGE, (void*) &info);
+			error(logopt, MODPREFIX "ldap_sasl_interactive_bind failed with error %d",
+			      rv);
+			debug(logopt, "ldap_sasl_interactive_bind: %s", info);
+			ldap_memfree(info);
+			if (ldap_res)
+				ldap_msgfree(ldap_res);
+			return 0;
+		}
+
+		/* Parse the result and check for errors */
+		if (ldap_res) {
+			rv = ldap_parse_result(conn->ldap, ldap_res, &err, &part_dn, &info, NULL, NULL, 0);
+			if (rv != LDAP_SUCCESS) {
+				error(logopt,
+				      MODPREFIX "ldap_sasl_interactive_bind parse result failed with error %d",
+				      err);
+				debug(logopt, "ldap_sasl_interactive_bind matched DN: %s", part_dn);
+				debug(logopt, "ldap_sasl_interactive_bind parse result: %s", info);
+				ldap_memfree(info);
+				ldap_memfree(part_dn);
+				ldap_msgfree(ldap_res);
+				return 0;
+			}
+		}
+
+		if (info)
+			ldap_memfree(info);
+		if (part_dn)
+			ldap_memfree(part_dn);
+		if (ldap_res)
+			ldap_msgfree(ldap_res);
+
+		/* Conversation was completed successfully by now */
+		result = ldap_get_option(conn->ldap, LDAP_OPT_X_SASL_USERNAME, &data);
+		if (result == LDAP_OPT_SUCCESS && data && *data)
+			debug(logopt, "SASL username: %s", data );
+
+		data = NULL;
+		result = ldap_get_option(conn->ldap, LDAP_OPT_X_SASL_AUTHCID, &data);
+		if (result == LDAP_OPT_SUCCESS && data && *data)
+			debug(logopt, "SASL authcid: %s", data);
+
+		data = NULL;
+		result = ldap_get_option(conn->ldap, LDAP_OPT_X_SASL_AUTHZID, &data);
+		if (result == LDAP_OPT_SUCCESS && data && *data)
+			debug(logopt, "SASL authzid: %s", data);
+
+		ssf = NULL;
+		result = ldap_get_option(conn->ldap, LDAP_OPT_X_SASL_SSF, &ssf);
+		if (result == LDAP_OPT_SUCCESS && ssf)
+			debug(logopt, "SASL SSF: %lu", (unsigned long) ssf);
+
+		debug(logopt, "sasl bind with mechanism %s succeeded",
+		      chosen_mech);
+#endif
 	} else {
 		rv = bind_ldap_simple(logopt, conn->ldap, uri, ctxt);
 		debug(logopt, MODPREFIX "ldap simple bind returned %d", rv);
@@ -1793,6 +1926,7 @@ static int do_init(const char *mapfmt,
 	}
 
 #ifdef WITH_SASL
+#ifndef WITH_LDAP_CYRUS_SASL
 	/* Init the sasl callbacks */
 	ldapinit_mutex_lock();
 	if (!autofs_sasl_client_init(LOGOPT_NONE)) {
@@ -1801,6 +1935,7 @@ static int do_init(const char *mapfmt,
 		return 1;
 	}
 	ldapinit_mutex_unlock();
+#endif
 #endif
 
 	if (is_amd_format)
