@@ -33,6 +33,7 @@
 - prepare for OpenLDAP SASL binding.
 - let OpenLDAP handle SASL binding.
 - configure: LDAP function checks ignore implicit declarations.
+- improve debug logging of LDAP binds.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

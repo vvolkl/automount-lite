@@ -31,6 +31,7 @@ static unsigned int logging_to_syslog = 0;
 /* log notification level */
 static unsigned int do_verbose = 0;		/* Verbose feedback option */
 static unsigned int do_debug = 0;		/* Full debug output */
+static unsigned int debug_level = 0;		/* Level for libldap debug output */
 
 static char *prepare_attempt_prefix(const char *msg)
 {
@@ -57,6 +58,11 @@ static char *prepare_attempt_prefix(const char *msg)
 	return prefixed_msg;
 }
 
+int get_log_debug_level(void)
+{
+	return debug_level;
+}
+
 void set_log_norm(void)
 {
 	do_verbose = 0;
@@ -70,9 +76,10 @@ void set_log_verbose(void)
 	return;
 }
 
-void set_log_debug(void)
+void set_log_debug(int level)
 {
 	do_debug = 1;
+	debug_level = level;
 	return;
 }
 

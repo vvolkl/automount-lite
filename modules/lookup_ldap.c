@@ -155,6 +155,18 @@ int ldap_parse_page_control(LDAP *ldap, LDAPControl **controls,
 }
 #endif /* HAVE_LDAP_PARSE_PAGE_CONTROL */
 
+static void autofs_ldap_debug(const char *buf)
+{
+	char *msg;
+
+	if (buf) {
+		msg = strdup(buf);
+		msg[strcspn(msg, "\n")] = '\0';
+		log_debug(LOGOPT_DEBUG, "libldap: %s", msg);
+		free(msg);
+	}
+}
+
 static void ldapinit_mutex_lock(void)
 {
 	int status = pthread_mutex_lock(&ldapinit_mutex);
@@ -259,11 +271,36 @@ LDAP *init_ldap_connection(unsigned logopt, const char *uri, struct lookup_conte
 	LDAP *ldap = NULL;
 	struct timeval timeout     = { ctxt->timeout, 0 };
 	struct timeval net_timeout = { ctxt->network_timeout, 0 };
+	int ldap_library_debug_level;
 	int rv;
 
 	ctxt->version = 3;
 
+	ldap_library_debug_level = get_log_debug_level();
+	if (ldap_library_debug_level == -1 || ldap_library_debug_level > 0) {
+		rv = ber_set_option(NULL, LBER_OPT_DEBUG_LEVEL,
+		                    &ldap_library_debug_level);
+		if (rv != LBER_OPT_SUCCESS)
+			info(logopt, MODPREFIX
+			     "failed to set LBER debug level to %d, ignored",
+			     ldap_library_debug_level);
+		rv = ber_set_option(NULL, LBER_OPT_LOG_PRINT_FN,
+		                    autofs_ldap_debug);
+		if (rv != LBER_OPT_SUCCESS)
+			info(logopt, MODPREFIX
+			     "Failed to set LBER_OPT_LOG_PRINT_FN, ignored");
+		rv = ldap_set_option(NULL, LDAP_OPT_DEBUG_LEVEL,
+		                     &ldap_library_debug_level);
+		if (rv != LDAP_OPT_SUCCESS)
+			info(logopt, MODPREFIX
+			     "failed to set LDAP debug level to %d, ignored",
+			     ldap_library_debug_level);
+	}
+
 	/* Initialize the LDAP context. */
+	debug(logopt,
+	      MODPREFIX "ldap_initialize( %s )", uri ? uri : "default");
+
 	rv = ldap_initialize(&ldap, uri);
 	if (rv != LDAP_OPT_SUCCESS) {
 		info(logopt, MODPREFIX

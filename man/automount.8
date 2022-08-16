@@ -48,9 +48,14 @@ Set the default timeout for caching failed key lookups. The default is 60 second
 Enables logging of general status and progress messages for all
 autofs managed mounts.
 .TP
-.I "\-d, \-\-debug"
+\fB\-d\fR[\fILEVEL\fR], \fB\-\-debug\fR[=\fILEVEL\fR]
 Enables logging of general status and progress messages as well as
-debugging messages for all autofs managed mounts.
+debugging messages for all autofs managed mounts. The default \fILEVEL\fR is 0.
+automounter must perform OpenLDAP authenticated binds for optional argument
+\fILEVEL\fR to have any effect. OpenLDAP uses a bitmap to enable debugging for
+specific components. Debug \fILEVEL\fR=0 disables libldap deugging.
+For further details see
+.BR slapd (8).
 .TP
 .I "\-Dvariable=value, --define variable=value"
 Define a global macro substitution variable. Global definitions

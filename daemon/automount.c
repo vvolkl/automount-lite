@@ -1413,6 +1413,21 @@ static unsigned long getnumopt(char *str, char option)
 	return val;
 }
 
+static long getsnumopt(char *str, char option)
+{
+	long val;
+	char *end;
+
+	val = strtol(str, &end, 0);
+	if (!*str || *end) {
+		fprintf(stderr,
+			"%s: option -%c requires a numeric argument, got %s\n",
+			program, option, str);
+		exit(1);
+	}
+	return val;
+}
+
 static void do_master_cleanup_unlock(void *arg)
 {
 	int status;
@@ -2017,7 +2032,9 @@ static void usage(void)
 	        "			maximum wait time (seconds) for master\n"
 	        "			map to become available\n"
 		"	-v --verbose	be verbose\n"
-		"	-d --debug	log debuging info\n"
+		"	-d[level]\n"
+		"	--debug[=level]\n"
+		"			log debugging info\n"
 		"	-Dvariable=value, --define variable=value\n"
 		"			define global macro variable\n"
 		"	-S --systemd-service\n"
@@ -2282,18 +2299,19 @@ int main(int argc, char *argv[])
 	int logpri = -1;
 	unsigned int flags;
 	unsigned int logging;
+	int debug_level = 0;
 	unsigned master_read;
 	int master_wait;
 	time_t timeout;
 	time_t age = monotonic_time(NULL);
 	struct rlimit rlim;
-	const char *options = "+hp:t:vmdD:SfVrO:l:n:CFUM:";
+	const char *options = "+hp:t:vmd::D:SfVrO:l:n:CFUM:";
 	static const struct option long_options[] = {
 		{"help", 0, 0, 'h'},
 		{"pid-file", 1, 0, 'p'},
 		{"timeout", 1, 0, 't'},
 		{"verbose", 0, 0, 'v'},
-		{"debug", 0, 0, 'd'},
+		{"debug", 2, 0, 'd'},
 		{"define", 1, 0, 'D'},
 		{"systemd-service", 0, 0, 'S'},
 		{"foreground", 0, 0, 'f'},
@@ -2363,6 +2381,8 @@ int main(int argc, char *argv[])
 
 		case 'd':
 			logging |= LOGOPT_DEBUG;
+			if (optarg)
+				debug_level = getsnumopt(optarg, opt);
 			break;
 
 		case 'D':
@@ -2439,7 +2459,8 @@ int main(int argc, char *argv[])
 
 		case '?':
 		case ':':
-			printf("%s: Ambiguous or unknown options\n", program);
+			fprintf(stderr, "%s: Ambiguous or unknown options\n", program);
+			fprintf(stderr, "Try `%s --help` for more information\n", program);
 			exit(1);
 		}
 	}
@@ -2448,7 +2469,7 @@ int main(int argc, char *argv[])
 		set_log_verbose();
 
 	if (logging & LOGOPT_DEBUG)
-		set_log_debug();
+		set_log_debug(debug_level);
 
 	if (geteuid() != 0) {
 		fprintf(stderr, "%s: this program must be run by root.\n",
