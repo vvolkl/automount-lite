@@ -326,6 +326,49 @@ LIBS="$af_check_hesiod_save_libs"
 ])
 
 dnl --------------------------------------------------------------------------
+dnl AF_CHECK_FUNC_LDAP_SUPPORT_SASL
+dnl
+dnl Check for sasl support in ldap
+dnl --------------------------------------------------------------------------
+AC_DEFUN(
+  [AF_CHECK_FUNC_LDAP_SUPPORT_SASL],
+  [AC_MSG_CHECKING(for cyrus sasl support in openldap)
+    have_openldap_cyrus_sasl=no
+    # save current libs
+    af_check_ldap_support_sasl_save_libs="$LIBS"
+    LIBS="$LIBLDAP"
+
+    AC_RUN_IFELSE(
+      [ AC_LANG_SOURCE(
+        [ #include <stdlib.h>
+          #include <ldap.h>
+          int main (int argc, char **argv) {
+            LDAP *ldap = NULL;
+            int lret = 0;
+
+            lret = ldap_initialize(&ldap, NULL);
+            if (lret != LDAP_OPT_SUCCESS) {
+              exit(1);
+            }
+            lret = ldap_set_option(ldap, LDAP_OPT_X_SASL_NOCANON,
+                                   LDAP_OPT_ON);
+            exit(lret == LDAP_OPT_SUCCESS ? 0 : 1);
+          } ])],
+      have_openldap_sasl=yes,
+      have_openldap_sasl=no,
+      have_openldap_sasl=yes)
+
+    AC_MSG_RESULT($have_openldap_sasl)
+    if test "$have_openldap_sasl" = "yes"; then
+      AC_DEFINE(WITH_LDAP_CYRUS_SASL,1,
+         [Define if OpenLDAP was built with Cyrus SASL])
+    fi
+
+    # restore libs
+    LIBS="$af_check_ldap_parse_page_control_save_libs"
+  ])
+
+dnl --------------------------------------------------------------------------
 dnl AF_CHECK_FUNC_LDAP_CREATE_PAGE_CONTROL
 dnl
 dnl Check for function ldap_create_page_control

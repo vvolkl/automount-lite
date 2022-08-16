@@ -30,6 +30,7 @@
 - fix missing unlock in sasl_do_kinit_ext_cc().
 - fix a couple of null cache locking problems.
 - restore gcc flags after autoconf Kerberos 5 check.
+- prepare for OpenLDAP SASL binding.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

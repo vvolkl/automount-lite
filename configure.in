@@ -279,6 +279,7 @@ AF_CHECK_NIS_HEADER()
 # OpenLDAP support?  Expect that this may have a special directory...
 #
 AF_tmp_ldflags="$LDFLAGS"
+AF_tmp_libs="$LIBS"
 LIBLDAP=''
 HAVE_LDAP=''
 AC_ARG_WITH(openldap,
@@ -303,15 +304,17 @@ if test -z "$HAVE_LDAP" -o "$HAVE_LDAP" != "0"; then
 	if test "$HAVE_LDAP" = "1"; then
 		AC_DEFINE(WITH_LDAP,1,
 			[Define if using LDAP as a source of automount maps])
-	fi
+	AF_CHECK_FUNC_LDAP_SUPPORT_SASL()
 	AF_CHECK_FUNC_LDAP_CREATE_PAGE_CONTROL()
 	AF_CHECK_FUNC_LDAP_PARSE_PAGE_CONTROL()
+    fi
 fi
 
 AC_SUBST(LDAP_FLAGS)
 AC_SUBST(HAVE_LDAP)
 AC_SUBST(LIBLDAP)
 LDFLAGS="${AF_tmp_ldflags}"
+LIBS="${AF_tmp_libs}"
 
 #
 # SASL support

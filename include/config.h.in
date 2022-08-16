@@ -162,6 +162,9 @@
 /* Define if using LDAP as a source of automount maps */
 #undef WITH_LDAP
 
+/* Define if OpenLDAP was built with Cyrus SASL */
+#undef WITH_LDAP_CYRUS_SASL
+
 /* Define to 1 if you have the libtirpc library installed */
 #undef WITH_LIBTIRPC
 

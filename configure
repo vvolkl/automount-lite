@@ -4481,6 +4481,9 @@ _ACEOF
 fi
 done
 
+
+  CFLAGS="$SAVE_CFLAGS"
+  LIBS="$SAVE_LIBS"
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing versionsort" >&5
@@ -5347,6 +5350,7 @@ CFLAGS="$af_check_nis_header_save_cflags"
 # OpenLDAP support?  Expect that this may have a special directory...
 #
 AF_tmp_ldflags="$LDFLAGS"
+AF_tmp_libs="$LIBS"
 LIBLDAP=''
 HAVE_LDAP=''
 
@@ -5413,7 +5417,54 @@ fi
 
 $as_echo "#define WITH_LDAP 1" >>confdefs.h
 
-	fi
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for cyrus sasl support in openldap" >&5
+$as_echo_n "checking for cyrus sasl support in openldap... " >&6; }
+    have_openldap_cyrus_sasl=no
+    # save current libs
+    af_check_ldap_support_sasl_save_libs="$LIBS"
+    LIBS="$LIBLDAP"
+
+    if test "$cross_compiling" = yes; then :
+  have_openldap_sasl=yes
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+  #include <stdlib.h>
+          #include <ldap.h>
+          int main (int argc, char **argv) {
+            LDAP *ldap = NULL;
+            int lret = 0;
+
+            lret = ldap_initialize(&ldap, NULL);
+            if (lret != LDAP_OPT_SUCCESS) {
+              exit(1);
+            }
+            lret = ldap_set_option(ldap, LDAP_OPT_X_SASL_NOCANON,
+                                   LDAP_OPT_ON);
+            exit(lret == LDAP_OPT_SUCCESS ? 0 : 1);
+          }
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  have_openldap_sasl=yes
+else
+  have_openldap_sasl=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_openldap_sasl" >&5
+$as_echo "$have_openldap_sasl" >&6; }
+    if test "$have_openldap_sasl" = "yes"; then
+
+$as_echo "#define WITH_LDAP_CYRUS_SASL 1" >>confdefs.h
+
+    fi
+
+    # restore libs
+    LIBS="$af_check_ldap_parse_page_control_save_libs"
+
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ldap_create_page_control in -lldap" >&5
 $as_echo_n "checking for ldap_create_page_control in -lldap... " >&6; }
 
@@ -5500,12 +5551,14 @@ fi
 # restore libs
 LIBS="$af_check_ldap_parse_page_control_save_libs"
 
+    fi
 fi
 
 
 
 
 LDFLAGS="${AF_tmp_ldflags}"
+LIBS="${AF_tmp_libs}"
 
 #
 # SASL support
