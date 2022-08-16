@@ -136,7 +136,7 @@ sasl_log_func(void *context, int level, const char *message)
 	case SASL_LOG_DEBUG:
 	case SASL_LOG_TRACE:
 	case SASL_LOG_PASS:
-		debug(LOGOPT_DEBUG, "%s", message);
+		debug(LOGOPT_NONE, "%s", message);
 		break;
 	default:
 		break;
@@ -894,10 +894,11 @@ sasl_conn_t *
 sasl_bind_mech(unsigned logopt, LDAP *ldap, struct lookup_context *ctxt, const char *mech)
 {
 	sasl_conn_t *conn;
-	char *tmp, *host = NULL;
+	char *tmp, *host, *data;
 	const char *clientout;
 	unsigned int clientoutlen;
 	const char *chosen_mech;
+	sasl_ssf_t *ssf;
 	int result;
 
 	if (!strncmp(mech, "GSSAPI", 6)) {
@@ -961,6 +962,27 @@ sasl_bind_mech(unsigned logopt, LDAP *ldap, struct lookup_context *ctxt, const c
 	result = do_sasl_bind(logopt, ldap, conn,
 			 &clientout, &clientoutlen, chosen_mech, result);
 	if (result == 0) {
+		/* Conversation was completed successfully by now */
+		data = NULL;
+		result = sasl_getprop(conn, SASL_USERNAME, (const void **)(char *) &data);
+		if (result == SASL_OK && data && *data)
+			debug(logopt, "SASL username: %s", data);
+
+		data = NULL;
+		result = ldap_get_option(ldap, LDAP_OPT_X_SASL_AUTHCID, &data);
+		if (result == LDAP_OPT_SUCCESS && data && *data)
+			debug(logopt, "SASL authcid: %s", data);
+
+		data = NULL;
+		result = ldap_get_option(ldap, LDAP_OPT_X_SASL_AUTHZID, &data);
+		if (result == LDAP_OPT_SUCCESS && data && *data)
+			debug(logopt, "SASL authzid: %s", data);
+
+		ssf = NULL;
+		result = sasl_getprop(conn, SASL_SSF, (const void **)(char *) &ssf);
+		if (result == SASL_OK)
+			debug(logopt, "SASL SSF: %lu", (unsigned long) *ssf);
+
 		ldap_memfree(host);
 		debug(logopt, "sasl bind with mechanism %s succeeded",
 		      chosen_mech);
