@@ -296,6 +296,9 @@ else
   LIBS="$LIBS $KRB5_LIBS"
 
   AC_CHECK_FUNCS([krb5_principal_get_realm])
+
+  CFLAGS="$SAVE_CFLAGS"
+  LIBS="$SAVE_LIBS"
 fi])
 
 dnl --------------------------------------------------------------------------
