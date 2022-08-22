@@ -169,7 +169,7 @@ int lookup_nss_read_master(struct master *master, time_t age)
 	/* If it starts with a '/' it has to be a file or LDAP map */
 	if (*master->name == '/') {
 		if (*(master->name + 1) == '/') {
-			debug(logopt, "reading master ldap %s", master->name);
+			info(logopt, "reading ldap master %s", master->name);
 			result = do_read_master(master, "ldap", age);
 		} else {
 			debug(logopt, "reading master file %s", master->name);
@@ -215,7 +215,7 @@ int lookup_nss_read_master(struct master *master, time_t age)
 				 */
 				if (strncmp(name, "ldap", 4)) {
 					master->name = tmp + 1;
-					debug(logopt, "reading master %s %s",
+					info(logopt, "reading %s master %s",
 					      source, master->name);
 				} else {
 					master->name = name;
@@ -260,8 +260,8 @@ int lookup_nss_read_master(struct master *master, time_t age)
 		    strncmp(this->source, "sss", 3))
 			continue;
 
-		debug(logopt,
-		      "reading master %s %s", this->source, master->name);
+		info(logopt,
+		      "reading %s master %s", this->source, master->name);
 
 		result = read_master_map(master, this->source, age);
 
@@ -549,8 +549,8 @@ int lookup_nss_read_map(struct autofs_point *ap, struct map_source *source, time
 			if (!strncmp(map->type, "multi", 5))
 				debug(ap->logopt, "reading multi map");
 			else
-				debug(ap->logopt,
-				      "reading map %s %s",
+				info(ap->logopt,
+				      "reading %s map %s",
 				       map->type, map->argv[0]);
 			result = lookup_map_read_map(ap, map, age);
 			map = map->next;
@@ -566,8 +566,8 @@ int lookup_nss_read_map(struct autofs_point *ap, struct map_source *source, time
 					continue;
 				}
 				map->type = tmp;
-				debug(ap->logopt,
-				      "reading map %s %s", tmp, map->argv[0]);
+				info(ap->logopt,
+				      "reading %s map %s", tmp, map->argv[0]);
 				result = do_read_map(ap, map, age);
 			} else {
 				debug(ap->logopt,
@@ -602,8 +602,8 @@ int lookup_nss_read_map(struct autofs_point *ap, struct map_source *source, time
 				continue;
 			}
 
-			debug(ap->logopt,
-			      "reading map %s %s", this->source, map->argv[0]);
+			info(ap->logopt,
+			      "reading %s map %s", this->source, map->argv[0]);
 
 			result = read_map_source(this, ap, map, age);
 			if (result == NSS_STATUS_UNKNOWN)

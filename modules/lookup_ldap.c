@@ -2624,7 +2624,7 @@ static int do_get_entries(struct ldap_search_params *sp, struct map_source *sour
 	e = ldap_first_entry(sp->ldap, sp->result);
 	if (!e) {
 		debug(ap->logopt,
-		      MODPREFIX "query succeeded, no matches for %s",
+		      MODPREFIX "query succeeded, no matches for query %s",
 		      sp->query);
 		ret = ldap_parse_result(sp->ldap, sp->result,
 					&rv, NULL, NULL, NULL, NULL, 0);
@@ -2647,7 +2647,7 @@ static int do_get_entries(struct ldap_search_params *sp, struct map_source *sour
 			e = ldap_next_entry(sp->ldap, e);
 			if (!e) {
 				debug(ap->logopt, MODPREFIX
-				      "failed to get next entry for query %s",
+				      "query succeeded, no more matches for query %s",
 				      sp->query);
 				ret = ldap_parse_result(sp->ldap,
 							sp->result, &rv,
