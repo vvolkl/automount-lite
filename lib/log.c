@@ -58,6 +58,16 @@ static char *prepare_attempt_prefix(const char *msg)
 	return prefixed_msg;
 }
 
+unsigned int have_log_verbose(void)
+{
+	return do_verbose;
+}
+
+unsigned int have_log_debug(void)
+{
+	return do_debug;
+}
+
 int get_log_debug_level(void)
 {
 	return debug_level;

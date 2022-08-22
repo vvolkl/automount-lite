@@ -109,6 +109,13 @@ static int getpass_func(sasl_conn_t *, void *, int, sasl_secret_t **);
 static int getuser_func(void *, int, const char **, unsigned *);
 
 static sasl_callback_t callbacks[] = {
+	{ SASL_CB_USER, &getuser_func, NULL },
+	{ SASL_CB_AUTHNAME, &getuser_func, NULL },
+	{ SASL_CB_PASS, &getpass_func, NULL },
+	{ SASL_CB_LIST_END, NULL, NULL },
+};
+
+static sasl_callback_t debug_callbacks[] = {
 	{ SASL_CB_LOG, &sasl_log_func, NULL },
 	{ SASL_CB_USER, &getuser_func, NULL },
 	{ SASL_CB_AUTHNAME, &getuser_func, NULL },
@@ -136,7 +143,7 @@ sasl_log_func(void *context, int level, const char *message)
 	case SASL_LOG_DEBUG:
 	case SASL_LOG_TRACE:
 	case SASL_LOG_PASS:
-		debug(LOGOPT_NONE, "%s", message);
+		log_debug(LOGOPT_NONE, "libsasl2: %s", message);
 		break;
 	default:
 		break;
@@ -1247,6 +1254,7 @@ static void sasl_mutex_dispose(void *mutex __attribute__((unused)))
  */
 int autofs_sasl_client_init(unsigned logopt)
 {
+	int result;
 
 	sasl_set_mutex(sasl_mutex_new,
 		       sasl_mutex_lock,
@@ -1254,7 +1262,11 @@ int autofs_sasl_client_init(unsigned logopt)
 		       sasl_mutex_dispose);
 
 	/* Start up Cyrus SASL--only needs to be done at library load. */
-	if (sasl_client_init(callbacks) != SASL_OK) {
+	if (have_log_debug())
+		result = sasl_client_init(debug_callbacks);
+	else
+		result = sasl_client_init(callbacks);
+	if (result != SASL_OK) {
 		error(logopt, "sasl_client_init failed");
 		return 0;
 	}

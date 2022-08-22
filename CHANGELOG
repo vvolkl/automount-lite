@@ -35,6 +35,7 @@
 - configure: LDAP function checks ignore implicit declarations.
 - improve debug logging of LDAP binds.
 - improve debug logging of SASL binds.
+- internal SASL logging only in debug log mode.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

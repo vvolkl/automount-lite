@@ -37,6 +37,8 @@ extern void set_log_verbose_ap(struct autofs_point *ap);
 extern void set_log_debug_ap(struct autofs_point *ap);
 extern void set_mnt_logging(unsigned global_logopt);
 
+extern unsigned int have_log_verbose(void);
+extern unsigned int have_log_debug(void);
 extern int get_log_debug_level(void);
 
 extern void open_log(void);
