@@ -37,6 +37,7 @@
 - improve debug logging of SASL binds.
 - internal SASL logging only in debug log mode.
 - more comprehensive verbose logging for LDAP maps.
+- fix invalid tsv access.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

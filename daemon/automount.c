@@ -2552,6 +2552,15 @@ int main(int argc, char *argv[])
 				master = argv[2];
 		}
 
+		status = pthread_key_create(&key_thread_stdenv_vars,
+					key_thread_stdenv_vars_destroy);
+		if (status) {
+			logerr("%s: failed to create thread data key for std env vars!",
+			       program);
+			macro_free_global_table();
+			exit(1);
+		}
+
 		if (master)
 			master_list = master_new(NULL, timeout, flags);
 		else
