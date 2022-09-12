@@ -644,14 +644,14 @@ static int do_bind(unsigned logopt, struct ldap_conn *conn,
 			sasl_flags = LDAP_SASL_QUIET;
 		}
 
-		debug(logopt, "Attempting sasl bind with mechanism %s", ctxt->sasl_mech);
-
 		if (ctxt->auth_required & LDAP_AUTH_AUTODETECT) {
 			if (ctxt->sasl_mech) {
 				free(ctxt->sasl_mech);
 				ctxt->sasl_mech = NULL;
 			}
-		}
+			debug(logopt, "Attempting sasl bind with mechanism auto-select");
+		} else
+			debug(logopt, "Attempting sasl bind with mechanism %s", ctxt->sasl_mech);
 
 		/*
 		 *  If LDAP_AUTH_AUTODETECT is set, it means that there was no
@@ -1445,20 +1445,47 @@ int parse_ldap_config(unsigned logopt, struct lookup_context *ctxt)
 		goto out;
 	}
 
+#ifndef WITH_LDAP_CYRUS_SASL
 	if (auth_required == LDAP_AUTH_USESIMPLE ||
 	   (authtype && authtype_requires_creds(authtype))) {
+#else
+	/*
+	 * OpenLDAP with Cyrus SASL needs user credentials for
+	 * SASL mechanism auto-selection in following cases:
+	 * (a) LDAP_AUTH_AUTODETECT
+	 * (b) LDAP_AUTH_REQUIRED but no SASL mechanism specified
+	 */
+	if (auth_required == LDAP_AUTH_USESIMPLE ||
+	   (authtype && authtype_requires_creds(authtype)) ||
+	   (!authtype && (auth_required & LDAP_AUTH_REQUIRED)) ||
+	   (auth_required & LDAP_AUTH_AUTODETECT)) {
+#endif
 		char *s1 = NULL, *s2 = NULL;
 		ret = get_property(logopt, root, "user",  &user);
 		ret |= get_property(logopt, root, "secret", &s1);
 		ret |= get_property(logopt, root, "encoded_secret", &s2);
 		if (ret != 0 || (!user || (!s1 && !s2))) {
 auth_fail:
-			error(logopt,
-			      MODPREFIX
-			      "%s authentication type requires a username "
-			      "and a secret.  Please fix your configuration "
-			      "in %s.", authtype, auth_conf);
-			free(authtype);
+			if (auth_required == LDAP_AUTH_USESIMPLE)
+				error(logopt,
+				      MODPREFIX
+				      "Simple authentication requires a username "
+				      "and a secret.  Please fix your configuration "
+				      "in %s.", auth_conf);
+			else if (authtype && authtype_requires_creds(authtype))
+				error(logopt,
+				      MODPREFIX
+				      "%s authentication requires a username and "
+				      "a secret.  Please fix your configuration "
+				      "in %s.", authtype, auth_conf);
+			else
+				error(logopt,
+				      MODPREFIX
+				      "SASL authentication auto-selection requires "
+				      "a username and a secret.  Please fix your "
+				      "configuration in %s.", auth_conf);
+			if (authtype)
+				free(authtype);
 			if (user)
 				free(user);
 			if (s1)

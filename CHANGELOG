@@ -39,6 +39,7 @@
 - more comprehensive verbose logging for LDAP maps.
 - fix invalid tsv access.
 - support SCRAM for SASL binding.
+- ldap_sasl_interactive_bind() needs credentials for auto-detection.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
