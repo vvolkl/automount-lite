@@ -35,7 +35,7 @@
  *
  *  This file implements SASL authentication to an LDAP server for the
  *  following mechanisms:
- *    GSSAPI, EXTERNAL, ANONYMOUS, PLAIN, DIGEST-MD5, KERBEROS_V5, LOGIN
+ *    GSSAPI, EXTERNAL, ANONYMOUS, PLAIN, DIGEST-MD5, SCRAM-SHA-*, KERBEROS_V5, LOGIN
  *  The mechanism to use is specified in an external file,
  *  LDAP_AUTH_CONF_FILE.  See the samples directory in the autofs
  *  distribution for an example configuration file.
@@ -1028,7 +1028,7 @@ sasl_choose_mech(unsigned logopt, LDAP *ldap, struct lookup_context *ctxt)
 		 *  This routine is called if there is no configured
 		 *  mechanism.  As such, we can skip over any auth
 		 *  mechanisms that require user credentials.  These include
-		 *  PLAIN, LOGIN, and DIGEST-MD5.
+		 *  PLAIN, LOGIN, SCRAM-SHA-*, and DIGEST-MD5.
 		 */
 		if (authtype_requires_creds(mechanisms[i]))
 			continue;

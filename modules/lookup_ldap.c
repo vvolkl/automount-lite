@@ -1233,7 +1233,7 @@ int get_property(unsigned logopt, xmlNodePtr node, const char *prop, char **valu
 }
 
 /*
- *  For plain text, login and digest-md5 authentication types, we need
+ *  For plain text, login, scram-sha-* and digest-md5 authentication types, we need
  *  user and password credentials.
  */
 int authtype_requires_creds(const char *authtype)
@@ -1241,6 +1241,7 @@ int authtype_requires_creds(const char *authtype)
 #ifdef WITH_SASL
 	if (!strncmp(authtype, "PLAIN", strlen("PLAIN")) ||
 	    !strncmp(authtype, "DIGEST-MD5", strlen("DIGEST-MD5")) ||
+	    !strncmp(authtype, "SCRAM-SHA-", strlen("SCRAM-SHA-")) ||
 	    !strncmp(authtype, "LOGIN", strlen("LOGIN")))
 		return 1;
 #endif

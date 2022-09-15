@@ -60,7 +60,7 @@ authentication mechanism. If no suitable mechanism can be found, connections
 to the ldap server are made without authentication. Finally, if it is set to
 simple, then simple authentication will be used instead of SASL.
 .TP
-\fBauthtype="GSSAPI"|"LOGIN"|"PLAIN"|"ANONYMOUS"|"DIGEST-MD5|EXTERNAL"\fP
+\fBauthtype="GSSAPI"|"LOGIN"|"PLAIN"|"ANONYMOUS"|"DIGEST-MD5"|"SCRAM-SHA-1"|"EXTERNAL"\fP
 This attribute can be used to specify a preferred authentication mechanism.
 In normal operations, the automounter will attempt to authenticate to the
 ldap server using the list of supportedSASLmechanisms obtained from the
