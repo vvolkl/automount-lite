@@ -32,6 +32,7 @@ struct master *master_list = NULL;
 
 extern const char *global_options;
 extern long global_negative_timeout;
+extern long global_positive_timeout;
 
 /* Attribute to create a joinable thread */
 extern pthread_attr_t th_attr;
@@ -94,11 +95,16 @@ int master_add_autofs_point(struct master_mapent *entry, unsigned logopt,
 	/*
 	 * Program command line option overrides config.
 	 * We can't use 0 negative timeout so use default.
+	 * We can't use <0 positive timeout so use default.
 	 */
 	if (global_negative_timeout <= 0)
 		ap->negative_timeout = defaults_get_negative_timeout();
 	else
 		ap->negative_timeout = global_negative_timeout;
+	if (global_positive_timeout < 0)
+		ap->positive_timeout = defaults_get_positive_timeout();
+	else
+		ap->positive_timeout = global_positive_timeout;
 	ap->exp_timeout = defaults_get_timeout();
 	ap->exp_runfreq = 0;
 	ap->flags = 0;

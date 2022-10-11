@@ -58,6 +58,7 @@ static char *type;
 static char *format;
 static long timeout;
 static long negative_timeout;
+static long positive_timeout;
 static unsigned symlnk;
 static unsigned strictexpire;
 static unsigned nobind;
@@ -112,7 +113,7 @@ static int master_fprintf(FILE *, char *, ...);
 
 %token COMMENT
 %token MAP
-%token OPT_TIMEOUT OPT_NTIMEOUT OPT_NOBIND OPT_NOGHOST OPT_GHOST OPT_VERBOSE
+%token OPT_TIMEOUT OPT_NTIMEOUT OPT_PTIMEOUT OPT_NOBIND OPT_NOGHOST OPT_GHOST OPT_VERBOSE
 %token OPT_DEBUG OPT_RANDOM OPT_USE_WEIGHT OPT_SYMLINK OPT_MODE
 %token OPT_STRICTEXPIRE OPT_SHARED OPT_SLAVE OPT_PRIVATE
 %token COLON COMMA NL DDASH
@@ -635,6 +636,7 @@ option: daemon_option
 
 daemon_option: OPT_TIMEOUT NUMBER { timeout = $2; }
 	| OPT_NTIMEOUT NUMBER { negative_timeout = $2; }
+	| OPT_PTIMEOUT NUMBER { positive_timeout = $2; }
 	| OPT_SYMLINK	{ symlnk = 1; }
 	| OPT_STRICTEXPIRE { strictexpire = 1; }
 	| OPT_SHARED	{ propagation = PROPAGATION_SHARED; }

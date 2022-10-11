@@ -25,6 +25,8 @@
 #include "automount.h"
 #include "nsswitch.h"
 
+extern long global_positive_timeout;
+
 static void nsslist_cleanup(void *arg)
 {
 	struct list_head *nsslist = (struct list_head *) arg;
@@ -1362,11 +1364,11 @@ void lookup_prune_one_cache(struct autofs_point *ap, struct mapent_cache *mc, ti
 
 			/* If the map hasn't been read (nobrowse
 			 * indirect mounts) then keep cached entries
-			 * for POSITIVE_TIMEOUT.
+			 * for ap->positive_timeout.
 			 */
 			if (!(ap->flags & (MOUNT_FLAG_GHOST |
 					   MOUNT_FLAG_AMD_CACHE_ALL))) {
-				time_t until = me->age + POSITIVE_TIMEOUT;
+				time_t until = me->age + ap->positive_timeout;
 				if ((long) age - (long) until < 0) {
 					me = cache_enumerate(mc, me);
 					continue;

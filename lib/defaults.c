@@ -50,6 +50,7 @@
 #define NAME_TIMEOUT			"timeout"
 #define NAME_MASTER_WAIT		"master_wait"
 #define NAME_NEGATIVE_TIMEOUT		"negative_timeout"
+#define NAME_POSITIVE_TIMEOUT		"positive_timeout"
 #define NAME_BROWSE_MODE		"browse_mode"
 #define NAME_LOGGING			"logging"
 #define NAME_FORCE_STD_PROG_MAP_ENV	"force_standard_program_map_env"
@@ -1701,6 +1702,17 @@ unsigned int defaults_get_negative_timeout(void)
 		n_timeout = atol(DEFAULT_NEGATIVE_TIMEOUT);
 
 	return (unsigned int) n_timeout;
+}
+
+unsigned int defaults_get_positive_timeout(void)
+{
+	long p_timeout;
+
+	p_timeout = conf_get_number(autofs_gbl_sec, NAME_POSITIVE_TIMEOUT);
+	if (p_timeout <= 0)
+		p_timeout = atol(DEFAULT_POSITIVE_TIMEOUT);
+
+	return (unsigned int) p_timeout;
 }
 
 unsigned int defaults_get_browse_mode(void)

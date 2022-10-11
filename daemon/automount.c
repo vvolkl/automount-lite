@@ -79,6 +79,7 @@ static char *pid_file = NULL;		/* File in which to keep pid */
 unsigned int global_selection_options;
 
 long global_negative_timeout = -1;
+long global_positive_timeout = -1;
 int do_force_unlink = 0;		/* Forceably unlink mount tree at startup */
 
 static int start_pipefd[2] = {-1, -1};
@@ -2046,6 +2047,8 @@ static void usage(void)
 		"			dump automounter maps and exit\n"
 		"	-n --negative-timeout n\n"
 		"			set the timeout for failed key lookups.\n"
+		"	-P --positive-timeout n\n"
+		"			set the positive timeout for key lookups.\n"
 		"	-O --global-options\n"
 		"			specify global mount options\n"
 		"	-l --set-log-priority priority path [path,...]\n"
@@ -2305,7 +2308,7 @@ int main(int argc, char *argv[])
 	time_t timeout;
 	time_t age = monotonic_time(NULL);
 	struct rlimit rlim;
-	const char *options = "+hp:t:vmd::D:SfVrO:l:n:CFUM:";
+	const char *options = "+hp:t:vmd::D:SfVrO:l:n:P:CFUM:";
 	static const struct option long_options[] = {
 		{"help", 0, 0, 'h'},
 		{"pid-file", 1, 0, 'p'},
@@ -2317,6 +2320,7 @@ int main(int argc, char *argv[])
 		{"foreground", 0, 0, 'f'},
 		{"random-multimount-selection", 0, 0, 'r'},
 		{"negative-timeout", 1, 0, 'n'},
+		{"positive-timeout", 1, 0, 'P'},
 		{"dumpmaps", 0, 0, 'm'},
 		{"global-options", 1, 0, 'O'},
 		{"version", 0, 0, 'V'},
@@ -2407,6 +2411,10 @@ int main(int argc, char *argv[])
 
 		case 'n':
 			global_negative_timeout = getnumopt(optarg, opt);
+			break;
+
+		case 'P':
+			global_positive_timeout = getnumopt(optarg, opt);
 			break;
 
 		case 'm':

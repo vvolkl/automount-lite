@@ -564,6 +564,7 @@ struct autofs_point {
 	time_t exp_timeout;		/* Indirect mount expire timeout */
 	time_t exp_runfreq;		/* Frequency for polling for timeouts */
 	time_t negative_timeout;	/* timeout in secs for failed mounts */
+	time_t positive_timeout;	/* timeout in secs for using cache for map entries */
 	unsigned int flags;		/* autofs mount flags */
 	unsigned int logopt;		/* Per map logging */
 	pthread_t exp_thread;		/* Thread that is expiring */

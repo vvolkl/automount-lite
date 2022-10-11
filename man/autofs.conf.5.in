@@ -43,6 +43,12 @@ Set the default timeout for caching failed key lookups (program default
 60). If the equivalent command line option is given it will override this
 setting.
 .TP
+.B positive_timeout
+.br
+Set the default timeout for using cached map entries (program default
+120). If the equivalent command line option is given it will override this
+setting.
+.TP
 .B mount_verbose
 .br
 Use the verbose flag when spawning mount(8), and log some process info
