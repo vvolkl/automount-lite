@@ -39,18 +39,18 @@ int parse_version = AUTOFS_PARSE_VERSION;	/* Required by protocol */
 
 static struct mount_mod *mount_nfs = NULL;
 static int init_ctr = 0;
-static pthread_mutex_t instance_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t parse_instance_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void instance_mutex_lock(void)
+static void parse_instance_mutex_lock(void)
 {
-	int status = pthread_mutex_lock(&instance_mutex);
+	int status = pthread_mutex_lock(&parse_instance_mutex);
 	if (status)
 		fatal(status);
 }
 
-static void instance_mutex_unlock(void)
+static void parse_instance_mutex_unlock(void)
 {
-	int status = pthread_mutex_unlock(&instance_mutex);
+	int status = pthread_mutex_unlock(&parse_instance_mutex);
 	if (status)
 		fatal(status);
 }
@@ -112,7 +112,7 @@ int parse_init(int argc, const char *const *argv, void **context)
 
 	/* We only need this once.  NFS mounts are so common that we cache
 	   this module. */
-	instance_mutex_lock();
+	parse_instance_mutex_lock();
 	if (mount_nfs)
 		init_ctr++;
 	else {
@@ -121,11 +121,11 @@ int parse_init(int argc, const char *const *argv, void **context)
 		} else {
 			kill_context(ctxt);
 			*context = NULL;
-			instance_mutex_unlock();
+			parse_instance_mutex_unlock();
 			return 1;
 		}
 	}
-	instance_mutex_unlock();
+	parse_instance_mutex_unlock();
 
 	return 0;
 }
@@ -1365,11 +1365,11 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 		argc = 1;
 	}
 
-	instance_mutex_lock();
+	parse_instance_mutex_lock();
 	status = open_lookup("hosts", MODPREFIX, NULL, argc, pargv, &lookup);
 	if (status != NSS_STATUS_SUCCESS) {
 		debug(ap->logopt, "open lookup module hosts failed");
-		instance_mutex_unlock();
+		parse_instance_mutex_unlock();
 		goto out;
 	}
 
@@ -1381,13 +1381,13 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 		if (!instance) {
 			error(ap->logopt, MODPREFIX
 			     "failed to create source instance for hosts map");
-			instance_mutex_unlock();
+			parse_instance_mutex_unlock();
 			close_lookup(lookup);
 			goto out;
 		}
 	}
 	instance->lookup = lookup;
-	instance_mutex_unlock();
+	parse_instance_mutex_unlock();
 
 	cache_writelock(source->mc);
 	me = cache_lookup_distinct(source->mc, name);
@@ -2380,12 +2380,12 @@ int parse_done(void *context)
 	int rv = 0;
 	struct parse_context *ctxt = (struct parse_context *) context;
 
-	instance_mutex_lock();
+	parse_instance_mutex_lock();
 	if (--init_ctr == 0) {
 		rv = close_mount(mount_nfs);
 		mount_nfs = NULL;
 	}
-	instance_mutex_unlock();
+	parse_instance_mutex_unlock();
 	if (ctxt)
 		kill_context(ctxt);
 
