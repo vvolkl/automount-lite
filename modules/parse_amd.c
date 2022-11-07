@@ -1365,14 +1365,6 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 		argc = 1;
 	}
 
-	parse_instance_mutex_lock();
-	status = open_lookup("hosts", MODPREFIX, NULL, argc, pargv, &lookup);
-	if (status != NSS_STATUS_SUCCESS) {
-		debug(ap->logopt, "open lookup module hosts failed");
-		parse_instance_mutex_unlock();
-		goto out;
-	}
-
 	instance = master_find_source_instance(source,
 					 "hosts", "sun", argc, pargv);
 	if (!instance) {
@@ -1381,13 +1373,22 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 		if (!instance) {
 			error(ap->logopt, MODPREFIX
 			     "failed to create source instance for hosts map");
-			parse_instance_mutex_unlock();
 			close_lookup(lookup);
 			goto out;
 		}
 	}
-	instance->lookup = lookup;
-	parse_instance_mutex_unlock();
+
+	map_module_writelock(instance);
+	if (!instance->lookup) {
+		status = open_lookup("hosts", MODPREFIX, NULL, argc, pargv, &lookup);
+		if (status != NSS_STATUS_SUCCESS) {
+			map_module_unlock(instance);
+			debug(ap->logopt, "open lookup module hosts failed");
+			goto out;
+		}
+		instance->lookup = lookup;
+	}
+	map_module_unlock(instance);
 
 	cache_writelock(source->mc);
 	me = cache_lookup_distinct(source->mc, name);
@@ -1398,8 +1399,11 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 	master_source_current_wait(ap->entry);
 	ap->entry->current = source;
 
+	map_module_readlock(instance);
+	lookup = instance->lookup;
 	ret = lookup->lookup_mount(ap, entry->rhost,
 				   strlen(entry->rhost), lookup->context);
+	map_module_unlock(instance);
 
 	if (!strcmp(name, entry->rhost))
 		goto out;

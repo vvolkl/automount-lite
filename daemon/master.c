@@ -66,6 +66,34 @@ void master_mutex_lock_cleanup(void *arg)
 	return;
 }
 
+void map_module_writelock(struct map_source *map)
+{
+	int status = pthread_rwlock_wrlock(&map->module_lock);
+	if (status)
+		fatal(status);
+}
+
+void map_module_readlock(struct map_source *map)
+{
+	int status = pthread_rwlock_rdlock(&map->module_lock);
+	if (status)
+		fatal(status);
+}
+
+void map_module_unlock(struct map_source *map)
+{
+	int status = pthread_rwlock_unlock(&map->module_lock);
+	if (status)
+		fatal(status);
+}
+
+void map_module_lock_cleanup(void *arg)
+{
+	struct map_source *map = (struct map_source *) arg;
+
+	map_module_unlock(map);
+}
+
 int master_add_autofs_point(struct master_mapent *entry, unsigned logopt,
 			    unsigned nobind, unsigned ghost, int submount)
 {
@@ -161,6 +189,7 @@ master_add_map_source(struct master_mapent *entry,
 	struct map_source *source;
 	char *ntype, *nformat;
 	const char **tmpargv;
+	int status;
 
 	source = malloc(sizeof(struct map_source));
 	if (!source)
@@ -246,6 +275,10 @@ master_add_map_source(struct master_mapent *entry,
 	}
 
 	master_source_unlock(entry);
+
+	status = pthread_rwlock_init(&source->module_lock, NULL);
+	if (status)
+		fatal(status);
 
 	return source;
 }
@@ -336,6 +369,8 @@ master_get_map_source(struct master_mapent *entry,
 
 static void __master_free_map_source(struct map_source *source, unsigned int free_cache)
 {
+	int status;
+
 	/* instance map sources are not ref counted */
 	if (source->ref && --source->ref)
 		return;
@@ -370,6 +405,10 @@ static void __master_free_map_source(struct map_source *source, unsigned int fre
 			instance = next;
 		}
 	}
+
+	status = pthread_rwlock_destroy(&source->module_lock);
+	if (status)
+		fatal(status);
 
 	free(source);
 
@@ -499,6 +538,10 @@ master_add_source_instance(struct map_source *source, const char *type, const ch
 	}
 
 	status = pthread_mutex_unlock(&instance_mutex);
+	if (status)
+		fatal(status);
+
+	status = pthread_rwlock_init(&new->module_lock, NULL);
 	if (status)
 		fatal(status);
 

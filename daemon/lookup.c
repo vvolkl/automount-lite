@@ -320,28 +320,27 @@ static int do_read_map(struct autofs_point *ap, struct map_source *map, time_t a
 	struct lookup_mod *lookup;
 	int status;
 
-	lookup = NULL;
-	master_source_writelock(ap->entry);
+	pthread_cleanup_push(map_module_lock_cleanup, map);
+	map_module_writelock(map);
 	if (!map->lookup) {
 		status = open_lookup(map->type, "", map->format,
 				     map->argc, map->argv, &lookup);
-		if (status != NSS_STATUS_SUCCESS) {
-			master_source_unlock(ap->entry);
+		if (status == NSS_STATUS_SUCCESS)
+			map->lookup = lookup;
+		else
 			debug(ap->logopt,
 			      "lookup module %s open failed", map->type);
-			return status;
-		}
-		map->lookup = lookup;
 	} else {
-		lookup = map->lookup;
-		status = lookup->lookup_reinit(map->format,
-					       map->argc, map->argv,
-					       &lookup->context);
+		status = map->lookup->lookup_reinit(map->format,
+						    map->argc, map->argv,
+						    &map->lookup->context);
 		if (status)
 			warn(ap->logopt,
 			     "lookup module %s reinit failed", map->type);
 	}
-	master_source_unlock(ap->entry);
+	pthread_cleanup_pop(1);
+	if (status != NSS_STATUS_SUCCESS)
+		return status;
 
 	if (!map->stale)
 		return NSS_STATUS_SUCCESS;
@@ -349,7 +348,11 @@ static int do_read_map(struct autofs_point *ap, struct map_source *map, time_t a
 	master_source_current_wait(ap->entry);
 	ap->entry->current = map;
 
+	pthread_cleanup_push(map_module_lock_cleanup, map);
+	map_module_readlock(map);
+	lookup = map->lookup;
 	status = lookup->lookup_read_map(ap, age, lookup->context);
+	pthread_cleanup_pop(1);
 
 	if (status != NSS_STATUS_SUCCESS)
 		map->stale = 0;
@@ -806,23 +809,27 @@ int do_lookup_mount(struct autofs_point *ap, struct map_source *map, const char 
 	struct lookup_mod *lookup;
 	int status;
 
+	map_module_writelock(map);
 	if (!map->lookup) {
 		status = open_lookup(map->type, "",
 				     map->format, map->argc, map->argv, &lookup);
 		if (status != NSS_STATUS_SUCCESS) {
+			map_module_unlock(map);
 			debug(ap->logopt,
 			      "lookup module %s open failed", map->type);
 			return status;
 		}
 		map->lookup = lookup;
 	}
-
-	lookup = map->lookup;
+	map_module_unlock(map);
 
 	master_source_current_wait(ap->entry);
 	ap->entry->current = map;
 
+	map_module_readlock(map);
+	lookup = map->lookup;
 	status = lookup->lookup_mount(ap, name, name_len, lookup->context);
+	map_module_unlock(map);
 
 	return status;
 }

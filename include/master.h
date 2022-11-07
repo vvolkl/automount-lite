@@ -35,6 +35,7 @@ struct map_source {
 	unsigned int stale;
 	unsigned int recurse;
 	unsigned int depth;
+	pthread_rwlock_t module_lock;
 	struct lookup_mod *lookup;
 	int argc;
 	const char **argv;
@@ -126,5 +127,9 @@ int __master_list_empty(struct master *);
 int master_list_empty(struct master *);
 int master_done(struct master *);
 int master_kill(struct master *);
+void map_module_writelock(struct map_source *map);
+void map_module_readlock(struct map_source *map);
+void map_module_unlock(struct map_source *map);
+void map_module_lock_cleanup(void *arg);
 
 #endif
