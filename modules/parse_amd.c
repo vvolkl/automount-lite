@@ -1377,17 +1377,19 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 		}
 	}
 
-	map_module_writelock(instance);
 	if (!instance->lookup) {
-		status = open_lookup("hosts", MODPREFIX, NULL, argc, pargv, &lookup);
-		if (status != NSS_STATUS_SUCCESS) {
-			map_module_unlock(instance);
-			debug(ap->logopt, "open lookup module hosts failed");
-			goto out;
+		map_module_writelock(instance);
+		if (!instance->lookup) {
+			status = open_lookup("hosts", MODPREFIX, NULL, argc, pargv, &lookup);
+			if (status != NSS_STATUS_SUCCESS) {
+				map_module_unlock(instance);
+				debug(ap->logopt, "open lookup module hosts failed");
+				goto out;
+			}
+			instance->lookup = lookup;
 		}
-		instance->lookup = lookup;
+		map_module_unlock(instance);
 	}
-	map_module_unlock(instance);
 
 	cache_writelock(source->mc);
 	me = cache_lookup_distinct(source->mc, name);

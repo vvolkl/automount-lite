@@ -44,6 +44,7 @@
 - fix parse module instance mutex naming.
 - serialise lookup module open and reinit.
 - coverity fix for invalid access.
+- fix hosts map deadlock on restart.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

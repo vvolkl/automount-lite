@@ -809,19 +809,21 @@ int do_lookup_mount(struct autofs_point *ap, struct map_source *map, const char 
 	struct lookup_mod *lookup;
 	int status;
 
-	map_module_writelock(map);
 	if (!map->lookup) {
-		status = open_lookup(map->type, "",
-				     map->format, map->argc, map->argv, &lookup);
-		if (status != NSS_STATUS_SUCCESS) {
-			map_module_unlock(map);
-			debug(ap->logopt,
-			      "lookup module %s open failed", map->type);
-			return status;
+		map_module_writelock(map);
+		if (!map->lookup) {
+			status = open_lookup(map->type, "",
+					     map->format, map->argc, map->argv, &lookup);
+			if (status != NSS_STATUS_SUCCESS) {
+				map_module_unlock(map);
+				debug(ap->logopt,
+				      "lookup module %s open failed", map->type);
+				return status;
+			}
+			map->lookup = lookup;
 		}
-		map->lookup = lookup;
+		map_module_unlock(map);
 	}
-	map_module_unlock(map);
 
 	master_source_current_wait(ap->entry);
 	ap->entry->current = map;
