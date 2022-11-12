@@ -192,11 +192,11 @@ mount_nfs_default_protocol = 4
 #disable_not_found_message = "no"
 #
 # use_ignore_mount_option - This option is used to enable the use of autofs
-#			pseudo option "disable". This option is used as a
+#			pseudo option "ignore". This option is used as a
 #			hint to user space that the mount entry should be
 #			ommitted from mount table listings. The default is
 #			"no" to avoid unexpected changes in behaviour and
-#			so is an opt-in setting.
+#			is an opt-in setting.
 #
 #use_ignore_mount_option = no
 #
