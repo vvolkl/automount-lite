@@ -177,7 +177,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 
 			return err;
 		} else {
-			debug(ap->logopt,
+			mountlog(ap->logopt,
 			      MODPREFIX "mounted %s type %s on %s",
 			      what, fstype, fullpath);
 		}
@@ -252,7 +252,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 			}
 			return 1;
 		} else {
-			debug(ap->logopt,
+			mountlog(ap->logopt,
 			      MODPREFIX "symlinked %s -> %s", fullpath, what);
 			return 0;
 		}

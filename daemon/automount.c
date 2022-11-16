@@ -1161,14 +1161,17 @@ static int get_pkt(struct autofs_point *ap, union autofs_v5_packet_union *pkt)
 int do_expire(struct autofs_point *ap, const char *name, int namelen)
 {
 	char buf[PATH_MAX];
+	const char *parent;
 	int len, ret;
 
 	if (*name != '/') {
 		len = ncat_path(buf, sizeof(buf), ap->path, name, namelen);
+		parent = ap->path;
 	} else {
 		len = snprintf(buf, PATH_MAX, "%s", name);
 		if (len >= PATH_MAX)
 			len = 0;
+		parent = name;
 	}
 
 	if (!len) {
@@ -1176,13 +1179,13 @@ int do_expire(struct autofs_point *ap, const char *name, int namelen)
 		return 1;
 	}
 
-	info(ap->logopt, "expiring path %s", buf);
+	info(ap->logopt, "expiring path %s on %s", buf, parent);
 
 	pthread_cleanup_push(master_source_lock_cleanup, ap->entry);
 	master_source_readlock(ap->entry);
 	ret = umount_multi(ap, buf, 1);
 	if (ret == 0)
-		info(ap->logopt, "expired %s", buf);
+		info(ap->logopt, "umounting %s succeeded", buf);
 	else
 		warn(ap->logopt, "couldn't complete expire of %s", buf);
 	pthread_cleanup_pop(1);

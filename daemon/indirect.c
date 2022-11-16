@@ -342,7 +342,7 @@ force_umount:
 		     "forcing umount of indirect mount %s", mountpoint);
 		rv = umount2(mountpoint, MNT_DETACH);
 	} else {
-		info(ap->logopt, "umounted indirect mount %s", mountpoint);
+		info(ap->logopt, "umounting indirect mount %s succeeded", mountpoint);
 		if (ap->submount)
 			rm_unwanted(ap, mountpoint, 1);
 	}

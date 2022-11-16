@@ -403,7 +403,9 @@ dont_probe:
 		}
 
 		if (!err) {
-			debug(ap->logopt, MODPREFIX "mounted %s on %s", loc, fullpath);
+			mountlog(ap->logopt,
+			         MODPREFIX "mounted %s type %s on %s",
+				 loc, fstype, fullpath);
 			free(loc);
 			free_host_list(&hosts);
 			return 0;

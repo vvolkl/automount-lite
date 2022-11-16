@@ -542,7 +542,7 @@ done:
 				while (errp && (p = memchr(sp, '\n', errp))) {
 					*p++ = '\0';
 					if (sp[0])	/* Don't output empty lines */
-						warn(logopt, ">> %s", sp);
+						debug(logopt, ">> %s", sp);
 					errp -= (p - sp);
 					sp = p;
 				}
@@ -553,7 +553,7 @@ done:
 				if (errp >= ERRBUFSIZ) {
 					/* Line too long, split */
 					errbuf[errp] = '\0';
-					warn(logopt, ">> %s", errbuf);
+					debug(logopt, ">> %s", errbuf);
 					errp = 0;
 				}
 			}
@@ -567,7 +567,7 @@ done:
 		if (errp > 0) {
 			/* End of file without \n */
 			errbuf[errp] = '\0';
-			warn(logopt, ">> %s", errbuf);
+			debug(logopt, ">> %s", errbuf);
 		}
 
 		if (waitpid(f, &ret, 0) != f)
