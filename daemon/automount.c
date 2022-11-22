@@ -2569,6 +2569,14 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
+		status = pthread_key_create(&key_thread_attempt_id, free);
+		if (status) {
+			logerr("%s: failed to create thread data key for attempt ID!",
+			       program);
+			macro_free_global_table();
+			exit(1);
+		}
+
 		if (master)
 			master_list = master_new(NULL, timeout, flags);
 		else
