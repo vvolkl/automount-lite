@@ -43,6 +43,7 @@
 - fix autofs regression due to positive_timeout.
 - fix parse module instance mutex naming.
 - serialise lookup module open and reinit.
+- coverity fix for invalid access.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

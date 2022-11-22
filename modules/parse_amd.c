@@ -1373,7 +1373,6 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 		if (!instance) {
 			error(ap->logopt, MODPREFIX
 			     "failed to create source instance for hosts map");
-			close_lookup(lookup);
 			goto out;
 		}
 	}
