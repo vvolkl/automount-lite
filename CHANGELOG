@@ -47,6 +47,7 @@
 - fix hosts map deadlock on restart.
 - fix deadlock with hosts map reload.
 - fix memory leak in update_hosts_mounts().
+- fix minus only option handling in concat_options().
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

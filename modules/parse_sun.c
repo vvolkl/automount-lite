@@ -376,10 +376,16 @@ static int do_init(int argc, const char *const *argv, struct parse_context *ctxt
 	if (gbl_options) {
 		append_options = defaults_get_append_options();
 		if (append_options) {
-			char *tmp = concat_options(gbl_options, ctxt->optstr);
+			char *tmp;
+
+			errno = 0;
+			tmp = concat_options(gbl_options, ctxt->optstr);
 			if (!tmp) {
-				char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
-				logerr(MODPREFIX "concat_options: %s", estr);
+				/* Ignore non-error NULL return */
+				if (errno) {
+					char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+					logerr(MODPREFIX "concat_options: %s", estr);
+				}
 				/* freed in concat_options */
 				ctxt->optstr = NULL;
 			} else
@@ -1007,9 +1013,12 @@ static int parse_mapent(const char *ent, char *g_options, char **options, char *
 				free(myoptions);
 				myoptions = newopt;
 			} else if (newopt) {
+				errno = 0;
 				tmp = concat_options(myoptions, newopt);
-				if (!tmp) {
+				/* Ignore non-error NULL return */
+				if (!tmp && errno) {
 					char *estr;
+
 					estr = strerror_r(errno, buf, MAX_ERR_BUF);
 					error(logopt, MODPREFIX
 					      "concat_options: %s", estr);
@@ -1381,8 +1390,10 @@ dont_expand:
 				free(mnt_options);
 				mnt_options = noptions;
 			} else if (noptions) {
+				errno = 0;
 				tmp = concat_options(mnt_options, noptions);
-				if (!tmp) {
+				/* Ignore non-error NULL return */
+				if (!tmp && errno) {
 					char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 					error(ap->logopt,
 					      MODPREFIX "concat_options: %s", estr);
@@ -1406,8 +1417,10 @@ dont_expand:
 				free(options);
 				options = mnt_options;
 			} else if (mnt_options) {
+				errno = 0;
 				tmp = concat_options(options, mnt_options);
-				if (!tmp) {
+				/* Ignore non-error NULL return */
+				if (!tmp && errno) {
 					char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 					error(ap->logopt, MODPREFIX "concat_options: %s", estr);
 					free(pmapent);
