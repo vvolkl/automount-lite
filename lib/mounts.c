@@ -2803,14 +2803,30 @@ int try_remount(struct autofs_point *ap, struct mapent *me, unsigned int type)
 			ap->flags &= ~MOUNT_FLAG_DIR_CREATED;
 		else
 			ap->flags |= MOUNT_FLAG_DIR_CREATED;
-	} else {
-		me->flags &= ~MOUNT_FLAG_DIR_CREATED;
-		if (type == t_offset) {
-			if (!is_mounted(MM_PARENT(me)->key, MNTS_REAL))
-				me->flags |= MOUNT_FLAG_DIR_CREATED;
-		}
+		goto done;
 	}
 
+	me->flags &= ~MOUNT_FLAG_DIR_CREATED;
+	/* Direct or offset mount, key is full path */
+	if (MM_PARENT(me)->key[0] == '/') {
+		if (!is_mounted(MM_PARENT(me)->key, MNTS_REAL))
+			me->flags |= MOUNT_FLAG_DIR_CREATED;
+	} else {
+		char *p_key = MM_PARENT(me)->key;
+		char mp[PATH_MAX + 1];
+		int len;
+
+		len = mount_fullpath(mp, PATH_MAX, ap->path, ap->len, p_key);
+		if (len > PATH_MAX) {
+			/* This should never happen due to earlier checks */
+			error(ap->logopt, "mountpoint path too long");
+			return 0;
+		}
+
+		if (!is_mounted(mp, MNTS_REAL))
+			me->flags |= MOUNT_FLAG_DIR_CREATED;
+	}
+done:
 	/*
 	 * Either we opened the mount or we're re-reading the map.
 	 * If we opened the mount and ioctlfd is not -1 we have
