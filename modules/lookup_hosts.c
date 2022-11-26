@@ -201,16 +201,80 @@ static int do_parse_mount(struct autofs_point *ap, struct map_source *source,
 	return NSS_STATUS_SUCCESS;
 }
 
+struct update_context {
+	char *key;
+	int key_len;
+	char *entry;
+	struct update_context *next;
+};
+
+static int add_update_entry(struct update_context **entries, struct mapent *me)
+{
+	struct update_context *upd;
+	char *key, *ent;
+
+	key = strdup(me->key);
+	if (!key)
+		return 0;
+
+	ent = strdup(me->mapent);
+	if (!ent) {
+		free(key);
+		return 0;
+	}
+
+	upd = malloc(sizeof(struct update_context));
+	if (!upd) {
+		free(ent);
+		free(key);
+		return 0;
+	}
+
+	upd->key = key;
+	upd->key_len = me->len;
+	upd->entry = ent;
+	upd->next = NULL;
+	if (*entries)
+		(*entries)->next = upd;
+	*entries = upd;
+
+	return 1;
+}
+
+static void free_update_entries(struct update_context *entries)
+{
+	struct update_context *this = entries;
+
+	while (this) {
+		struct update_context *next = this->next;
+		free(this->key);
+		free(this->entry);
+		free(this);
+		this = next;
+	}
+}
+
+void entries_cleanup(void *arg)
+{
+	struct update_context *entries = arg;
+
+	free_update_entries(entries);
+}
+
 static void update_hosts_mounts(struct autofs_point *ap,
 				struct map_source *source, time_t age,
 				struct lookup_context *ctxt)
 {
+	struct update_context *head = NULL;
+	struct update_context *entries = NULL;
 	struct mapent_cache *mc;
 	struct mapent *me;
 	char *mapent;
 	int ret;
 
 	mc = source->mc;
+
+	pthread_cleanup_push(entries_cleanup, head);
 
 	pthread_cleanup_push(cache_lock_cleanup, mc);
 	cache_writelock(mc);
@@ -224,39 +288,39 @@ static void update_hosts_mounts(struct autofs_point *ap,
 
 		mapent = get_exports(ap, me->key);
 		if (mapent) {
-			cache_update(mc, source, me->key, mapent, age);
+			int ret;
+
+			ret = cache_update(mc, source, me->key, mapent, age);
 			free(mapent);
+			if (!IS_MM_ROOT(me))
+				goto next;
+			if (ret != CHE_FAIL) {
+				if (!add_update_entry(&entries, me))
+					warn(ap->logopt, MODPREFIX
+					     "failed to add update entry for %s", me->key);
+				else if (!head)
+					head = entries;
+			}
 		}
 next:
 		me = cache_lookup_next(mc, me);
 	}
 	pthread_cleanup_pop(1);
 
-	pthread_cleanup_push(cache_lock_cleanup, mc);
-	cache_readlock(mc);
-	me = cache_lookup_first(mc);
-	while (me) {
-		/*
-		 * Hosts map entry not yet expanded, already expired
-		 * or not the base of the tree
-		 */
-		if (!IS_MM(me) || !IS_MM_ROOT(me))
-			goto cont;
-
+	while (head) {
 		debug(ap->logopt, MODPREFIX
-		      "attempt to update exports for %s", me->key);
+		      "attempt to update exports for %s", head->key);
 
 		master_source_current_wait(ap->entry);
 		ap->entry->current = source;
 		ap->flags |= MOUNT_FLAG_REMOUNT;
-		ret = ctxt->parse->parse_mount(ap, me->key, strlen(me->key),
-					       me->mapent, ctxt->parse->context);
+		ret = ctxt->parse->parse_mount(ap, head->key, strlen(head->key),
+					       head->entry, ctxt->parse->context);
 		if (ret)
 			warn(ap->logopt, MODPREFIX
-			     "failed to parse mount %s", me->mapent);
+			     "failed to parse mount %s", head->entry);
 		ap->flags &= ~MOUNT_FLAG_REMOUNT;
-cont:
-		me = cache_lookup_next(mc, me);
+		head = head->next;
 	}
 	pthread_cleanup_pop(1);
 }
