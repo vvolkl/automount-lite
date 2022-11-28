@@ -307,20 +307,21 @@ next:
 	}
 	pthread_cleanup_pop(1);
 
-	while (head) {
+	entries = head;
+	while (entries) {
 		debug(ap->logopt, MODPREFIX
-		      "attempt to update exports for %s", head->key);
+		      "attempt to update exports for %s", entries->key);
 
 		master_source_current_wait(ap->entry);
 		ap->entry->current = source;
 		ap->flags |= MOUNT_FLAG_REMOUNT;
-		ret = ctxt->parse->parse_mount(ap, head->key, strlen(head->key),
-					       head->entry, ctxt->parse->context);
+		ret = ctxt->parse->parse_mount(ap, entries->key, strlen(entries->key),
+					       entries->entry, ctxt->parse->context);
 		if (ret)
 			warn(ap->logopt, MODPREFIX
-			     "failed to parse mount %s", head->entry);
+			     "failed to parse mount %s", entries->entry);
 		ap->flags &= ~MOUNT_FLAG_REMOUNT;
-		head = head->next;
+		entries = entries->next;
 	}
 	pthread_cleanup_pop(1);
 }
