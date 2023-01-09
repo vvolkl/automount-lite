@@ -24,6 +24,7 @@
 
 #define DEFAULT_MASTER_MAP_NAME	"auto.master"
 
+#define DEFAULT_OPEN_FILE_LIMIT		"20480"
 #define DEFAULT_TIMEOUT			"600"
 #define DEFAULT_MASTER_WAIT		"10"
 #define DEFAULT_NEGATIVE_TIMEOUT	"60"
@@ -158,6 +159,7 @@ unsigned int defaults_read_config(unsigned int);
 void defaults_conf_release(void);
 const char *defaults_get_master_map(void);
 int defaults_master_set(void);
+unsigned long defaults_get_open_file_limit(void);
 unsigned int defaults_get_timeout(void);
 int defaults_get_master_wait(void);
 unsigned int defaults_get_negative_timeout(void);

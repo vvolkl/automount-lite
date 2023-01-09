@@ -23,6 +23,13 @@ configuration settings.
 .P
 Configuration settings available are:
 .TP
++.B open_file_limit
++.br
++Set the maximum number of open files. Note there may be other limits
++within the system that prevent this from being set, systemd for example
++may need a setting in the unit file to increase its default. The autofs
++default is 20480.
++.TP
 .B timeout
 .br
 Sets the default mount timeout in seconds. The internal program

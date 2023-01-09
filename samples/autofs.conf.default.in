@@ -1,4 +1,15 @@
 #
+# Global configuration options.
+#
+# open_file_limit - set the maximum number of open files. Note there
+#                   may be other limits within the system that prevent
+#                   this from being set, systemd for example may need
+#                   a setting in the unit file to increase its default.
+#                   The autofs default is 20480.
+#
+#open_file_limit = 20480
+#
+#
 # Define default options for autofs.
 #
 [ autofs ]

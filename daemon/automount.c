@@ -111,8 +111,6 @@ struct startup_cond suc = {
 pthread_key_t key_thread_stdenv_vars;
 pthread_key_t key_thread_attempt_id = (pthread_key_t) 0L;
 
-#define MAX_OPEN_FILES		20480
-
 int aquire_flag_file(void);
 void release_flag_file(void);
 
@@ -2240,6 +2238,7 @@ int main(int argc, char *argv[])
 	time_t timeout;
 	time_t age = monotonic_time(NULL);
 	struct rlimit rlim;
+	unsigned long max_open_files;
 	const char *options = "+hp:t:vmd::D:SfVrO:l:n:P:CFUM:";
 	static const struct option long_options[] = {
 		{"help", 0, 0, 'h'},
@@ -2452,11 +2451,13 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+	max_open_files = defaults_get_open_file_limit();
+
 	res = getrlimit(RLIMIT_NOFILE, &rlim);
-	if (res == -1 || rlim.rlim_cur <= MAX_OPEN_FILES)  {
-		rlim.rlim_cur = MAX_OPEN_FILES;
-		if (rlim.rlim_max < MAX_OPEN_FILES)
-			rlim.rlim_max = MAX_OPEN_FILES;
+	if (res == -1 || rlim.rlim_cur <= max_open_files)  {
+		rlim.rlim_cur = max_open_files;
+		if (rlim.rlim_max < max_open_files)
+			rlim.rlim_max = max_open_files;
 	}
 	res = setrlimit(RLIMIT_NOFILE, &rlim);
 	if (res)

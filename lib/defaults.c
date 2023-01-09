@@ -47,6 +47,7 @@
 
 #define NAME_MASTER_MAP			"master_map_name"
 
+#define NAME_OPEN_FILE_LIMIT		"open_file_limit"
 #define NAME_TIMEOUT			"timeout"
 #define NAME_MASTER_WAIT		"master_wait"
 #define NAME_NEGATIVE_TIMEOUT		"negative_timeout"
@@ -290,6 +291,11 @@ static int conf_load_autofs_defaults(void)
 	struct conf_option *co;
 	const char *sec = autofs_gbl_sec;
 	int ret;
+
+	ret = conf_update(sec, NAME_OPEN_FILE_LIMIT,
+			  DEFAULT_OPEN_FILE_LIMIT, CONF_ENV);
+	if (ret == CFG_FAIL)
+		goto error;
 
 	ret = conf_update(sec, NAME_TIMEOUT,
 			  DEFAULT_TIMEOUT, CONF_ENV);
@@ -1669,6 +1675,17 @@ int defaults_master_set(void)
 	if (co)
 		return 1;
 	return 0;
+}
+
+unsigned long defaults_get_open_file_limit(void)
+{
+	long limit;
+
+	limit = conf_get_number(autofs_gbl_sec, NAME_OPEN_FILE_LIMIT);
+	if (limit < 0)
+		limit = atol(DEFAULT_OPEN_FILE_LIMIT);
+
+	return limit;
 }
 
 unsigned int defaults_get_timeout(void)
