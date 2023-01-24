@@ -52,6 +52,7 @@
 - fix additional tsv invalid access.
 - fix use_ignore_mount_option description.
 - include addtional log info for mounts.
+- fail on empty replicated host name.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

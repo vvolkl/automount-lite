@@ -935,6 +935,12 @@ static int validate_location(unsigned int logopt, char *loc)
 	if (*ptr == ':')
 		return 1;
 
+	/* Fail on replicated entry with empty first host name */
+	if (*ptr == ',') {
+		error(logopt, "missing first host name in location %s", loc);
+		return 0;
+	}
+
 	/*
 	 * If a ':/' is present now it must be a host name, except
 	 * for those special file systems like sshfs which use "#"
@@ -971,6 +977,18 @@ static int validate_location(unsigned int logopt, char *loc)
 				      "found in location %s", *ptr, loc);
 				return 0;
 			}
+
+			/* Fail on replicated entry with empty host name */
+			if (*ptr == ',') {
+				char next = *(ptr + 1);
+
+				if (next == ',' || next == ':') {
+					error(logopt,
+					      "missing host name in location %s", loc);
+					return 0;
+				}
+			}
+
 			ptr++;
 		}
 
