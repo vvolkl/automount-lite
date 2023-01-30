@@ -394,7 +394,17 @@ static int setautomntent(unsigned int logopt,
 			if (ret != ENOENT)
 				goto error;
 		} else {
-			if (ret != ENOENT && ret != EHOSTDOWN)
+			/* If we get an ENOENT here assume it's accurrate
+			 * and return the error.
+			 */
+			if (ret == ENOENT) {
+				error(logopt, MODPREFIX
+				      "setautomountent: entry for map %s not found",
+				      ctxt->mapname);
+				err = NSS_STATUS_NOTFOUND;
+				goto free;
+			}
+			if (ret != EHOSTDOWN)
 				goto error;
 		}
 
@@ -410,6 +420,10 @@ static int setautomntent(unsigned int logopt,
 			if (ret == EINVAL)
 				goto free;
 			if (ret == ENOENT) {
+				/* Map info. not found after host became available */
+				error(logopt, MODPREFIX
+				      "setautomountent: entry for map %s not found",
+				      ctxt->mapname);
 				err = NSS_STATUS_NOTFOUND;
 				goto free;
 			}
