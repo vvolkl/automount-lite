@@ -338,9 +338,12 @@ static int setautomntent_wait(unsigned int logopt,
 	     "can't connect to sssd, retry for %d seconds",
 	     retries);
 
-	while (++retry <= retries) {
+	while (++retry < retries) {
 		struct timespec t = { SSS_WAIT_INTERVAL, 0 };
 		struct timespec r;
+
+		while (nanosleep(&t, &r) == -1 && errno == EINTR)
+			memcpy(&t, &r, sizeof(struct timespec));
 
 		ret = ctxt->setautomntent(ctxt->mapname, sss_ctxt);
 		if (proto_version(ctxt) == 0) {
@@ -355,9 +358,6 @@ static int setautomntent_wait(unsigned int logopt,
 			free(*sss_ctxt);
 			*sss_ctxt = NULL;
 		}
-
-		while (nanosleep(&t, &r) == -1 && errno == EINTR)
-			memcpy(&t, &r, sizeof(struct timespec));
 	}
 
 	if (!ret)
@@ -475,9 +475,12 @@ static int getautomntent_wait(unsigned int logopt,
 	 "can't contact sssd to to get map entry, retry for %d seconds",
 	 retries);
 
-	while (++retry <= retries) {
+	while (++retry < retries) {
 		struct timespec t = { SSS_WAIT_INTERVAL, 0 };
 		struct timespec r;
+
+		while (nanosleep(&t, &r) == -1 && errno == EINTR)
+			memcpy(&t, &r, sizeof(struct timespec));
 
 		ret = ctxt->getautomntent_r(key, value, sss_ctxt);
 		if (proto_version(ctxt) == 0) {
@@ -487,9 +490,6 @@ static int getautomntent_wait(unsigned int logopt,
 			if (ret != EHOSTDOWN)
 				break;
 		}
-
-		while (nanosleep(&t, &r) == -1 && errno == EINTR)
-			memcpy(&t, &r, sizeof(struct timespec));
 	}
 
 	if (!ret)
@@ -600,9 +600,12 @@ static int getautomntbyname_wait(unsigned int logopt,
 	"can't contact sssd to to lookup key value, retry for %d seconds",
 	retries);
 
-	while (++retry <= retries) {
+	while (++retry < retries) {
 		struct timespec t = { SSS_WAIT_INTERVAL, 0 };
 		struct timespec r;
+
+		while (nanosleep(&t, &r) == -1 && errno == EINTR)
+			memcpy(&t, &r, sizeof(struct timespec));
 
 		ret = ctxt->getautomntbyname_r(key, value, sss_ctxt);
 		if (proto_version(ctxt) == 0) {
@@ -612,9 +615,6 @@ static int getautomntbyname_wait(unsigned int logopt,
 			if (ret != EHOSTDOWN)
 				break;
 		}
-
-		while (nanosleep(&t, &r) == -1 && errno == EINTR)
-			memcpy(&t, &r, sizeof(struct timespec));
 	}
 
 	if (!ret)
