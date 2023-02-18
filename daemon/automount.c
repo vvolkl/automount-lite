@@ -69,6 +69,8 @@ unsigned int mp_mode = 0755;
 unsigned int nfs_mount_uses_string_options = 0;
 static struct nfs_mount_vers vers, check = {1, 1, 1};
 
+#define FIFO_BUF_SIZE		25
+
 /* autofs fifo name prefix */
 #define FIFO_NAME_PREFIX "autofs.fifo"
 const char *fifodir = AUTOFS_FIFO_DIR "/" FIFO_NAME_PREFIX;
@@ -961,35 +963,57 @@ static void cleanup_stale_logpri_fifo_pipes(void)
 	closedir(dfd);
 }
 
-static void handle_fifo_message(struct autofs_point *ap, int fd)
+static void handle_fifo_message(int fd)
 {
+	struct autofs_point *ap;
 	int ret;
 	char buffer[PIPE_BUF];
-	char *end;
+	char *end, *sep;
 	long pri;
 	char buf[MAX_ERR_BUF];
+	dev_t devid;
 
 	memset(buffer, 0, sizeof(buffer));
 	ret = read(fd, &buffer, sizeof(buffer));
 	if (ret < 0) {
 		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
-		warn(ap->logopt, "read on fifo returned error: %s", estr);
+		warn(LOGOPT_ANY, "read on fifo returned error: %s", estr);
 		return;
 	}
 
-	if (ret != 2) {
-		debug(ap->logopt, "expected 2 bytes, received %d.", ret);
+	sep = strrchr(buffer, ' ');
+	if (!sep) {
+		error(LOGOPT_ANY, "Incorrect cmd message format %s.", buffer);
+		return;
+	}
+	sep++;
+
+	errno = 0;
+	devid = strtol(buffer, &end, 10);
+	if ((devid == LONG_MIN || devid == LONG_MAX) && errno == ERANGE) {
+		debug(LOGOPT_ANY, "strtol reported a range error.");
+		error(LOGOPT_ANY, "Invalid cmd message format %s.", buffer);
+		return;
+	}
+	if ((devid == 0 && errno == EINVAL) || end == buffer) {
+		debug(LOGOPT_ANY, "devid id is expected to be a integer.");
+		return;
+	}
+
+	ap = master_find_mapent_by_devid(master_list, devid);
+	if (!ap) {
+		error(LOGOPT_ANY, "Can't locate autofs_point for device id %ld.", devid);
 		return;
 	}
 
 	errno = 0;
-	pri = strtol(buffer, &end, 10);
+	pri = strtol(sep, &end, 10);
 	if ((pri == LONG_MIN || pri == LONG_MAX) && errno == ERANGE) {
 		debug(ap->logopt, "strtol reported an %s.  Failed to set "
 		      "log priority.", pri == LONG_MIN ? "underflow" : "overflow");
 		return;
 	}
-	if ((pri == 0 && errno == EINVAL) || end == buffer) {
+	if ((pri == 0 && errno == EINVAL) || end == sep) {
 		debug(ap->logopt, "priority is expected to be an integer "
 		      "in the range 0-7 inclusive.");
 		return;
@@ -1026,9 +1050,24 @@ static void handle_fifo_message(struct autofs_point *ap, int fd)
 
 static int set_log_priority(const char *path, int priority)
 {
+	struct ioctl_ops *ops = get_ioctl_ops();
 	int fd;
 	char *fifo_name;
-	char buf[2];
+	char buf[FIFO_BUF_SIZE];
+	int ret;
+	dev_t devid;
+
+	if (!ops) {
+		fprintf(stderr, "Could not get ioctl ops\n");
+		return -1;
+	} else {
+		ret = ops->mount_device(LOGOPT_ANY, path, 0, &devid);
+		if (ret == -1 || ret == 0) {
+			fprintf(stderr,
+				"Could not find device id for mount %s\n", path);
+			return -1;
+		}
+	}
 
 	if (priority > LOG_DEBUG || priority < LOG_EMERG) {
 		fprintf(stderr, "Log priority %d is invalid.\n", priority);
@@ -1040,7 +1079,11 @@ static int set_log_priority(const char *path, int priority)
 	 * This is an ascii based protocol, so we want the string
 	 * representation of the integer log priority.
 	 */
-	snprintf(buf, sizeof(buf), "%d", priority);
+	ret = snprintf(buf, sizeof(buf), "%ld %d", devid, priority);
+	if (ret >= FIFO_BUF_SIZE) {
+		fprintf(stderr, "Invalid device id or log priotity\n");
+		return -1;
+	}
 
 	fifo_name = automount_path_to_fifo(LOGOPT_NONE, path);
 	if (!fifo_name) {
@@ -1139,7 +1182,7 @@ static int get_pkt(struct autofs_point *ap, union autofs_v5_packet_union *pkt)
 
 		if (fds[1].fd != -1 && fds[1].revents & POLLIN) {
 			debug(ap->logopt, "message pending on control fifo.");
-			handle_fifo_message(ap, fds[1].fd);
+			handle_fifo_message(fds[1].fd);
 		}
 	}
 }
