@@ -61,6 +61,7 @@
 - fix deadlock in lookups.
 - dont delay expire.
 - make amd mapent search function name clear.
+- rename statemachine() to signal_handler().
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

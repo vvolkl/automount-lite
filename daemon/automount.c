@@ -85,7 +85,7 @@ int do_force_unlink = 0;		/* Forceably unlink mount tree at startup */
 static int start_pipefd[2] = {-1, -1};
 static int st_stat = 1;
 static int *pst_stat = &st_stat;
-static pthread_t state_mach_thid;
+static pthread_t signal_handler_thid;
 
 static sigset_t block_sigs;
 
@@ -1613,7 +1613,7 @@ static int do_hup_signal(struct master *master)
 }
 
 /* Deal with all the signal-driven events in the state machine */
-static void *statemachine(void *arg)
+static void *signal_handler(void *arg)
 {
 	sigset_t signalset;
 	int sig;
@@ -1800,7 +1800,7 @@ static void handle_mounts_cleanup(void *arg)
 	 * perform final cleanup.
 	 */
 	if (!submount && !pending)
-		pthread_kill(state_mach_thid, SIGTERM);
+		pthread_kill(signal_handler_thid, SIGTERM);
 
 	master_mutex_unlock();
 
@@ -2796,8 +2796,8 @@ int main(int argc, char *argv[])
 			sd_notify(1, "READY=1");
 #endif
 
-		state_mach_thid = pthread_self();
-		statemachine(NULL);
+		signal_handler_thid = pthread_self();
+		signal_handler(NULL);
 	}
 
 	master_kill(master_list);
