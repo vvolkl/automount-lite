@@ -160,6 +160,7 @@ int ext_mount_inuse(const char *);
 struct mnt_list *mnts_lookup_mount(const char *mp);
 void mnts_put_mount(struct mnt_list *mnt);
 struct mnt_list *mnts_find_submount(const char *path);
+struct autofs_point *mnt_find_submount_by_devid(struct list_head *submounts, dev_t devid);
 struct mnt_list *mnts_add_submount(struct autofs_point *ap);
 void mnts_remove_submount(const char *mp);
 struct mnt_list *mnts_find_amdmount(const char *path);

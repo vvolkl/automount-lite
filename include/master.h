@@ -110,6 +110,7 @@ void master_source_lock_cleanup(void *);
 void master_source_current_wait(struct master_mapent *);
 void master_source_current_signal(struct master_mapent *);
 struct master_mapent *master_find_mapent(struct master *, const char *);
+struct autofs_point *master_find_mapent_by_devid(struct master *master, dev_t devid);
 struct master_mapent *master_new_mapent(struct master *, const char *, time_t);
 void master_add_mapent(struct master *, struct master_mapent *);
 void master_remove_mapent(struct master_mapent *);

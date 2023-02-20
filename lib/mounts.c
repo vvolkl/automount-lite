@@ -1059,6 +1059,40 @@ struct mnt_list *mnts_find_submount(const char *path)
 	return NULL;
 }
 
+static struct autofs_point *__mnt_find_submount_by_devid(struct list_head *submounts, dev_t devid)
+{
+	struct autofs_point *ap = NULL;
+	struct list_head *p;
+
+	list_for_each(p, submounts) {
+		struct mnt_list *this;
+
+		this = list_entry(p, struct mnt_list, submount);
+
+		if (this->ap->dev == devid) {
+			ap = this->ap;
+			break;
+		}
+
+		ap = mnt_find_submount_by_devid(&this->ap->submounts, devid);
+		if (ap)
+			break;
+	}
+
+	return ap;
+}
+
+struct autofs_point *mnt_find_submount_by_devid(struct list_head *submounts, dev_t devid)
+{
+	struct autofs_point *ap = NULL;
+
+	mnts_hash_mutex_lock();
+	ap = __mnt_find_submount_by_devid(submounts, devid);
+	mnts_hash_mutex_unlock();
+
+	return ap;
+}
+
 struct mnt_list *mnts_add_submount(struct autofs_point *ap)
 {
 	struct mnt_list *this;

@@ -745,6 +745,34 @@ struct master_mapent *master_find_mapent(struct master *master, const char *path
 	return NULL;
 }
 
+struct autofs_point *master_find_mapent_by_devid(struct master *master, dev_t devid)
+{
+	struct autofs_point *ap = NULL;
+	struct list_head *head, *p;
+
+	master_mutex_lock();
+
+	head = &master->mounts;
+	list_for_each(p, head) {
+		struct master_mapent *entry;
+
+		entry = list_entry(p, struct master_mapent, list);
+
+		if (entry->ap->dev == devid) {
+			ap = entry->ap;
+			break;
+		}
+
+		ap = mnt_find_submount_by_devid(&entry->ap->submounts, devid);
+		if (ap)
+			break;
+	}
+
+	master_mutex_unlock();
+
+	return ap;
+}
+
 static unsigned int master_partial_match_amd_mapent(struct master *master, const char *path)
 {
 	struct list_head *head, *p;

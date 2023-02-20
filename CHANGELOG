@@ -64,6 +64,7 @@
 - rename statemachine() to signal_handler().
 - make signal handling consistent.
 - eliminate last remaining state_pipe usage.
+- add function master_find_mapent_by_devid().
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
