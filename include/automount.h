@@ -570,7 +570,6 @@ struct autofs_point {
 	pthread_t exp_thread;		/* Thread that is expiring */
 	pthread_t readmap_thread;	/* Thread that is reading maps */
 	enum states state;		/* Current state */
-	int state_pipe[2];		/* State change router pipe */
 	struct autofs_point *parent;	/* Owner of mounts list for submount */
 	struct list_head mounts;	/* List of autofs mounts at current level */
 	unsigned int submount;		/* Is this a submount */

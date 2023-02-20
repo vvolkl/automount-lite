@@ -86,7 +86,6 @@ void st_mutex_unlock(void);
 
 void expire_cleanup(void *);
 void expire_proc_cleanup(void *);
-void nextstate(int, enum states);
 
 int st_add_task(struct autofs_point *, enum states);
 int __st_add_task(struct autofs_point *, enum states);

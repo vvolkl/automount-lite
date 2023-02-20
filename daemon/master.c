@@ -113,8 +113,6 @@ int master_add_autofs_point(struct master_mapent *entry, unsigned logopt,
 
 	ap->state = ST_INIT;
 
-	ap->state_pipe[0] = -1;
-	ap->state_pipe[1] = -1;
 	ap->logpri_fifo = -1;
 
 	ap->path = strdup(entry->path);
@@ -1399,7 +1397,7 @@ static int master_do_mount(struct master_mapent *entry)
 		handle_mounts_startup_cond_destroy(&suc);
 		return 0;
 	}
-	entry->thid = thid;
+	entry->thid = ap->thid = thid;
 
 	handle_mounts_startup_cond_destroy(&suc);
 
@@ -1483,9 +1481,6 @@ int master_mount_mounts(struct master *master, time_t age)
 		struct master_mapent *this;
 		struct autofs_point *ap;
 		struct mapent *ne, *nested;
-		struct stat st;
-		int state_pipe, save_errno;
-		int ret;
 
 		this = list_entry(p, struct master_mapent, list);
 		p = p->next;
@@ -1541,19 +1536,9 @@ int master_mount_mounts(struct master *master, time_t age)
 		}
 		cache_unlock(nc);
 cont:
-		st_mutex_lock();
-
-		state_pipe = this->ap->state_pipe[1];
-
-		/* No pipe so mount is needed */
-		ret = fstat(state_pipe, &st);
-		save_errno = errno;
-
-		st_mutex_unlock();
-
-		if (!ret)
+		if (ap->thid && is_mounted(this->path, MNTS_AUTOFS))
 			check_update_map_sources(this, master->readall);
-		else if (ret == -1 && save_errno == EBADF) {
+		else {
 			if (!master_do_mount(this)) {
 				list_del_init(&this->list);
 				master_free_mapent_sources(ap->entry, 1);

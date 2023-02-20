@@ -152,8 +152,6 @@ out_rmdir:
 out_err:
 	if (options)
 		free(options);
-	close(ap->state_pipe[0]);
-	close(ap->state_pipe[1]);
 	close(ap->pipefd);
 	close(ap->kpipefd);
 
@@ -215,11 +213,6 @@ void close_mount_fds(struct autofs_point *ap)
 	 */
 	if (ap->submount)
 		lookup_source_close_ioctlfd(ap->parent, ap->path);
-
-	close(ap->state_pipe[0]);
-	close(ap->state_pipe[1]);
-	ap->state_pipe[0] = -1;
-	ap->state_pipe[1] = -1;
 
 	if (ap->pipefd >= 0)
 		close(ap->pipefd);

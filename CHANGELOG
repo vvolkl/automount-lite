@@ -63,6 +63,7 @@
 - make amd mapent search function name clear.
 - rename statemachine() to signal_handler().
 - make signal handling consistent.
+- eliminate last remaining state_pipe usage.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

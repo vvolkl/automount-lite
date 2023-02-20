@@ -263,8 +263,6 @@ done:
 	}
 	pthread_cleanup_pop(1);
 
-	close(ap->state_pipe[0]);
-	close(ap->state_pipe[1]);
 	if (ap->pipefd >= 0)
 		close(ap->pipefd);
 	if (ap->kpipefd >= 0) {

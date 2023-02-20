@@ -1078,58 +1078,51 @@ static int set_log_priority(const char *path, int priority)
 	return 0;
 }
 
+static void dummy(int sig)
+{
+}
+
 static int get_pkt(struct autofs_point *ap, union autofs_v5_packet_union *pkt)
 {
-	struct pollfd fds[3];
-	int pollfds = 3;
+	struct sigaction sa;
+	sigset_t signalset;
+	struct pollfd fds[2];
+	int pollfds = 2;
 	char buf[MAX_ERR_BUF];
 	size_t read;
 	char *estr;
 
 	fds[0].fd = ap->pipefd;
 	fds[0].events = POLLIN;
-	fds[1].fd = ap->state_pipe[0];
+	fds[1].fd = ap->logpri_fifo;
 	fds[1].events = POLLIN;
-	fds[2].fd = ap->logpri_fifo;
-	fds[2].events = POLLIN;
-	if (fds[2].fd  == -1)
+	if (fds[1].fd  == -1)
 		pollfds--;
 
+	sa.sa_handler = dummy;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = 0;
+	if (sigaction(SIGCONT, &sa, NULL) == -1)
+		error(LOGOPT_ANY, "failed to set signal handler %d", errno);
+
+	sigfillset(&signalset);
+	sigdelset(&signalset, SIGCONT);
+
 	for (;;) {
-		if (poll(fds, pollfds, -1) == -1) {
-			if (errno == EINTR)
-				continue;
-			estr = strerror_r(errno, buf, MAX_ERR_BUF);
-			logerr("poll failed: %s", estr);
-			return -1;
-		}
-
-		if (fds[1].revents & POLLIN) {
-			enum states next_state;
-			size_t read_size = sizeof(next_state);
-			int state_pipe;
-
-			next_state = ST_INVAL;
-
-			st_mutex_lock();
-
-			state_pipe = ap->state_pipe[0];
-
-			read = fullread(state_pipe, &next_state, read_size);
-			if (read) {
-				estr = strerror_r(errno, buf, MAX_ERR_BUF);
-				error(ap->logopt,
-				      "read error on state pipe, "
-				      "read %lu, error %s",
-				      read, estr);
+		errno = 0;
+		if (ppoll(fds, pollfds, NULL, &signalset) == -1) {
+			if (errno == EINTR) {
+				st_mutex_lock();
+				if (ap->state == ST_SHUTDOWN) {
+					st_mutex_unlock();
+					return -1;
+				}
 				st_mutex_unlock();
 				continue;
 			}
-
-			st_mutex_unlock();
-
-			if (next_state == ST_SHUTDOWN)
-				return -1;
+			estr = strerror_r(errno, buf, MAX_ERR_BUF);
+			logerr("poll failed: %s", estr);
+			return -1;
 		}
 
 		if (fds[0].revents & POLLIN) {
@@ -1144,9 +1137,9 @@ static int get_pkt(struct autofs_point *ap, union autofs_v5_packet_union *pkt)
 			return read;
 		}
 
-		if (fds[2].fd != -1 && fds[2].revents & POLLIN) {
+		if (fds[1].fd != -1 && fds[1].revents & POLLIN) {
 			debug(ap->logopt, "message pending on control fifo.");
-			handle_fifo_message(ap, fds[2].fd);
+			handle_fifo_message(ap, fds[1].fd);
 		}
 	}
 }
@@ -1208,15 +1201,6 @@ static int autofs_init_ap(struct autofs_point *ap)
 
 	ap->pipefd = pipefd[0];
 	ap->kpipefd = pipefd[1];
-
-	/* Pipe state changes from signal handler to main loop */
-	if (open_pipe(ap->state_pipe) < 0) {
-		crit(ap->logopt,
-		     "failed create state pipe for autofs path %s", ap->path);
-		close(ap->pipefd);
-		close(ap->kpipefd);	/* Close kernel pipe end */
-		return -1;
-	}
 
 	if (create_logpri_fifo(ap) < 0) {
 		logmsg("could not create FIFO for path %s\n", ap->path);

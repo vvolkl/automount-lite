@@ -52,16 +52,6 @@ void st_mutex_unlock(void)
 		fatal(status);
 }
 
-void nextstate(int statefd, enum states next)
-{
-	char buf[MAX_ERR_BUF];
-
-	if (write(statefd, &next, sizeof(next)) != sizeof(next)) {
-		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
-		logerr("write failed %s", estr);
-	}
-}
-
 /*
  * Handle expire thread cleanup and return the next state the system
  * should enter as a result.
@@ -631,12 +621,16 @@ static unsigned int st_force_shutdown(struct autofs_point *ap)
 
 static unsigned int st_shutdown(struct autofs_point *ap)
 {
+	int ret;
+
 	debug(ap->logopt, "state %d path %s", ap->state, ap->path);
 
 	assert(ap->state == ST_SHUTDOWN_PENDING || ap->state == ST_SHUTDOWN_FORCE);
 
 	ap->state = ST_SHUTDOWN;
-	nextstate(ap->state_pipe[1], ST_SHUTDOWN);
+	ret = pthread_kill(ap->thid, SIGCONT);
+	if (ret)
+		error(LOGOPT_ANY, "error %d sending shutdown signal", ret);
 
 	return 0;
 }
