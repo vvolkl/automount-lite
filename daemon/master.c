@@ -113,8 +113,6 @@ int master_add_autofs_point(struct master_mapent *entry, unsigned logopt,
 
 	ap->state = ST_INIT;
 
-	ap->logpri_fifo = -1;
-
 	ap->path = strdup(entry->path);
 	if (!ap->path) {
 		free(ap);

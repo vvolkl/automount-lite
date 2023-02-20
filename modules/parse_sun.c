@@ -82,7 +82,6 @@ static struct parse_context default_context = {
 	1			/* Do slashify_colons */
 };
 
-int destroy_logpri_fifo(struct autofs_point *ap);
 static char *concat_options(char *left, char *right);
 
 /* Free all storage associated with this context */

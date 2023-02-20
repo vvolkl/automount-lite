@@ -557,7 +557,6 @@ struct autofs_point {
 	int pipefd;			/* File descriptor for pipe */
 	int kpipefd;			/* Kernel end descriptor for pipe */
 	int ioctlfd;			/* File descriptor for ioctls */
-	int logpri_fifo;		/* FIFO used for changing log levels */
 	dev_t dev;			/* "Device" number assigned by kernel */
 	struct master_mapent *entry;	/* Master map entry for this mount */
 	unsigned int type;		/* Type of map direct or indirect */
