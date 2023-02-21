@@ -2250,7 +2250,7 @@ static void do_master_list_reset(struct master *master)
 
 static int do_master_read_master(struct master *master, time_t *age, int wait)
 {
-	sigset_t signalset;
+	sigset_t signalset, savesigset;
 	/* Wait must be at least 1 second */
 	unsigned int retry_wait = 2;
 	unsigned int elapsed = 0;
@@ -2261,7 +2261,7 @@ static int do_master_read_master(struct master *master, time_t *age, int wait)
 	sigaddset(&signalset, SIGTERM);
 	sigaddset(&signalset, SIGINT);
 	sigaddset(&signalset, SIGHUP);
-	sigprocmask(SIG_UNBLOCK, &signalset, NULL);
+	pthread_sigmask(SIG_UNBLOCK, &signalset, &savesigset);
 
 	while (1) {
 		struct timespec t = { retry_wait, 0 };
@@ -2287,7 +2287,7 @@ static int do_master_read_master(struct master *master, time_t *age, int wait)
 		}
 	}
 
-	sigprocmask(SIG_BLOCK, &signalset, NULL);
+	pthread_sigmask(SIG_SETMASK, &savesigset, NULL);
 
 	return ret;
 }
@@ -2336,7 +2336,7 @@ int main(int argc, char *argv[])
 	sigdelset(&block_sigs, SIGILL);
 	sigdelset(&block_sigs, SIGFPE);
 	sigdelset(&block_sigs, SIGTRAP);
-	sigprocmask(SIG_BLOCK, &block_sigs, NULL);
+	pthread_sigmask(SIG_BLOCK, &block_sigs, NULL);
 
 	program = argv[0];
 

@@ -46,7 +46,6 @@ void dump_core(void)
 	sigemptyset(&segv);
 	sigaddset(&segv, SIGSEGV);
 	pthread_sigmask(SIG_UNBLOCK, &segv, NULL);
-	sigprocmask(SIG_UNBLOCK, &segv, NULL);
 
 	raise(SIGSEGV);
 }
