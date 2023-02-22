@@ -1235,7 +1235,7 @@ static int autofs_init_ap(struct autofs_point *ap)
 
 static int mount_autofs(struct autofs_point *ap, const char *root)
 {
-	int status = 0;
+	int status;
 
 	/* No need to create comms fds and command fifo if
 	 * unlinking mounts and exiting.
@@ -1257,7 +1257,7 @@ static int mount_autofs(struct autofs_point *ap, const char *root)
 
 	st_add_task(ap, ST_READY);
 
-	return 0;
+	return status;
 }
 
 static int handle_packet(struct autofs_point *ap)
