@@ -320,30 +320,48 @@ static int do_read_map(struct autofs_point *ap, struct map_source *map, time_t a
 	struct lookup_mod *lookup;
 	int status;
 
-	pthread_cleanup_push(map_module_lock_cleanup, map);
-	map_module_writelock(map);
-	if (!map->lookup) {
-		status = open_lookup(map->type, "", map->format,
-				     map->argc, map->argv, &lookup);
-		if (status == NSS_STATUS_SUCCESS)
-			map->lookup = lookup;
-		else
-			debug(ap->logopt,
-			      "lookup module %s open failed", map->type);
-	} else {
-		status = map->lookup->lookup_reinit(map->format,
-						    map->argc, map->argv,
-						    &map->lookup->context);
-		if (status)
-			warn(ap->logopt,
-			     "lookup module %s reinit failed", map->type);
-	}
-	pthread_cleanup_pop(1);
-	if (status != NSS_STATUS_SUCCESS)
-		return status;
-
 	if (!map->stale)
 		return NSS_STATUS_SUCCESS;
+
+	/* If this readmap is the result of trying to mount a submount
+	 * the readlock may already be held if the map is the same as
+	 * that of the caller. In that case the map has already been
+	 * read so just skip the map open/reinit.
+	 */
+	status = map_module_try_writelock(map);
+	if (status) {
+		if (!map->lookup) {
+			error(ap->logopt, "map module lock not held as expected");
+			return NSS_STATUS_UNAVAIL;
+		}
+	} else {
+		if (!map->lookup) {
+			pthread_cleanup_push(map_module_lock_cleanup, map);
+			status = open_lookup(map->type, "", map->format,
+					     map->argc, map->argv, &lookup);
+			pthread_cleanup_pop(0);
+			if (status != NSS_STATUS_SUCCESS) {
+				map_module_unlock(map);
+				debug(ap->logopt,
+				      "lookup module %s open failed", map->type);
+				return status;
+			}
+			map->lookup = lookup;
+		} else {
+			pthread_cleanup_push(map_module_lock_cleanup, map);
+			status = map->lookup->lookup_reinit(map->format,
+							    map->argc, map->argv,
+							    &map->lookup->context);
+			pthread_cleanup_pop(0);
+			if (status) {
+				map_module_unlock(map);
+				warn(ap->logopt,
+				     "lookup module %s reinit failed", map->type);
+				return status;
+			}
+		}
+		map_module_unlock(map);
+	}
 
 	master_source_current_wait(ap->entry);
 	ap->entry->current = map;

@@ -128,6 +128,7 @@ int master_list_empty(struct master *);
 int master_done(struct master *);
 int master_kill(struct master *);
 void map_module_writelock(struct map_source *map);
+int map_module_try_writelock(struct map_source *map);
 void map_module_readlock(struct map_source *map);
 void map_module_unlock(struct map_source *map);
 void map_module_lock_cleanup(void *arg);

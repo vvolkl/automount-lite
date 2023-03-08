@@ -73,6 +73,14 @@ void map_module_writelock(struct map_source *map)
 		fatal(status);
 }
 
+int map_module_try_writelock(struct map_source *map)
+{
+	int status = pthread_rwlock_trywrlock(&map->module_lock);
+	if (status && status != EBUSY && status != EDEADLK)
+		fatal(status);
+	return status;
+}
+
 void map_module_readlock(struct map_source *map)
 {
 	int status = pthread_rwlock_rdlock(&map->module_lock);

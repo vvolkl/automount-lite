@@ -1398,7 +1398,7 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 	cache_unlock(source->mc);
 
 	master_source_current_wait(ap->entry);
-	ap->entry->current = source;
+	ap->entry->current = instance;
 
 	map_module_readlock(instance);
 	lookup = instance->lookup;
