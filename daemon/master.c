@@ -1259,17 +1259,16 @@ int master_notify_submount(struct autofs_point *ap, const char *path, enum state
 		st_wait_task(this->ap, state, 0);
 
 		/*
-		 * If our submount gets to state ST_SHUTDOWN, ST_SHUTDOWN_PENDING or
-		 * ST_SHUTDOWN_FORCE we need to wait until it goes away or changes
-		 * to ST_READY.
+		 * If our submount gets to state ST_SHUTDOWN_PENDING or
+		 * ST_SHUTDOWN_FORCE we need to wait until it goes away
+		 * or changes to state ST_SHUTDOWN or ST_READY.
 		 */
 		st_mutex_lock();
 		while ((sbmnt = mnts_find_submount(path))) {
 			struct timespec t = { 0, 300000000 };
 			struct timespec r;
 
-			if (sbmnt->ap->state != ST_SHUTDOWN &&
-			    sbmnt->ap->state != ST_SHUTDOWN_PENDING &&
+			if (sbmnt->ap->state != ST_SHUTDOWN_PENDING &&
 			    sbmnt->ap->state != ST_SHUTDOWN_FORCE) {
 				ret = 0;
 				mnts_put_mount(sbmnt);

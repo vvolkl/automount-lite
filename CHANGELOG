@@ -59,6 +59,7 @@
 - fix return status of mount_autofs().
 - don't close lookup at umount.
 - fix deadlock in lookups.
+- dont delay expire.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
