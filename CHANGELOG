@@ -69,6 +69,7 @@
 - add command pipe handling functions.
 - switch to application wide command pipe.
 - get rid of unused field submnt_count.
+- fix mount tree startup reconnect.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

@@ -2807,6 +2807,7 @@ static int remount_active_mount(struct autofs_point *ap,
 int try_remount(struct autofs_point *ap, struct mapent *me, unsigned int type)
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
+	struct mapent *mapent;
 	const char *path;
 	int ret, fd;
 	dev_t devid;
@@ -2841,12 +2842,13 @@ int try_remount(struct autofs_point *ap, struct mapent *me, unsigned int type)
 	}
 
 	me->flags &= ~MOUNT_FLAG_DIR_CREATED;
+	mapent = IS_MM(me) ? MM_PARENT(me) : me;
 	/* Direct or offset mount, key is full path */
-	if (MM_PARENT(me)->key[0] == '/') {
-		if (!is_mounted(MM_PARENT(me)->key, MNTS_REAL))
+	if (mapent->key[0] == '/') {
+		if (!is_mounted(mapent->key, MNTS_REAL))
 			me->flags |= MOUNT_FLAG_DIR_CREATED;
 	} else {
-		char *p_key = MM_PARENT(me)->key;
+		char *p_key = mapent->key;
 		char mp[PATH_MAX + 1];
 		int len;
 
