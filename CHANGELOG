@@ -68,6 +68,7 @@
 - use device id to locate autofs_point when setting log priotity.
 - add command pipe handling functions.
 - switch to application wide command pipe.
+- get rid of unused field submnt_count.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

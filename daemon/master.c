@@ -158,7 +158,6 @@ int master_add_autofs_point(struct master_mapent *entry, unsigned logopt,
 
 	ap->parent = NULL;
 	ap->thid = 0;
-	ap->submnt_count = 0;
 	ap->submount = submount;
 	INIT_LIST_HEAD(&ap->mounts);
 	INIT_LIST_HEAD(&ap->submounts);

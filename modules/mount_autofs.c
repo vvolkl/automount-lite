@@ -379,8 +379,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	}
 	nap->thid = thid;
 
-	ap->submnt_count++;
-
 	handle_mounts_startup_cond_destroy(&suc);
 
 	return 0;

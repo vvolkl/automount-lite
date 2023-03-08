@@ -1772,9 +1772,6 @@ static void handle_mounts_cleanup(void *arg)
 	if (submount) {
 		struct mnt_list *mnt;
 
-		/* We are finishing up */
-		ap->parent->submnt_count--;
-
 		/* Submount at ap->path belongs to parent submount list. */
 		mnts_remove_submount(ap->path);
 		/* Also remove from parent mounted list */
