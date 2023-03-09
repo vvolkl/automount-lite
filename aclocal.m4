@@ -419,7 +419,8 @@ af_check_ldap_parse_page_control_save_cflags="$CFLAGS"
 CFLAGS="$CFLAGS -Werror=implicit-function-declaration"
 
 AC_TRY_LINK(
-  [ #include <ldap.h> ],
+  [ #define LDAP_DEPRECATED 1
+    #include <ldap.h> ],
   [ LDAP *ld;
     ber_int_t ct;
     struct berval *c;
