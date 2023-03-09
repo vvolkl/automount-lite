@@ -747,7 +747,7 @@ struct master_mapent *master_find_mapent(struct master *master, const char *path
 	return NULL;
 }
 
-unsigned int master_partial_match_mapent(struct master *master, const char *path)
+static unsigned int master_partial_match_amd_mapent(struct master *master, const char *path)
 {
 	struct list_head *head, *p;
 	size_t path_len = strlen(path);
@@ -761,7 +761,7 @@ unsigned int master_partial_match_mapent(struct master *master, const char *path
 
 		entry = list_entry(p, struct master_mapent, list);
 
-		entry_len = strlen(entry->path);
+		entry_len = entry->len;
 		cmp_len = min(entry_len, path_len);
 
 		if (!strncmp(entry->path, path, cmp_len)) {
@@ -812,6 +812,7 @@ struct master_mapent *master_new_mapent(struct master *master, const char *path,
 		return NULL;
 	}
 	entry->path = tmp;
+	entry->len = strlen(tmp);
 
 	entry->thid = 0;
 	entry->age = age;
@@ -1044,7 +1045,7 @@ static void master_add_amd_mount_section_mounts(struct master *master, time_t ag
 		char *map = NULL;
 		char *opts;
 
-		ret = master_partial_match_mapent(master, path);
+		ret = master_partial_match_amd_mapent(master, path);
 		if (ret) {
 			/* If this amd entry is already present in the
 			 * master map it's not a duplicate, don't issue
