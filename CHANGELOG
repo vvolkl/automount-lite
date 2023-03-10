@@ -57,6 +57,7 @@
 - don't immediately call function when waiting.
 - define LDAP_DEPRECATED during LDAP configure check.
 - fix return status of mount_autofs().
+- don't close lookup at umount.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
