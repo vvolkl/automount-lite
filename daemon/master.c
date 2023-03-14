@@ -837,7 +837,6 @@ struct master_mapent *master_new_mapent(struct master *master, const char *path,
 	entry->path = tmp;
 	entry->len = strlen(tmp);
 
-	entry->thid = 0;
 	entry->age = age;
 	entry->master = master;
 	entry->current = NULL;
@@ -1422,7 +1421,7 @@ static int master_do_mount(struct master_mapent *entry)
 		handle_mounts_startup_cond_destroy(&suc);
 		return 0;
 	}
-	entry->thid = ap->thid = thid;
+	ap->thid = thid;
 
 	handle_mounts_startup_cond_destroy(&suc);
 
@@ -1977,7 +1976,7 @@ int master_done(struct master *master)
 		entry = list_entry(p, struct master_mapent, join);
 		p = p->next;
 		list_del(&entry->join);
-		pthread_join(entry->thid, NULL);
+		pthread_join(entry->ap->thid, NULL);
 		master_free_mapent_sources(entry, 1);
 		master_free_mapent(entry);
 	}

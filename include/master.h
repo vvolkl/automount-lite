@@ -46,7 +46,6 @@ struct map_source {
 struct master_mapent {
 	char *path;
 	size_t len;
-	pthread_t thid;
 	time_t age;
 	struct master *master;
 	pthread_rwlock_t source_lock;
