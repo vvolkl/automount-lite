@@ -714,7 +714,7 @@ static char *make_browse_path(unsigned int logopt,
 	return path;
 }
 
-int lookup_ghost(struct autofs_point *ap, const char *root)
+int lookup_ghost(struct autofs_point *ap)
 {
 	struct master_mapent *entry = ap->entry;
 	struct map_source *map;
@@ -778,7 +778,7 @@ int lookup_ghost(struct autofs_point *ap, const char *root)
 			}
 
 			fullpath = make_browse_path(ap->logopt,
-						    root, me->key, ap->pref);
+						    ap->path, me->key, ap->pref);
 			if (!fullpath)
 				goto next;
 

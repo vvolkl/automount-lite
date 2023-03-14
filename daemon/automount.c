@@ -751,7 +751,7 @@ static void umount_all(struct autofs_point *ap)
 		     left, ap->path);
 }
 
-static int umount_autofs(struct autofs_point *ap, const char *root)
+static int umount_autofs(struct autofs_point *ap)
 {
 	int ret = 0;
 
@@ -760,7 +760,7 @@ static int umount_autofs(struct autofs_point *ap, const char *root)
 
 	if (ap->type == LKP_INDIRECT) {
 		umount_all(ap);
-		ret = umount_autofs_indirect(ap, root);
+		ret = umount_autofs_indirect(ap);
 	} else
 		ret = umount_autofs_direct(ap);
 
@@ -930,7 +930,7 @@ static int autofs_init_ap(struct autofs_point *ap)
 	return 0;
 }
 
-static int mount_autofs(struct autofs_point *ap, const char *root)
+static int mount_autofs(struct autofs_point *ap)
 {
 	int status;
 
@@ -945,7 +945,7 @@ static int mount_autofs(struct autofs_point *ap, const char *root)
 	if (ap->type == LKP_DIRECT)
 		status = mount_autofs_direct(ap);
 	else
-		status = mount_autofs_indirect(ap, root);
+		status = mount_autofs_indirect(ap);
 
 	st_add_task(ap, ST_READY);
 
@@ -1917,7 +1917,7 @@ int handle_mounts_exit(struct autofs_point *ap)
 	 * to check for possible recovery.
 	 */
 	if (ap->type == LKP_DIRECT) {
-		umount_autofs(ap, NULL);
+		umount_autofs(ap);
 		handle_mounts_cleanup(ap);
 		return 1;
 	}
@@ -1928,7 +1928,7 @@ int handle_mounts_exit(struct autofs_point *ap)
 	 * so we can continue. This can happen if a lookup
 	 * occurs while we're trying to umount.
 	 */
-	ret = umount_autofs(ap, NULL);
+	ret = umount_autofs(ap);
 	if (!ret) {
 		set_indirect_mount_tree_catatonic(ap);
 		handle_mounts_cleanup(ap);
@@ -1956,12 +1956,10 @@ void *handle_mounts(void *arg)
 	struct startup_cond *suc;
 	struct autofs_point *ap;
 	int cancel_state, status = 0;
-	char *root;
 
 	suc = (struct startup_cond *) arg;
 
 	ap = suc->ap;
-	root = strdup(suc->root);
 
 	pthread_cleanup_push(return_start_status, suc);
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cancel_state);
@@ -1969,29 +1967,17 @@ void *handle_mounts(void *arg)
 	status = pthread_mutex_lock(&suc->mutex);
 	if (status) {
 		logerr("failed to lock startup condition mutex!");
-		if (root)
-			free(root);
 		fatal(status);
 	}
 
-	if (!root) {
-		crit(ap->logopt, "failed to alloc string root");
-		suc->status = 1;
-		pthread_setcancelstate(cancel_state, NULL);
-		pthread_exit(NULL);
-	}
-
-	if (mount_autofs(ap, root) < 0) {
+	if (mount_autofs(ap) < 0) {
 		if (!(do_force_unlink & UNLINK_AND_EXIT))
 			crit(ap->logopt, "mount of %s failed!", ap->path);
 		suc->status = 1;
-		umount_autofs(ap, root);
-		free(root);
+		umount_autofs(ap);
 		pthread_setcancelstate(cancel_state, NULL);
 		pthread_exit(NULL);
 	}
-
-	free(root);
 
 	if (ap->flags & MOUNT_FLAG_NOBIND)
 		info(ap->logopt, "bind mounts disabled");

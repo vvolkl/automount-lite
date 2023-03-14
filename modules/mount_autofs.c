@@ -324,7 +324,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 
 
 	suc.ap = nap;
-	suc.root = mountpoint;
 	suc.done = 0;
 	suc.status = 0;
 

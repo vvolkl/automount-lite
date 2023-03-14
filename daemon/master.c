@@ -1393,7 +1393,6 @@ static int master_do_mount(struct master_mapent *entry)
 	}
 
 	suc.ap = ap;
-	suc.root = ap->path;
 	suc.done = 0;
 	suc.status = 0;
 

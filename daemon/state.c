@@ -433,7 +433,7 @@ static void *do_readmap(void *arg)
 		ap->exp_runfreq = (timeout + CHECK_RATIO - 1) / CHECK_RATIO;
 		ops->timeout(ap->logopt, ap->ioctlfd, timeout);
 		lookup_prune_cache(ap, now);
-		status = lookup_ghost(ap, ap->path);
+		status = lookup_ghost(ap);
 	} else {
 		struct mapent *me;
 		unsigned int append_alarm = !ap->exp_runfreq;
