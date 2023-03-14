@@ -856,8 +856,11 @@ void *expire_proc_direct(void *arg)
 			 * one of them and pass on state change.
 			 */
 			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-			if (mnt->flags & MNTS_AUTOFS)
+			if (mnt->flags & MNTS_AUTOFS) {
 				master_notify_submount(ap, mnt->mp, ap->state);
+				pthread_setcancelstate(cur_state, NULL);
+				continue;
+			}
 
 			if (me->ioctlfd == -1) {
 				pthread_setcancelstate(cur_state, NULL);

@@ -75,6 +75,7 @@
 - fix fix mount tree startup reconnect.
 - fix amd selector function matching.
 - get rid entry thid field.
+- continue expire immediately after submount check.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
