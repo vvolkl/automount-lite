@@ -151,6 +151,9 @@ void free_amd_entry_list(struct list_head *entries);
 unsigned int query_kproto_ver(void);
 unsigned int get_kver_major(void);
 unsigned int get_kver_minor(void);
+
+int open_ioctlfd(struct autofs_point *ap, const char *path, dev_t dev);
+
 char *make_options_string(char *path, int pipefd,
 			  const char *type, unsigned int flags);
 char *make_mnt_name_string(char *path);

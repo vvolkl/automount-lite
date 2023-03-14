@@ -124,17 +124,17 @@ static int do_mount_autofs_indirect(struct autofs_point *ap)
 		     "failed to stat mount for autofs path %s", ap->path);
 		goto out_umount;
 	}
+	ap->dev = st.st_dev;	/* Device number for mount point checks */
 
 	if (ap->mode && (err = chmod(ap->path, ap->mode)))
 		warn(ap->logopt, "failed to change mode of %s", ap->path);
 
-	if (ops->open(ap->logopt, &ap->ioctlfd, st.st_dev, ap->path)) {
+	ap->ioctlfd = open_ioctlfd(ap, ap->path, ap->dev);
+	if (ap->ioctlfd == -1) {
 		crit(ap->logopt,
 		     "failed to create ioctl fd for autofs path %s", ap->path);
 		goto out_umount;
 	}
-
-	ap->dev = st.st_dev;	/* Device number for mount point checks */
 
 	ops->timeout(ap->logopt, ap->ioctlfd, timeout);
 	notify_mount_result(ap, ap->path, timeout, str_indirect);
@@ -284,8 +284,7 @@ int umount_autofs_indirect(struct autofs_point *ap)
 					return 0;
 				}
 #endif
-				ops->open(ap->logopt,
-					  &ap->ioctlfd, ap->dev, ap->path);
+				ap->ioctlfd = open_ioctlfd(ap, ap->path, ap->dev);
 				if (ap->ioctlfd < 0) {
 					warn(ap->logopt,
 					     "could not recover autofs path %s",

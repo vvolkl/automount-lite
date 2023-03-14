@@ -88,6 +88,7 @@
 - fix possible use after free in handle_mounts_exit().
 - make submount cleanup the same as top level mounts.
 - add soucre parameter to module functions.
+- add ioctlfd open helper.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

@@ -121,7 +121,9 @@ int do_umount_autofs_direct(struct autofs_point *ap, struct mapent *me)
 		}
 		ioctlfd = me->ioctlfd;
 	} else {
-		ops->open(ap->logopt, &ioctlfd, me->dev, me->key);
+		ioctlfd = open_ioctlfd(ap, me->key, me->dev);
+		if (ioctlfd == -1)
+			return 1;
 		opened = 1;
 	}
 
@@ -317,8 +319,7 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 			save_ioctlfd = ioctlfd = me->ioctlfd;
 
 			if (ioctlfd == -1)
-				ops->open(ap->logopt,
-					  &ioctlfd, me->dev, me->key);
+				ioctlfd = open_ioctlfd(ap, me->key, me->dev);
 
 			if (ioctlfd < 0) {
 				error(ap->logopt,
@@ -416,7 +417,7 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 	if (ap->mode && (err = chmod(me->key, ap->mode)))
 		warn(ap->logopt, "failed to change mode of %s", me->key);
 
-	ops->open(ap->logopt, &ioctlfd, st.st_dev, me->key);
+	ioctlfd = open_ioctlfd(ap, me->key, me->dev);
 	if (ioctlfd < 0) {
 		crit(ap->logopt, "failed to create ioctl fd for %s", me->key);
 		goto out_umount;
@@ -542,7 +543,9 @@ int umount_autofs_offset(struct autofs_point *ap, struct mapent *me)
 			      me->key);
 			return 0;
 		}
-		ops->open(ap->logopt, &ioctlfd, me->dev, me->key);
+		ioctlfd = open_ioctlfd(ap, me->key, me->dev);
+		if (ioctlfd == -1)
+			return 1;
 		opened = 1;
 	}
 
@@ -772,11 +775,9 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me)
 	me->dev = st.st_dev;
 	me->ino = st.st_ino;
 
-	ops->open(ap->logopt, &ioctlfd, st.st_dev, me->key);
-	if (ioctlfd < 0) {
-		crit(ap->logopt, "failed to create ioctl fd for %s", me->key);
+	ioctlfd = open_ioctlfd(ap, me->key, me->dev);
+	if (ioctlfd < 0)
 		goto out_umount;
-	}
 
 	ops->timeout(ap->logopt, ioctlfd, timeout);
 	cache_set_ino_index(me->mc, me);
@@ -1066,9 +1067,9 @@ int handle_packet_expire_direct(struct autofs_point *ap, autofs_packet_expire_di
 	/* Can't expire it if it isn't mounted */
 	if (me->ioctlfd == -1) {
 		int ioctlfd;
-		ops->open(ap->logopt, &ioctlfd, me->dev, me->key);
+
+		ioctlfd = open_ioctlfd(ap, me->key, me->dev);
 		if (ioctlfd == -1) {
-			crit(ap->logopt, "can't open ioctlfd for %s", me->key);
 			cache_unlock(mc);
 			master_source_unlock(ap->entry);
 			pthread_setcancelstate(state, NULL);
@@ -1361,8 +1362,8 @@ int handle_packet_missing_direct(struct autofs_point *ap, autofs_packet_missing_
 		close(me->ioctlfd);
 		me->ioctlfd = -1;
 	}
-	ops->open(ap->logopt, &ioctlfd, me->dev, me->key);
 
+	ioctlfd = open_ioctlfd(ap, me->key, me->dev);
 	if (ioctlfd == -1) {
 		cache_unlock(mc);
 		master_source_unlock(ap->entry);

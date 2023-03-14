@@ -231,6 +231,32 @@ unsigned int get_kver_minor(void)
 	return kver.minor;
 }
 
+int open_ioctlfd(struct autofs_point *ap, const char *path, dev_t dev)
+{
+	struct ioctl_ops *ops = get_ioctl_ops();
+	int fd = -1;
+	int error;
+
+	error = ops->open(ap->logopt, &fd, dev, path);
+	if (error == -1) {
+		char buf[MAX_ERR_BUF];
+		int err = errno;
+		char *estr;
+
+		if (errno == ENOENT)
+			return -1;
+
+		estr = strerror_r(errno, buf, MAX_ERR_BUF);
+		error(ap->logopt,
+		      "failed to open ioctlfd for %s, error: %s",
+		      path, estr);
+		errno = err;
+		return -1;
+	}
+
+	return fd;
+}
+
 #ifdef HAVE_MOUNT_NFS
 static int extract_version(char *start, struct nfs_mount_vers *vers)
 {
@@ -2719,7 +2745,7 @@ static int remount_active_mount(struct autofs_point *ap,
 	*ioctlfd = -1;
 
 	/* Open failed, no mount present */
-	ops->open(ap->logopt, &fd, devid, path);
+	fd = open_ioctlfd(ap, path, devid);
 	if (fd == -1)
 		return REMOUNT_OPEN_FAIL;
 
@@ -2918,10 +2944,9 @@ static int set_mount_catatonic(struct autofs_point *ap, struct mapent *me, int i
 {
 	struct ioctl_ops *ops = get_ioctl_ops();
 	unsigned int opened = 0;
-	char buf[MAX_ERR_BUF];
-	char *path;
-	int fd = -1;
-	int error;
+	const char *path;
+	int fd;
+	int err;
 	dev_t dev;
 
 	path = ap->path;
@@ -2936,44 +2961,31 @@ static int set_mount_catatonic(struct autofs_point *ap, struct mapent *me, int i
 	else if (me && me->ioctlfd >= 0)
 		fd = me->ioctlfd;
 	else {
-		error = ops->open(ap->logopt, &fd, dev, path);
-		if (error == -1) {
-			int err = errno;
-			char *estr;
-
-			if (errno == ENOENT)
-				return 0;
-
-			estr = strerror_r(errno, buf, MAX_ERR_BUF);
-			error(ap->logopt,
-			      "failed to open ioctlfd for %s, error: %s",
-			      path, estr);
-			return err;
-		}
+		fd = open_ioctlfd(ap, path, dev);
+		if (fd == -1)
+			return (errno == ENOENT ? 0 : errno);
 		opened = 1;
 	}
 
-	if (fd >= 0) {
-		error = ops->catatonic(ap->logopt, fd);
-		if (error == -1) {
-			int err = errno;
-			char *estr;
+	err = ops->catatonic(ap->logopt, fd);
+	if (err == -1) {
+		char buf[MAX_ERR_BUF];
+		char *estr;
 
-			estr = strerror_r(errno, buf, MAX_ERR_BUF);
-			error(ap->logopt,
-			      "failed to set %s catatonic, error: %s",
-			      path, estr);
-			if (opened)
-				ops->close(ap->logopt, fd);
-			return err;
-		}
-		if (opened)
-			ops->close(ap->logopt, fd);
+		err = errno;
+		estr = strerror_r(err, buf, MAX_ERR_BUF);
+		error(ap->logopt,
+		      "failed to set %s catatonic, error: %s",
+		      path, estr);
+		goto out;
 	}
 
 	debug(ap->logopt, "set %s catatonic", path);
+out:
+	if (opened)
+		ops->close(ap->logopt, fd);
 
-	return 0;
+	return err;
 }
 
 static int set_offset_tree_catatonic_work(struct tree_node *n, void *ptr)
