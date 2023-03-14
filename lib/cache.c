@@ -290,20 +290,13 @@ static u_int32_t ino_hash(dev_t dev, ino_t ino, unsigned int size)
 	return hashval % size;
 }
 
-int cache_set_ino_index(struct mapent_cache *mc, const char *key, dev_t dev, ino_t ino)
+int cache_set_ino_index(struct mapent_cache *mc, struct mapent *me)
 {
-	u_int32_t ino_index = ino_hash(dev, ino, mc->size);
-	struct mapent *me;
-
-	me = cache_lookup_distinct(mc, key);
-	if (!me)
-		return 0;
+	u_int32_t ino_index = ino_hash(me->dev, me->ino, mc->size);
 
 	ino_index_lock(mc);
 	list_del_init(&me->ino_index);
 	list_add(&me->ino_index, &mc->ino_index[ino_index]);
-	me->dev = dev;
-	me->ino = ino;
 	ino_index_unlock(mc);
 
 	return 1;

@@ -410,6 +410,8 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 		      "failed to stat direct mount trigger %s", me->key);
 		goto out_umount;
 	}
+	me->dev = st.st_dev;
+	me->ino = st.st_ino;
 
 	if (ap->mode && (err = chmod(me->key, ap->mode)))
 		warn(ap->logopt, "failed to change mode of %s", me->key);
@@ -422,7 +424,7 @@ int do_mount_autofs_direct(struct autofs_point *ap,
 
 	ops->timeout(ap->logopt, ioctlfd, timeout);
 	notify_mount_result(ap, me->key, timeout, str_direct);
-	cache_set_ino_index(me->mc, me->key, st.st_dev, st.st_ino);
+	cache_set_ino_index(me->mc, me);
 	ops->close(ap->logopt, ioctlfd);
 
 	debug(ap->logopt, "mounted trigger %s", me->key);
@@ -767,6 +769,8 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me)
 			goto out_umount;
 		goto out_err;
 	}
+	me->dev = st.st_dev;
+	me->ino = st.st_ino;
 
 	ops->open(ap->logopt, &ioctlfd, st.st_dev, me->key);
 	if (ioctlfd < 0) {
@@ -775,7 +779,7 @@ int mount_autofs_offset(struct autofs_point *ap, struct mapent *me)
 	}
 
 	ops->timeout(ap->logopt, ioctlfd, timeout);
-	cache_set_ino_index(me->mc, me->key, st.st_dev, st.st_ino);
+	cache_set_ino_index(me->mc, me);
 	notify_mount_result(ap, me->key, timeout, str_offset);
 	ops->close(ap->logopt, ioctlfd);
 

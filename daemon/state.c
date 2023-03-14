@@ -366,7 +366,7 @@ static int do_readmap_mount(struct autofs_point *ap,
 			valid->ioctlfd = me->ioctlfd;
 			me->ioctlfd = -1;
 			/* Set device and inode number of the new mapent */
-			cache_set_ino_index(vmc, me->key, me->dev, me->ino);
+			cache_set_ino_index(vmc, me);
 			cache_unlock(vmc);
 			/* Set timeout and calculate the expire run frequency */
 			timeout = get_exp_timeout(ap, map);

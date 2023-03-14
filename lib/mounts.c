@@ -2761,10 +2761,20 @@ static int remount_active_mount(struct autofs_point *ap,
 		ops->close(ap->logopt, fd);
 		return REMOUNT_STAT_FAIL;
 	}
-	if (type != t_indirect)
-		cache_set_ino_index(me->mc, path, st.st_dev, st.st_ino);
-	else
+	if (type == t_indirect)
 		ap->dev = st.st_dev;
+	else {
+		if (strcmp(path, me->key)) {
+			error(ap->logopt,
+			      "mount point path mismatch, path %s mapent %s", path, me->key);
+			debug(ap->logopt, "couldn't re-connect to mount %s", path);
+			ops->close(ap->logopt, fd);
+			return REMOUNT_STAT_FAIL;
+		}
+		me->dev = st.st_dev;
+		me->ino = st.st_ino;
+		cache_set_ino_index(me->mc, me);
+	}
 	notify_mount_result(ap, path, timeout, str_type);
 
 	*ioctlfd = fd;

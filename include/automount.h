@@ -204,8 +204,7 @@ int cache_push_mapent(struct mapent *me, char *mapent);
 int cache_pop_mapent(struct mapent *me);
 struct mapent_cache *cache_init(struct autofs_point *ap, struct map_source *map);
 struct mapent_cache *cache_init_null_cache(struct master *master);
-int cache_set_ino_index(struct mapent_cache *mc, const char *key, dev_t dev, ino_t ino);
-/* void cache_set_ino(struct mapent *me, dev_t dev, ino_t ino); */
+int cache_set_ino_index(struct mapent_cache *mc, struct mapent *me);
 struct mapent *cache_lookup_ino(struct mapent_cache *mc, dev_t dev, ino_t ino);
 struct mapent *cache_lookup_first(struct mapent_cache *mc);
 struct mapent *cache_lookup_next(struct mapent_cache *mc, struct mapent *me);
