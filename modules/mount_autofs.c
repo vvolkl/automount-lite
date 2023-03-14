@@ -50,7 +50,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 {
 	struct startup_cond suc;
 	pthread_t thid;
-	char realpath[PATH_MAX + 1];
 	char mountpoint[PATH_MAX + 1];
 	const char **argv;
 	int argc, status;
@@ -73,11 +72,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 
 	/* Root offset of multi-mount */
 	if (root[strlen(root) - 1] == '/') {
-		err = snprintf(realpath, PATH_MAX + 1, "%s/%s", ap->path, name);
-		if (err > PATH_MAX) {
-			error(ap->logopt, MODPREFIX "string too long for realpath");
-			return 1;
-		}
 		err = snprintf(mountpoint, PATH_MAX + 1, "%s", root);
 		if (err > PATH_MAX) {
 			error(ap->logopt, MODPREFIX "string too long for mountpoint");
@@ -91,20 +85,10 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 				error(ap->logopt, MODPREFIX "string too long for mountpoint");
 				return 1;
 			}
-			err = snprintf(realpath, PATH_MAX + 1, "%s", name);
-			if (err > PATH_MAX) {
-				error(ap->logopt, MODPREFIX "string too long for realpath");
-				return 1;
-			}
 		} else {
 			err = snprintf(mountpoint, PATH_MAX + 1, "%s", root);
 			if (err > PATH_MAX) {
 				error(ap->logopt, MODPREFIX "string too long for mountpoint");
-				return 1;
-			}
-			err = snprintf(realpath, PATH_MAX + 1, "%s", name);
-			if (err > PATH_MAX) {
-				error(ap->logopt, MODPREFIX "string too long for realpath");
 				return 1;
 			}
 		}
@@ -114,7 +98,6 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 			error(ap->logopt, MODPREFIX "string too long for mountpoint");
 			return 1;
 		}
-		strcpy(realpath, mountpoint);
 	}
 
 	options = NULL;
@@ -180,7 +163,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 
 	master = ap->entry->master;
 
-	entry = master_new_mapent(master, realpath, ap->entry->age);
+	entry = master_new_mapent(master, mountpoint, ap->entry->age);
 	if (!entry) {
 		error(ap->logopt,
 		      MODPREFIX "failed to malloc master_mapent struct");
@@ -332,7 +315,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	mnt = mnts_add_submount(nap);
 	if (!mnt) {
 		crit(ap->logopt,
-		     MODPREFIX "failed to allocate mount %s", realpath);
+		     MODPREFIX "failed to allocate mount %s", mountpoint);
 		handle_mounts_startup_cond_destroy(&suc);
 		master_free_map_source(source, 1);
 		master_free_mapent(entry);
@@ -349,7 +332,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 		crit(ap->logopt,
 		     MODPREFIX
 		     "failed to create mount handler thread for %s",
-		     realpath);
+		     mountpoint);
 		handle_mounts_startup_cond_destroy(&suc);
 		mnts_remove_submount(nap->path);
 		master_free_map_source(source, 1);
@@ -370,7 +353,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 
 	if (suc.status) {
 		crit(ap->logopt,
-		     MODPREFIX "failed to create submount for %s", realpath);
+		     MODPREFIX "failed to create submount for %s", mountpoint);
 		handle_mounts_startup_cond_destroy(&suc);
 		mnts_remove_submount(nap->path);
 		master_free_map_source(source, 1);
