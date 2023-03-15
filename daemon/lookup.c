@@ -782,25 +782,13 @@ int lookup_ghost(struct autofs_point *ap)
 			if (!fullpath)
 				goto next;
 
-			ret = stat(fullpath, &st);
-			if (ret == -1 && errno != ENOENT) {
-				char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
-				warn(ap->logopt, "stat error %s", estr);
-				free(fullpath);
-				goto next;
-			}
-
-			/* Directory already exists? */
-			if (!ret) {
-				free(fullpath);
-				goto next;
-			}
-
 			ret = mkdir_path(fullpath, mp_mode);
-			if (ret < 0 && errno != EEXIST) {
-				char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
-				warn(ap->logopt,
-				     "mkdir_path %s failed: %s", fullpath, estr);
+			if (ret < 0) {
+				if (errno != EEXIST) {
+					char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+					warn(ap->logopt,
+					     "mkdir_path %s failed: %s", fullpath, estr);
+				}
 				free(fullpath);
 				goto next;
 			}
