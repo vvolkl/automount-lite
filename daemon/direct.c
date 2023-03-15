@@ -1294,7 +1294,7 @@ int handle_packet_missing_direct(struct autofs_point *ap, autofs_packet_missing_
 	char buf[MAX_ERR_BUF];
 	int status = 0;
 	struct timespec wait;
-	int ioctlfd, len, state;
+	int ioctlfd, state;
 	unsigned int kver_major = get_kver_major();
 	unsigned int kver_minor = get_kver_minor();
 
@@ -1396,8 +1396,7 @@ int handle_packet_missing_direct(struct autofs_point *ap, autofs_packet_missing_
 		return 0;
 	}
 
-	len = strlen(me->key);
-	if (len >= PATH_MAX) {
+	if (me->len >= PATH_MAX) {
 		error(ap->logopt, "direct mount path too long %s", me->key);
 		ops->send_fail(ap->logopt,
 			       ioctlfd, pkt->wait_queue_token, -ENAMETOOLONG);
@@ -1436,7 +1435,7 @@ int handle_packet_missing_direct(struct autofs_point *ap, autofs_packet_missing_
 	mt->ioctlfd = ioctlfd;
 	mt->mc = mc;
 	strcpy(mt->name, me->key);
-	mt->len = len;
+	mt->len = me->len;
 	mt->dev = me->dev;
 	mt->type = NFY_MOUNT;
 	mt->uid = pkt->uid;

@@ -79,6 +79,7 @@
 - eliminate realpath from mount of submount.
 - eliminate root param from autofs mount and umount.
 - remove redundant fstat from do_mount_direct().
+- get rid of strlen call in handle_packet_missing_direct().
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
