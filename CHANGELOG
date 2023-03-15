@@ -78,6 +78,7 @@
 - continue expire immediately after submount check.
 - eliminate realpath from mount of submount.
 - eliminate root param from autofs mount and umount.
+- remove redundant fstat from do_mount_direct().
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

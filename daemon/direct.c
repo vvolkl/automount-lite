@@ -1203,19 +1203,11 @@ static void *do_mount_direct(void *arg)
 	}
 
 	status = fstat(mt.ioctlfd, &st);
-	if (status == -1) {
-		error(ap->logopt,
-		      "can't stat direct mount trigger %s", mt.name);
-		mt.status = -ENOENT;
-		pthread_setcancelstate(state, NULL);
-		pthread_exit(NULL);
-	}
-
-	status = stat(mt.name, &st);
 	if (status != 0 || !S_ISDIR(st.st_mode) || st.st_dev != mt.dev) {
 		error(ap->logopt,
 		     "direct trigger not valid or already mounted %s",
 		     mt.name);
+		mt.status = -EINVAL;
 		pthread_setcancelstate(state, NULL);
 		pthread_exit(NULL);
 	}
