@@ -721,13 +721,6 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 
 	left = 0;
 
-	/*
-	 * If we are a submount we need to umount any offsets our
-	 * parent may have mounted over top of us.
-	 */
-	if (ap->submount)
-		left += umount_subtree_mounts(ap->parent, path, 1);
-
 	left += umount_subtree_mounts(ap, path, is_autofs_fs);
 
 	/* Delete detritus like unwanted mountpoints and symlinks */
