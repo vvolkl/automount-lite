@@ -84,6 +84,7 @@
 - set mapent dev and ino before adding to index.
 - change to use printf functions in amd parser.
 - dont call umount_subtree_mounts() on parent at umount.
+- dont take parent source lock at mount shutdown.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

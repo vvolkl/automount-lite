@@ -1793,7 +1793,6 @@ static void handle_mounts_cleanup(void *arg)
 	 * here.
 	 */
 	if (submount) {
-		master_source_unlock(ap->parent->entry);
 		master_free_mapent_sources(ap->entry, 1);
 		master_free_mapent(ap->entry);
 	}
@@ -1822,36 +1821,6 @@ static void handle_mounts_cleanup(void *arg)
 	return;
 }
 
-static int submount_source_writelock_nested(struct autofs_point *ap)
-{
-	struct autofs_point *parent = ap->parent;
-	int status;
-
-	status = pthread_rwlock_trywrlock(&parent->entry->source_lock);
-	if (status)
-		goto done;
-
-	status = pthread_rwlock_trywrlock(&ap->entry->source_lock);
-	if (status)
-		master_source_unlock(parent->entry);
-
-done:
-	if (status && status != EBUSY) {
-		logmsg("submount nested master_mapent source write lock failed");
-		fatal(status);
-	}
-
-	return status;
-}
-
-static void submount_source_unlock_nested(struct autofs_point *ap)
-{
-	struct autofs_point *parent = ap->parent;
-
-	master_source_unlock(ap->entry);
-	master_source_unlock(parent->entry);
-}
-
 int handle_mounts_exit(struct autofs_point *ap)
 {
 	int ret, cur_state;
@@ -1866,33 +1835,13 @@ int handle_mounts_exit(struct autofs_point *ap)
 
 	master_mutex_lock();
 
-	if (!ap->submount)
-		master_source_writelock(ap->entry);
-	else {
-		/*
-		 * If a mount request arrives before the locks are
-		 * aquired just return to ready state.
-		 */
-		ret = submount_source_writelock_nested(ap);
-		if (ret) {
-			warn(ap->logopt,
-			     "can't shutdown submount: mount in progress");
-			/* Return to ST_READY is done immediately */
-			st_add_task(ap, ST_READY);
-			master_mutex_unlock();
-			pthread_setcancelstate(cur_state, NULL);
-			return 0;
-		}
-	}
+	master_source_writelock(ap->entry);
 
 	if (ap->state != ST_SHUTDOWN) {
 		conditional_alarm_add(ap, ap->exp_runfreq);
 		/* Return to ST_READY is done immediately */
 		st_add_task(ap, ST_READY);
-		if (ap->submount)
-			submount_source_unlock_nested(ap);
-		else
-			master_source_unlock(ap->entry);
+		master_source_unlock(ap->entry);
 		master_mutex_unlock();
 
 		pthread_setcancelstate(cur_state, NULL);
@@ -1933,10 +1882,7 @@ int handle_mounts_exit(struct autofs_point *ap)
 	conditional_alarm_add(ap, ap->exp_runfreq);
 	/* Return to ST_READY is done immediately */
 	st_add_task(ap, ST_READY);
-	if (ap->submount)
-		submount_source_unlock_nested(ap);
-	else
-		master_source_unlock(ap->entry);
+	master_source_unlock(ap->entry);
 	master_mutex_unlock();
 
 	pthread_setcancelstate(cur_state, NULL);
