@@ -59,6 +59,8 @@ struct callback_data {
 
 int lookup_version = AUTOFS_LOOKUP_VERSION;	/* Required by protocol */
 
+static pthread_mutex_t defaults_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 static unsigned int get_map_order(const char *domain, const char *map)
 {
 	char key[] = "YP_LAST_MODIFIED";
@@ -392,19 +394,15 @@ int yp_all_callback(int status, char *ypkey, int ypkeylen,
 	return 0;
 }
 
-int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
+int lookup_read_map(struct autofs_point *ap, struct map_source *map, time_t age, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
 	struct ypall_callback ypcb;
 	struct callback_data ypcb_data;
 	unsigned int logopt = ap->logopt;
-	struct map_source *source;
+	struct map_source *source = map;
 	char *mapname;
 	int err;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
 
 	/*
 	 * If we don't need to create directories (or don't need
@@ -457,9 +455,9 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 	}
 
 	source->age = age;
-	pthread_mutex_lock(&ap->entry->current_mutex);
+	pthread_mutex_lock(&defaults_mutex);
 	ctxt->check_defaults = 0;
-	pthread_mutex_unlock(&ap->entry->current_mutex);
+	pthread_mutex_unlock(&defaults_mutex);
 
 	return NSS_STATUS_SUCCESS;
 }
@@ -685,7 +683,7 @@ static int check_map_indirect(struct autofs_point *ap,
 	mc = source->mc;
 
 	/* Only read map if it has been modified */
-	pthread_mutex_lock(&ap->entry->current_mutex);
+	pthread_mutex_lock(&defaults_mutex);
 	map_order = get_map_order(ctxt->domainname, ctxt->mapname);
 	if (map_order > ctxt->order) {
 		ctxt->order = map_order;
@@ -702,7 +700,7 @@ static int check_map_indirect(struct autofs_point *ap,
 		} else
 			ctxt->check_defaults = 0;
 	}
-	pthread_mutex_unlock(&ap->entry->current_mutex);
+	pthread_mutex_unlock(&defaults_mutex);
 
 	/* check map and if change is detected re-read map */
 	ret = match_key(ap, source, key, key_len, ctxt);
@@ -782,11 +780,11 @@ static int check_map_indirect(struct autofs_point *ap,
 	return NSS_STATUS_SUCCESS;
 }
 
-int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *context)
+int lookup_mount(struct autofs_point *ap, struct map_source *map, const char *name, int name_len, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct map_source *source = map;
+	struct mapent_cache *mc = source->mc;
 	char key[KEY_MAX_LEN + 1];
 	int key_len;
 	char *lkp_key;
@@ -796,12 +794,6 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 	char buf[MAX_ERR_BUF];
 	int status = 0;
 	int ret = 1;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	debug(ap->logopt, MODPREFIX "looking up %s", name);
 
@@ -939,10 +931,7 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 
 	free(lkp_key);
 
-	master_source_current_wait(ap->entry);
-	ap->entry->current = source;
-
-	ret = ctxt->parse->parse_mount(ap, key, key_len,
+	ret = ctxt->parse->parse_mount(ap, source, key, key_len,
 				       mapent, ctxt->parse->context);
 	free(mapent);
 	if (ret) {

@@ -1310,13 +1310,14 @@ static void cleanup_offset_entries(struct autofs_point *ap,
  * level nexting point. Finally to mount non multi-mounts and to mount a
  * lower level multi-mount nesting point and its offsets.
  */
-int parse_mount(struct autofs_point *ap, const char *name,
-		int name_len, const char *mapent, void *context)
+int parse_mount(struct autofs_point *ap, struct map_source *map,
+		const char *name, int name_len, const char *mapent,
+		void *context)
 {
 	struct parse_context *ctxt = (struct parse_context *) context;
 	char buf[MAX_ERR_BUF];
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct map_source *source = map;
+	struct mapent_cache *mc = source->mc;
 	struct mapent *me, *oe, *tmp;
 	LIST_HEAD(offsets);
 	char *pmapent, *options;
@@ -1325,12 +1326,6 @@ int parse_mount(struct autofs_point *ap, const char *name,
 	int cur_state;
 	int slashify = ctxt->slashify_colons;
 	unsigned int append_options;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	if (!mapent) {
 		warn(ap->logopt, MODPREFIX "error: empty map entry");

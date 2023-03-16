@@ -689,22 +689,16 @@ prepare_plus_include(struct autofs_point *ap,
 	return new;
 }
 
-int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
+int lookup_read_map(struct autofs_point *ap, struct map_source *map, time_t age, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct map_source *source = map;
+	struct mapent_cache *mc = source->mc;
 	char key[KEY_MAX_LEN + 1];
 	char mapent[MAPENT_MAX_LEN + 1];
 	FILE *f;
 	unsigned int k_len, m_len;
 	int entry;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	if (source->recurse)
 		return NSS_STATUS_TRYAGAIN;
@@ -1128,11 +1122,11 @@ static int map_update_needed(struct autofs_point *ap,
 	return ret;
 }
 
-int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *context)
+int lookup_mount(struct autofs_point *ap, struct map_source *map, const char *name, int name_len, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct map_source *source = map;
+	struct mapent_cache *mc = source->mc;
 	struct mapent *me;
 	char key[KEY_MAX_LEN + 1];
 	int key_len;
@@ -1142,12 +1136,6 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 	char buf[MAX_ERR_BUF];
 	int status = 0;
 	int ret = 1;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	if (source->recurse)
 		return NSS_STATUS_UNAVAIL;
@@ -1282,10 +1270,7 @@ do_cache_lookup:
 
 	free(lkp_key);
 
-	master_source_current_wait(ap->entry);
-	ap->entry->current = source;
-
-	ret = ctxt->parse->parse_mount(ap, key, key_len,
+	ret = ctxt->parse->parse_mount(ap, source, key, key_len,
 				       mapent, ctxt->parse->context);
 	if (ret) {
 		/* Don't update negative cache when re-connecting */

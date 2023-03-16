@@ -83,6 +83,8 @@ struct ldap_search_params {
 
 static int decode_percent_hack(const char *, char **);
 
+pthread_mutex_t defaults_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 #ifdef WITH_SASL
 static int set_env(unsigned logopt, const char *name, const char *val)
 {
@@ -3135,16 +3137,12 @@ static int read_one_map(struct autofs_point *ap,
 	return NSS_STATUS_SUCCESS;
 }
 
-int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
+int lookup_read_map(struct autofs_point *ap, struct map_source *map, time_t age, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
-	struct map_source *source;
+	struct map_source *source = map;
 	int rv = LDAP_SUCCESS;
 	int ret, cur_state;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
 
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
 	ret = read_one_map(ap, source, ctxt, age, &rv);
@@ -3758,7 +3756,7 @@ static int check_map_indirect(struct autofs_point *ap,
 
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
 
-	status = pthread_mutex_lock(&ap->entry->current_mutex);
+	status = pthread_mutex_lock(&defaults_mutex);
 	if (status)
 		fatal(status);
 	if (is_amd_format) {
@@ -3780,7 +3778,7 @@ static int check_map_indirect(struct autofs_point *ap,
 				ctxt->check_defaults = 0;
 		}
 	}
-	status = pthread_mutex_unlock(&ap->entry->current_mutex);
+	status = pthread_mutex_unlock(&defaults_mutex);
 	if (status)
 		fatal(status);
 
@@ -3827,12 +3825,12 @@ static int check_map_indirect(struct autofs_point *ap,
 		}
 		cache_unlock(mc);
 
-		status = pthread_mutex_lock(&ap->entry->current_mutex);
+		status = pthread_mutex_lock(&defaults_mutex);
 		if (status)
 			fatal(status);
 		if (t_last_read > ap->exp_runfreq && ret & CHE_UPDATED)
 			source->stale = 1;
-		status = pthread_mutex_unlock(&ap->entry->current_mutex);
+		status = pthread_mutex_unlock(&defaults_mutex);
 		if (status)
 			fatal(status);
 	}
@@ -3848,11 +3846,11 @@ static int check_map_indirect(struct autofs_point *ap,
 	return NSS_STATUS_SUCCESS;
 }
 
-int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *context)
+int lookup_mount(struct autofs_point *ap, struct map_source *map, const char *name, int name_len, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct map_source *source = map;
+	struct mapent_cache *mc = source->mc;
 	struct mapent *me;
 	char key[KEY_MAX_LEN + 1];
 	int key_len;
@@ -3862,12 +3860,6 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 	char buf[MAX_ERR_BUF];
 	int status = 0;
 	int ret = 1;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	debug(ap->logopt, MODPREFIX "looking up %s", name);
 
@@ -3997,10 +3989,7 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 
 	free(lkp_key);
 
-	master_source_current_wait(ap->entry);
-	ap->entry->current = source;
-
-	ret = ctxt->parse->parse_mount(ap, key, key_len,
+	ret = ctxt->parse->parse_mount(ap, source, key, key_len,
 				       mapent, ctxt->parse->context);
 	if (ret) {
 		/* Don't update negative cache when re-connecting */

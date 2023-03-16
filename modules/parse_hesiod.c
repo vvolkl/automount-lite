@@ -272,8 +272,9 @@ int parse_done(void *context)
 	return 0;
 }
 
-int parse_mount(struct autofs_point *ap, const char *name,
-		int name_len, const char *mapent, void *context)
+int parse_mount(struct autofs_point *ap, struct map_source *map,
+		const char *name, int name_len, const char *mapent,
+		void *context)
 {
 	char source[HESIOD_LEN + 1];
 	char fstype[HESIOD_LEN + 1];
@@ -281,9 +282,6 @@ int parse_mount(struct autofs_point *ap, const char *name,
 	char *q;
 	const char *p;
 	int ret;
-
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
 
 	p = mapent;
 	q = fstype;

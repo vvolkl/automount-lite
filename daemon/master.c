@@ -688,47 +688,6 @@ void master_source_lock_cleanup(void *arg)
 	return;
 }
 
-void master_source_current_wait(struct master_mapent *entry)
-{
-	int status;
-
-	status = pthread_mutex_lock(&entry->current_mutex);
-	if (status) {
-		logmsg("entry current source lock failed");
-		fatal(status);
-	}
-
-	while (entry->current != NULL) {
-		status = pthread_cond_wait(
-				&entry->current_cond, &entry->current_mutex);
-		if (status) {
-			logmsg("entry current source condition wait failed");
-			fatal(status);
-		}
-	}
-
-	return;
-}
-
-void master_source_current_signal(struct master_mapent *entry)
-{
-	int status;
-
-	status = pthread_cond_signal(&entry->current_cond);
-	if (status) {
-		logmsg("entry current source condition signal failed");
-		fatal(status);
-	}
-
-	status = pthread_mutex_unlock(&entry->current_mutex);
-	if (status) {
-		logmsg("entry current source unlock failed");
-		fatal(status);
-	}
-
-	return;
-}
-
 struct master_mapent *master_find_mapent(struct master *master, const char *path)
 {
 	struct list_head *head, *p;
@@ -851,14 +810,6 @@ struct master_mapent *master_new_mapent(struct master *master, const char *path,
 	if (status)
 		fatal(status);
 
-	status = pthread_mutex_init(&entry->current_mutex, NULL);
-	if (status)
-		fatal(status);
-
-	status = pthread_cond_init(&entry->current_cond, NULL);
-	if (status)
-		fatal(status);
-
 	INIT_LIST_HEAD(&entry->list);
 
 	return entry;
@@ -923,14 +874,6 @@ void master_free_mapent(struct master_mapent *entry)
 	master_free_autofs_point(entry->ap);
 
 	status = pthread_rwlock_destroy(&entry->source_lock);
-	if (status)
-		fatal(status);
-
-	status = pthread_mutex_destroy(&entry->current_mutex);
-	if (status)
-		fatal(status);
-
-	status = pthread_cond_destroy(&entry->current_cond);
 	if (status)
 		fatal(status);
 

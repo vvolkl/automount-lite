@@ -46,26 +46,18 @@ int lookup_read_master(struct master *master, time_t age, void *context)
         return NSS_STATUS_UNKNOWN;
 }
 
-int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
+int lookup_read_map(struct autofs_point *ap, struct map_source *map, time_t age, void *context)
 {
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
 	return NSS_STATUS_UNKNOWN;
 }
 
-int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *context)
+int lookup_mount(struct autofs_point *ap, struct map_source *map, const char *name, int name_len, void *context)
 {
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct map_source *source = map;
+	struct mapent_cache *mc = source->mc;
 	struct passwd *pw;
 	char buf[MAX_ERR_BUF];
 	int ret;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	debug(ap->logopt, MODPREFIX "looking up %s", name);
 

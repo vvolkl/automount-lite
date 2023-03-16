@@ -363,13 +363,10 @@ static int do_read_map(struct autofs_point *ap, struct map_source *map, time_t a
 		map_module_unlock(map);
 	}
 
-	master_source_current_wait(ap->entry);
-	ap->entry->current = map;
-
 	pthread_cleanup_push(map_module_lock_cleanup, map);
 	map_module_readlock(map);
 	lookup = map->lookup;
-	status = lookup->lookup_read_map(ap, age, lookup->context);
+	status = lookup->lookup_read_map(ap, map, age, lookup->context);
 	pthread_cleanup_pop(1);
 
 	if (status != NSS_STATUS_SUCCESS)
@@ -831,12 +828,9 @@ int do_lookup_mount(struct autofs_point *ap, struct map_source *map, const char 
 		map_module_unlock(map);
 	}
 
-	master_source_current_wait(ap->entry);
-	ap->entry->current = map;
-
 	map_module_readlock(map);
 	lookup = map->lookup;
-	status = lookup->lookup_mount(ap, name, name_len, lookup->context);
+	status = lookup->lookup_mount(ap, map, name, name_len, lookup->context);
 	map_module_unlock(map);
 
 	return status;

@@ -166,11 +166,8 @@ int lookup_read_master(struct master *master, time_t age, void *context)
         return NSS_STATUS_UNKNOWN;
 }
 
-int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
+int lookup_read_map(struct autofs_point *ap, struct map_source *map, time_t age, void *context)
 {
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
 	return NSS_STATUS_UNKNOWN;
 }
 
@@ -585,20 +582,14 @@ static int match_key(struct autofs_point *ap,
 	return ret;
 }
 
-int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *context)
+int lookup_mount(struct autofs_point *ap, struct map_source *map, const char *name, int name_len, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct map_source *source = map;
+	struct mapent_cache *mc = source->mc;
 	char *mapent = NULL;
 	struct mapent *me;
 	int ret = 1;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	/* Check if we recorded a mount fail for this key anywhere */
 	me = lookup_source_mapent(ap, name, LKP_DISTINCT);
@@ -649,10 +640,9 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 				strcpy(ent, me->mapent);
 			}
 			cache_unlock(mc);
-			master_source_current_wait(ap->entry);
-			ap->entry->current = source;
-			ret = ctxt->parse->parse_mount(ap, name,
-				 name_len, ent, ctxt->parse->context);
+			ret = ctxt->parse->parse_mount(ap, source,
+						       name, name_len, ent,
+						       ctxt->parse->context);
 			if (ent)
 				free(ent);
 			goto out_free;
@@ -684,10 +674,7 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 
 	debug(ap->logopt, MODPREFIX "%s -> %s", name, mapent);
 
-	master_source_current_wait(ap->entry);
-	ap->entry->current = source;
-
-	ret = ctxt->parse->parse_mount(ap, name, name_len,
+	ret = ctxt->parse->parse_mount(ap, source, name, name_len,
 				       mapent, ctxt->parse->context);
 out_free:
 	if (mapent)

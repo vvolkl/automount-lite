@@ -1390,12 +1390,9 @@ static int do_host_mount(struct autofs_point *ap, const char *name,
 		cache_push_mapent(me, NULL);
 	cache_unlock(source->mc);
 
-	master_source_current_wait(ap->entry);
-	ap->entry->current = instance;
-
 	map_module_readlock(instance);
 	lookup = instance->lookup;
-	ret = lookup->lookup_mount(ap, entry->rhost,
+	ret = lookup->lookup_mount(ap, instance, entry->rhost,
 				   strlen(entry->rhost), lookup->context);
 	map_module_unlock(instance);
 
@@ -2210,13 +2207,14 @@ done:
 	return defaults_entry;
 }
 
-int parse_mount(struct autofs_point *ap, const char *name,
-		int name_len, const char *mapent, void *context)
+int parse_mount(struct autofs_point *ap, struct map_source *map,
+		const char *name, int name_len, const char *mapent,
+		void *context)
 {
 	struct parse_context *ctxt = (struct parse_context *) context;
 	unsigned int flags = conf_amd_get_flags(ap->path);
 	struct substvar *sv = NULL;
-	struct map_source *source;
+	struct map_source *source = map;
 	unsigned int at_least_one;
 	struct list_head entries, *p, *head;
 	struct amd_entry *defaults_entry;
@@ -2225,10 +2223,6 @@ int parse_mount(struct autofs_point *ap, const char *name,
 	int rv = 1;
 	int cur_state;
 	int ret;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
 
 	if (!mapent) {
 		warn(ap->logopt, MODPREFIX "error: empty map entry");

@@ -160,11 +160,8 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 	return NSS_STATUS_UNKNOWN;
 }
 
-int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
+int lookup_read_map(struct autofs_point *ap, struct map_source *map, time_t age, void *context)
 {
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
 	return NSS_STATUS_UNKNOWN;
 }
 
@@ -360,11 +357,11 @@ done:
 	return ret;
 }
 
-int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *context)
+int lookup_mount(struct autofs_point *ap, struct map_source *map, const char *name, int name_len, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
 	char buf[MAX_ERR_BUF];
-	struct map_source *source;
+	struct map_source *source = map;
 	struct mapent *me;
 	char key[KEY_MAX_LEN + 1];
 	size_t key_len;
@@ -372,10 +369,6 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 	size_t len;
 	char *mapent;
 	int rv;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
 
 	debug(ap->logopt,
 	      MODPREFIX "looking up root=\"%s\", name=\"%s\"",
@@ -468,7 +461,7 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 
 	free(lkp_key);
 
-	rv = ctxt->parser->parse_mount(ap, key, key_len,
+	rv = ctxt->parser->parse_mount(ap, source, key, key_len,
 				       mapent, ctxt->parser->context);
 	free(mapent);
 

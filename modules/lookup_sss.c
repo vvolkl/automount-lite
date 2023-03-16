@@ -771,22 +771,16 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 	return NSS_STATUS_SUCCESS;
 }
 
-int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
+int lookup_read_map(struct autofs_point *ap, struct map_source *map, time_t age, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct map_source *source = map;
+	struct mapent_cache *mc = source->mc;
 	void *sss_ctxt = NULL;
 	char *key;
 	char *value = NULL;
 	char *s_key;
 	int count, ret;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	/*
 	 * If we don't need to create directories (or don't need
@@ -873,23 +867,16 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 	return NSS_STATUS_SUCCESS;
 }
 
-static int lookup_one(struct autofs_point *ap,
-		char *qKey, int qKey_len, struct lookup_context *ctxt)
+static int lookup_one(struct autofs_point *ap, struct map_source *source,
+		      char *qKey, int qKey_len, struct lookup_context *ctxt)
 {
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct mapent_cache *mc = source->mc;
 	struct mapent *we;
 	void *sss_ctxt = NULL;
 	time_t age = monotonic_time(NULL);
 	char *value = NULL;
 	char *s_key;
 	int err, ret;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	ret = setautomntent(ap->logopt, ctxt, &sss_ctxt, SSS_LOOKUP_KEY);
 	if (ret)
@@ -983,24 +970,14 @@ wild:
 }
 
 static int check_map_indirect(struct autofs_point *ap,
-			      char *key, int key_len,
+			      struct map_source *source, char *key, int key_len,
 			      struct lookup_context *ctxt)
 {
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct mapent_cache *mc = source->mc;
 	int ret, cur_state;
 
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
-
-	master_source_current_wait(ap->entry);
-	ap->entry->current = source;
-
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-	ret = lookup_one(ap, key, key_len, ctxt);
+	ret = lookup_one(ap, source, key, key_len, ctxt);
 	if (ret == NSS_STATUS_NOTFOUND) {
 		pthread_setcancelstate(cur_state, NULL);
 		return ret;
@@ -1026,23 +1003,17 @@ static int check_map_indirect(struct autofs_point *ap,
 	return NSS_STATUS_SUCCESS;
 }
 
-int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *context)
+int lookup_mount(struct autofs_point *ap, struct map_source *map, const char *name, int name_len, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct map_source *source = map;
+	struct mapent_cache *mc = source->mc;
 	struct mapent *me;
 	char key[KEY_MAX_LEN + 1];
 	int key_len;
 	char *mapent = NULL;
 	char mapent_buf[MAPENT_MAX_LEN + 1];
 	int ret;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	debug(ap->logopt, MODPREFIX "looking up %s", name);
 
@@ -1078,10 +1049,7 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 		if (!lkp_key)
 			return NSS_STATUS_UNKNOWN;
 
-		master_source_current_wait(ap->entry);
-		ap->entry->current = source;
-
-		status = check_map_indirect(ap, lkp_key, strlen(lkp_key), ctxt);
+		status = check_map_indirect(ap, source, lkp_key, strlen(lkp_key), ctxt);
 		free(lkp_key);
 		if (status)
 			return status;
@@ -1128,11 +1096,9 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 	if (!mapent)
 		return NSS_STATUS_TRYAGAIN;
 
-	master_source_current_wait(ap->entry);
-	ap->entry->current = source;
-
 	debug(ap->logopt, MODPREFIX "%s -> %s", key, mapent);
-	ret = ctxt->parse->parse_mount(ap, key, key_len,
+
+	ret = ctxt->parse->parse_mount(ap, source, key, key_len,
 				       mapent, ctxt->parse->context);
 	if (ret) {
 		/* Don't update negative cache when re-connecting */

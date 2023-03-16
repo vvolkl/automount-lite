@@ -220,11 +220,11 @@ int lookup_read_master(struct master *master, time_t age, void *context)
 	return NSS_STATUS_SUCCESS;
 }
 
-int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
+int lookup_read_map(struct autofs_point *ap, struct map_source *map, time_t age, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct map_source *source = map;
+	struct mapent_cache *mc = source->mc;
 	char *tablename;
 	nis_result *result;
 	nis_object *this;
@@ -232,10 +232,6 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 	char *key, *mapent;
 	char buf[MAX_ERR_BUF];
 	int cur_state;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
 
 	/*
 	 * If we don't need to create directories (or don't need
@@ -670,11 +666,11 @@ static int check_map_indirect(struct autofs_point *ap,
 	return NSS_STATUS_SUCCESS;
 }
 
-int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *context)
+int lookup_mount(struct autofs_point *ap, struct map_source *map, const char *name, int name_len, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct map_source *source = map;
+	struct mapent_cache *mc = source->mc;
 	char key[KEY_MAX_LEN + 1];
 	int key_len;
 	char *lkp_key;
@@ -684,12 +680,6 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 	char buf[MAX_ERR_BUF];
 	int status;
 	int ret = 1;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	debug(ap->logopt, MODPREFIX "looking up %s", name);
 
@@ -821,10 +811,7 @@ int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *
 
 	free(lkp_key);
 
-	master_source_current_wait(ap->entry);
-	ap->entry->current = source;
-
-	ret = ctxt->parse->parse_mount(ap, key, key_len,
+	ret = ctxt->parse->parse_mount(ap, source, key, key_len,
 				       mapent, ctxt->parse->context);
 	if (ret) {
 		free(mapent);

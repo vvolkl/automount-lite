@@ -182,10 +182,7 @@ static int do_parse_mount(struct autofs_point *ap, struct map_source *source,
 {
 	int ret;
 
-	master_source_current_wait(ap->entry);
-	ap->entry->current = source;
-
-	ret = ctxt->parse->parse_mount(ap, name, name_len,
+	ret = ctxt->parse->parse_mount(ap, source, name, name_len,
 				 mapent, ctxt->parse->context);
 	if (ret) {
 		struct mapent_cache *mc = source->mc;
@@ -312,11 +309,10 @@ next:
 		debug(ap->logopt, MODPREFIX
 		      "attempt to update exports for %s", entries->key);
 
-		master_source_current_wait(ap->entry);
-		ap->entry->current = source;
 		ap->flags |= MOUNT_FLAG_REMOUNT;
-		ret = ctxt->parse->parse_mount(ap, entries->key, strlen(entries->key),
-					       entries->entry, ctxt->parse->context);
+		ret = ctxt->parse->parse_mount(ap, source, entries->key,
+					       strlen(entries->key), entries->entry,
+					       ctxt->parse->context);
 		if (ret)
 			warn(ap->logopt, MODPREFIX
 			     "failed to parse mount %s", entries->entry);
@@ -326,19 +322,13 @@ next:
 	pthread_cleanup_pop(1);
 }
 
-int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
+int lookup_read_map(struct autofs_point *ap, struct map_source *map, time_t age, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct map_source *source = map;
+	struct mapent_cache *mc = source->mc;
 	struct hostent *host;
 	int status;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	debug(ap->logopt, MODPREFIX "read hosts map");
 
@@ -381,22 +371,16 @@ int lookup_read_map(struct autofs_point *ap, time_t age, void *context)
 	return NSS_STATUS_SUCCESS;
 }
 
-int lookup_mount(struct autofs_point *ap, const char *name, int name_len, void *context)
+int lookup_mount(struct autofs_point *ap, struct map_source *map, const char *name, int name_len, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
-	struct map_source *source;
-	struct mapent_cache *mc;
+	struct map_source *source = map;
+	struct mapent_cache *mc = source->mc;
 	struct mapent *me;
 	char *mapent = NULL;
 	int mapent_len;
 	time_t now = monotonic_time(NULL);
 	int ret;
-
-	source = ap->entry->current;
-	ap->entry->current = NULL;
-	master_source_current_signal(ap->entry);
-
-	mc = source->mc;
 
 	/* Check if we recorded a mount fail for this key anywhere */
 	me = lookup_source_mapent(ap, name, LKP_DISTINCT);

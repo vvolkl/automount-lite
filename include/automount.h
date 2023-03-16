@@ -287,15 +287,15 @@ int lookup_source_close_ioctlfd(struct autofs_point *ap, const char *key);
 int lookup_init(const char *mapfmt, int argc, const char *const *argv, void **context);
 int lookup_reinit(const char *mapfmt, int argc, const char *const *argv, void **context);
 int lookup_read_master(struct master *master, time_t age, void *context);
-int lookup_read_map(struct autofs_point *, time_t, void *context);
-int lookup_mount(struct autofs_point *, const char *, int, void *);
+int lookup_read_map(struct autofs_point *ap, struct map_source *map, time_t age, void *context);
+int lookup_mount(struct autofs_point *, struct map_source *map, const char *name, int name_len, void *context);
 int lookup_done(void *);
 #endif
 typedef int (*lookup_init_t) (const char *, int, const char *const *, void **);
 typedef int (*lookup_reinit_t) (const char *, int, const char *const *, void **);
 typedef int (*lookup_read_master_t) (struct master *master, time_t, void *);
-typedef int (*lookup_read_map_t) (struct autofs_point *, time_t, void *);
-typedef int (*lookup_mount_t) (struct autofs_point *, const char *, int, void *);
+typedef int (*lookup_read_map_t) (struct autofs_point *, struct map_source *, time_t, void *);
+typedef int (*lookup_mount_t) (struct autofs_point *, struct map_source *, const char *, int, void *);
 typedef int (*lookup_done_t) (void *);
 
 struct lookup_mod {
@@ -324,13 +324,15 @@ int close_lookup(struct lookup_mod *);
 #ifdef MODULE_PARSE
 int parse_init(int argc, const char *const *argv, void **context);
 int parse_reinit(int argc, const char *const *argv, void **context);
-int parse_mount(struct autofs_point *ap, const char *name,
-		int name_len, const char *mapent, void *context);
+int parse_mount(struct autofs_point *ap, struct map_source *map,
+		const char *name, int name_len, const char *mapent,
+		void *context);
 int parse_done(void *);
 #endif
 typedef int (*parse_init_t) (int, const char *const *, void **);
 typedef int (*parse_reinit_t) (int, const char *const *, void **);
-typedef int (*parse_mount_t) (struct autofs_point *, const char *, int, const char *, void *);
+typedef int (*parse_mount_t) (struct autofs_point *, struct map_source *,
+				const char *, int, const char *, void *);
 typedef int (*parse_done_t) (void *);
 
 struct parse_mod {
