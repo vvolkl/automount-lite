@@ -1787,16 +1787,6 @@ static void handle_mounts_cleanup(void *arg)
 
 	info(logopt, "shut down path %s", ap->path);
 
-	/*
-	 * Submounts are detached threads and don't belong to the
-	 * master map entry list so we need to free their resources
-	 * here.
-	 */
-	if (submount) {
-		master_free_mapent_sources(ap->entry, 1);
-		master_free_mapent(ap->entry);
-	}
-
 	if (clean) {
 		if (rmdir(ap->path) == -1) {
 			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
@@ -1807,6 +1797,16 @@ static void handle_mounts_cleanup(void *arg)
 
 	master_remove_mapent(ap->entry);
 	master_source_unlock(ap->entry);
+
+	/*
+	 * Submounts are detached threads and don't belong to the
+	 * master map entry list so we need to free their resources
+	 * here.
+	 */
+	if (submount) {
+		master_free_mapent_sources(ap->entry, 1);
+		master_free_mapent(ap->entry);
+	}
 
 	/*
 	 * If we are not a submount send a signal to the signal handler
