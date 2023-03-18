@@ -1452,7 +1452,6 @@ static void handle_cmd_pipe_fifo_message(int fd)
 	int ret;
 	long pri;
 
-	memset(buffer, 0, sizeof(buffer));
 	ret = read(fd, &buffer, sizeof(buffer));
 	if (ret < 0) {
 		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
@@ -1460,6 +1459,12 @@ static void handle_cmd_pipe_fifo_message(int fd)
 		     "read on command pipe returned error: %s", estr);
 		return;
 	}
+	if (ret >= sizeof(buffer)) {
+		error(LOGOPT_ANY,
+		      "read overrun on command pipe message");
+		return;
+	}
+	buffer[ret] = 0;
 
 	sep = strrchr(buffer, ' ');
 	if (!sep) {

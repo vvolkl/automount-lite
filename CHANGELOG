@@ -70,6 +70,7 @@
 - switch to application wide command pipe.
 - get rid of unused field submnt_count.
 - fix mount tree startup reconnect.
+- fix unterminated read in handle_cmd_pipe_fifo_message().
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
