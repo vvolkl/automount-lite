@@ -159,15 +159,17 @@ CUTSEP		(\|\||\/)
 		return SELECTOR;
 	}
 
-	"!"/({SEL1ARG}|{SEL2ARG}) { return NOT; }
+	"!"/({SEL1ARG})(\([^,]+\)) { return NOT; }
 
-	{SEL1ARG} {
+	"!"/({SEL2ARG})(\(([^,]+)(,([^,]+))?\)) { return NOT; }
+
+	({SEL1ARG})/(\([^,]+\)) {
 		BEGIN(SELARGVAL);
 		amd_copy_buffer();
 		return SELECTOR;
 	}
 
-	{SEL2ARG} {
+	({SEL2ARG})/(\([^,]+)(,([^,]+))?\) {
 		BEGIN(SELARGVAL);
 		amd_copy_buffer();
 		return SELECTOR;
