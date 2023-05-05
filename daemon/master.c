@@ -390,11 +390,14 @@ static void __master_free_map_source(struct map_source *source, unsigned int fre
 
 		instance = source->instance;
 		while (instance) {
-			if (instance->lookup)
+			if (instance->lookup) {
 				close_lookup(instance->lookup);
+				instance->lookup = NULL;
+			}
 			instance = instance->next;
 		}
 		close_lookup(source->lookup);
+		source->lookup = NULL;
 	}
 	if (source->argv)
 		free_argv(source->argc, source->argv);
@@ -407,6 +410,7 @@ static void __master_free_map_source(struct map_source *source, unsigned int fre
 			__master_free_map_source(instance, 0);
 			instance = next;
 		}
+		source->instance = NULL;
 	}
 
 	status = pthread_rwlock_destroy(&source->module_lock);
@@ -869,9 +873,20 @@ void master_add_mapent(struct master *master, struct master_mapent *entry)
 void master_remove_mapent(struct master_mapent *entry)
 {
 	struct master *master = entry->master;
+	struct autofs_point *ap = entry->ap;
 
-	if (entry->ap->submount)
+	if (ap->submount) {
+		struct mnt_list *mnt;
+
+		mnt = mnts_find_submount(ap->path);
+		if (mnt) {
+			warn(ap->logopt,
+			     "map entry %s in use at shutdown", ap->path);
+			mnts_put_mount(mnt);
+		}
+		list_add(&entry->join, &master->completed);
 		return;
+	}
 
 	if (!list_empty(&entry->list)) {
 		list_del_init(&entry->list);

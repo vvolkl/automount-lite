@@ -28,8 +28,8 @@
 
 #define MODPREFIX "mount(autofs): "
 
-/* Attribute to create detached thread */
-extern pthread_attr_t th_attr_detached;
+/* Attributes to create handle_mounts() thread */
+extern pthread_attr_t th_attr;
 extern struct startup_cond suc;
 
 int mount_version = AUTOFS_MOUNT_VERSION;	/* Required by protocol */
@@ -327,7 +327,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name,
 	suc.done = 0;
 	suc.status = 0;
 
-	if (pthread_create(&thid, &th_attr_detached, handle_mounts, &suc)) {
+	if (pthread_create(&thid, &th_attr, handle_mounts, &suc)) {
 		crit(ap->logopt,
 		     MODPREFIX
 		     "failed to create mount handler thread for %s",

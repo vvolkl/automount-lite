@@ -1799,21 +1799,10 @@ static void handle_mounts_cleanup(void *arg)
 	master_source_unlock(ap->entry);
 
 	/*
-	 * Submounts are detached threads and don't belong to the
-	 * master map entry list so we need to free their resources
-	 * here.
+	 * Send a signal to the signal handler so it can join with any
+	 * completed handle_mounts() threads and perform final cleanup.
 	 */
-	if (submount) {
-		master_free_mapent_sources(ap->entry, 1);
-		master_free_mapent(ap->entry);
-	}
-
-	/*
-	 * If we are not a submount send a signal to the signal handler
-	 * so it can join with any completed handle_mounts() threads and
-	 * perform final cleanup.
-	 */
-	if (!submount && !pending)
+	if (!pending)
 		pthread_kill(signal_handler_thid, SIGTERM);
 
 	master_mutex_unlock();
