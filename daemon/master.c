@@ -1561,7 +1561,7 @@ int master_mount_mounts(struct master *master, time_t age)
 		}
 		cache_unlock(nc);
 cont:
-		if (ap->thid && is_mounted(this->path, MNTS_AUTOFS))
+		if (ap->thid && ap->state != ST_INIT)
 			check_update_map_sources(this, master->readall);
 		else {
 			if (!master_do_mount(this)) {
