@@ -655,7 +655,7 @@ sasl_do_kinit(unsigned logopt, struct lookup_context *ctxt)
 	if (ret) {
 		error(logopt, "krb5_unparse_name failed with error %d",
 		      ret);
-		goto out_cleanup_client_princ;
+		goto out_cleanup_tgs_princ;
 	}
 
 	debug(logopt, "Using tgs name %s", tgs_name);
@@ -717,8 +717,9 @@ out_cleanup_creds:
 	krb5cc_in_use--;
 	krb5_free_cred_contents(ctxt->krb5ctxt, &my_creds);
 out_cleanup_unparse:
-	krb5_free_principal(ctxt->krb5ctxt, tgs_princ);
 	krb5_free_unparsed_name(ctxt->krb5ctxt, tgs_name);
+out_cleanup_tgs_princ:
+	krb5_free_principal(ctxt->krb5ctxt, tgs_princ);
 out_cleanup_client_princ:
 	krb5_free_principal(ctxt->krb5ctxt, krb5_client_princ);
 out_cleanup_cc:

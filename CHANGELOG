@@ -71,6 +71,7 @@
 - get rid of unused field submnt_count.
 - fix mount tree startup reconnect.
 - fix unterminated read in handle_cmd_pipe_fifo_message().
+- fix memory leak in sasl_do_kinit()
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
