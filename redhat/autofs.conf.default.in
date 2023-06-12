@@ -214,7 +214,7 @@ mount_nfs_default_protocol = 4
 # sss_master_map_wait - When sssd is starting up it can sometimes return
 #			"no such entry" for a short time until it has read
 # 			in the LDAP map information. Internal default is 0
-# 			(don't wait) or 10 if sss supports returning EHSTDOWN.
+# 			(don't wait) or 10 if sss supports returning EHOSTDOWN.
 # 			If there is a problem with autofs not finding the
 # 			master map at startup (when it should) then try setting
 # 			this to 10 or more. If the sss library supports returning

@@ -368,7 +368,7 @@ static int setautomntent_wait(unsigned int logopt,
 			*sss_ctxt = NULL;
 		}
 
-		if (proto_version(ctxt) == 0 && retry > retries)
+		if (proto_version(ctxt) == 0 && retry >= retries)
 			ret = ETIMEDOUT;
 	}
 	return ret;
@@ -496,7 +496,7 @@ static int getautomntent_wait(unsigned int logopt,
 		info(logopt,
 		     "successfully contacted sssd to get map entry");
 	else {
-		if (retry == retries)
+		if (proto_version(ctxt) == 0 && retry >= retries)
 			ret = ETIMEDOUT;
 	}
 	return ret;
@@ -621,7 +621,7 @@ static int getautomntbyname_wait(unsigned int logopt,
 		info(logopt,
 		     "successfully contacted sssd to lookup key value");
 	else {
-		if (proto_version(ctxt) == 0 && retry > retries)
+		if (proto_version(ctxt) == 0 && retry >= retries)
 			ret = ETIMEDOUT;
 	}
 	return ret;
