@@ -98,6 +98,7 @@
 - allow -null map in indirect maps.
 - fix multi-mount check.
 - fix let OpenLDAP handle SASL binding.
+- always recreate credential cache.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

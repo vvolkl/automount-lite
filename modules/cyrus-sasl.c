@@ -661,6 +661,46 @@ sasl_do_kinit(unsigned logopt, struct lookup_context *ctxt)
 	debug(logopt, "Using tgs name %s", tgs_name);
 
 	memset(&my_creds, 0, sizeof(my_creds));
+
+	if (krb5cc_in_use++ == 0) {
+		/* tell the cache what the default principal is */
+		ret = krb5_cc_initialize(ctxt->krb5ctxt,
+				 ctxt->krb5_ccache, krb5_client_princ);
+
+		if (ret) {
+			--krb5cc_in_use;
+			error(logopt,
+			      "krb5_cc_initialize failed with error %d", ret);
+			goto out_cleanup_unparse;
+		}
+	}
+	else {
+		krb5_creds match_creds, out_creds;
+		time_t now = monotonic_time(NULL);
+
+		/* even if the cache is in use, we will clear it if it
+		 * contains an expired credential for our principal,
+		 * because Kerberos doesn't always work well with caches
+		 * that contain both expired and valid credentials
+		 */
+		memset(&match_creds, 0, sizeof match_creds);
+		match_creds.client = krb5_client_princ;
+		match_creds.server = tgs_princ;
+		ret = krb5_cc_retrieve_cred(ctxt->krb5ctxt, ctxt->krb5_ccache,
+					    0, &match_creds, &out_creds);
+		if (ret == 0 && (time_t) out_creds.times.endtime < now) {
+			debug(logopt,
+			 "calling krb5_cc_initialize to clear expired tickets");
+			ret = krb5_cc_initialize(ctxt->krb5ctxt,
+					 ctxt->krb5_ccache, krb5_client_princ);
+			if (ret)
+				warn(logopt,
+				     "krb5_cc_initialize failed with error %d "
+				     "while trying to clear existing cache",
+				     ret);
+		}
+	}
+
 	ret = krb5_get_init_creds_keytab(ctxt->krb5ctxt, &my_creds,
 					 krb5_client_princ,
 					 NULL /*keytab*/,
@@ -673,18 +713,7 @@ sasl_do_kinit(unsigned logopt, struct lookup_context *ctxt)
 		goto out_cleanup_unparse;
 	}
 
-	if (krb5cc_in_use++ == 0)
-		/* tell the cache what the default principal is */
-		ret = krb5_cc_initialize(ctxt->krb5ctxt,
-				 ctxt->krb5_ccache, krb5_client_princ);
-
-	if (ret) {
-		error(logopt,
-		      "krb5_cc_initialize failed with error %d", ret);
-		goto out_cleanup_creds;
-	}
-
-	/* and store credentials for that principal */
+	/* and store credentials for our principal */
 	ret = krb5_cc_store_cred(ctxt->krb5ctxt, ctxt->krb5_ccache, &my_creds);
 	if (ret) {
 		error(logopt,
