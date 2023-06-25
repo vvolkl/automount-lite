@@ -343,6 +343,7 @@ void *expire_proc_indirect(void *arg)
 	int offsets, submnts, count;
 	int ioctlfd, cur_state;
 	int status, ret, left;
+	int retries;
 
 	ea = (struct expire_args *) arg;
 
@@ -490,9 +491,19 @@ void *expire_proc_indirect(void *arg)
 	 * If there are no more real mounts left we could still
 	 * have some offset mounts with no '/' offset or symlinks
 	 * so we need to umount or unlink them here.
+	 *
+	 * The dentry info last_used field is set to 'now' when a
+	 * dentry is selected for expire so that it isn't immediately
+	 * selected again if the expire fails. But this can't work
+	 * for immediate expires so the count_mounts() function must
+	 * be used to limit the number of expire iterations.
 	 */
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cur_state);
-	while (1) {
+	if (how == AUTOFS_EXP_IMMEDIATE)
+		retries = count_mounts(ap, ap->path, ap->dev);
+	else
+		retries = -1;
+	while (retries--) {
 		ret = ops->expire(ap->logopt, ap->ioctlfd, ap->path, how);
 		if (ret != 0 && errno == EAGAIN)
 			break;

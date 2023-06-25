@@ -146,7 +146,7 @@ struct autofs_point;
 #define NEGATIVE_TIMEOUT	10
 #define POSITIVE_TIMEOUT	120
 #define UMOUNT_RETRIES		16
-#define EXPIRE_RETRIES		3
+#define EXPIRE_RETRIES		1
 
 struct mapent_cache {
 	pthread_rwlock_t rwlock;
