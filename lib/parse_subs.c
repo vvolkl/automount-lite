@@ -566,8 +566,11 @@ struct mapent *match_cached_key(struct autofs_point *ap,
 			while ((me = cache_lookup_key_next(me)))
 				if (me->source == source)
 					break;
-			if (!me)
+			if (!me) {
 				me = cache_lookup_distinct(mc, "*");
+				if (me && (me->source != source))
+					me = NULL;
+			}
 		}
 
 		if (!me)
@@ -579,7 +582,9 @@ struct mapent *match_cached_key(struct autofs_point *ap,
 		 */
 		if (!(ap->flags & MOUNT_FLAG_REMOUNT) &&
 		    ap->type == LKP_INDIRECT && *me->key == '*') {
-			ret = cache_update(mc, source, key, me->mapent, me->age);
+			time_t now = monotonic_time(NULL);
+
+			ret = cache_update(mc, source, key, me->mapent, now);
 			if (!(ret & (CHE_OK | CHE_UPDATED)))
 				me = NULL;
 		}
