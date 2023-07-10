@@ -927,6 +927,15 @@ static int add_new_host(struct host **list,
 	prx = get_proximity(host_addr->ai_addr);
 
 	/*
+	 * If we tried to add an IPv6 address and we don't have IPv6
+	 * support (or the host_addr type doesn't match that of any
+	 * of the interface addresses or looks unreachable) return
+	 * success in the hope of getting a valid address later.
+	 */
+	if (prx == PROXIMITY_UNSUPPORTED)
+		return 1;
+
+	/*
 	 * If we want the weight to be the determining factor
 	 * when selecting a host, or we are using random selection,
 	 * then all hosts must have the same proximity. However,
@@ -938,13 +947,6 @@ static int add_new_host(struct host **list,
 		       MOUNT_FLAG_RANDOM_SELECT)))
 		prx = PROXIMITY_SUBNET;
 
-	/*
-	 * If we tried to add an IPv6 address and we don't have IPv6
-	 * support return success in the hope of getting an IPv4
-	 * address later.
-	 */
-	if (prx == PROXIMITY_UNSUPPORTED)
-		return 1;
 	if (prx == PROXIMITY_ERROR)
 		return 0;
 
@@ -1038,7 +1040,8 @@ try_name:
 		} else if (this->ai_family == AF_INET6) {
 			struct sockaddr_in6 *addr = (struct sockaddr_in6 *) this->ai_addr;
 
-			if (!IN6_IS_ADDR_LOOPBACK(&addr->sin6_addr))
+			if (!IN6_IS_ADDR_LOOPBACK(&addr->sin6_addr) &&
+			    !IN6_IS_ADDR_LINKLOCAL(&addr->sin6_addr))
 				rr6++;
 		}
 		this = this->ai_next;

@@ -218,7 +218,7 @@ unsigned int get_proximity(struct sockaddr *host_addr)
 	int addr_len;
 	char buf[MAX_ERR_BUF];
 	uint32_t mask, ha, ia, *mask6, *ha6, *ia6;
-	int ret;
+	int ret, at_least_one;
 
 	addr = NULL;
 	addr6 = NULL;
@@ -228,6 +228,7 @@ unsigned int get_proximity(struct sockaddr *host_addr)
 	ha6 = NULL;
 	ia6 = NULL;
 	ha = 0;
+	at_least_one = 0;
 
 	switch (host_addr->sa_family) {
 	case AF_INET:
@@ -245,6 +246,14 @@ unsigned int get_proximity(struct sockaddr *host_addr)
 		hst6_addr = (struct in6_addr *) &addr6->sin6_addr;
 		ha6 = &hst6_addr->s6_addr32[0];
 		addr_len = sizeof(*hst6_addr);
+
+		/* The link-local address always seems to be a problem so
+		 * ignore it when trying to work out if the address we have
+		 * is reachable.
+		 */
+		if (IN6_IS_ADDR_LINKLOCAL(hst6_addr))
+			return PROXIMITY_UNSUPPORTED;
+
 		break;
 #endif
 
@@ -278,6 +287,14 @@ unsigned int get_proximity(struct sockaddr *host_addr)
 				freeifaddrs(ifa);
 				return PROXIMITY_LOCAL;
 			}
+
+			/* If the target address is the loopback address it will
+			 * have matched above so we can ignore it when trying to
+			 * work out if the address we have is reachable.
+			 */
+			if (addr->sin_addr.s_addr != INADDR_LOOPBACK)
+				at_least_one = 1;
+
 			break;
 
 		case AF_INET6:
@@ -290,11 +307,25 @@ unsigned int get_proximity(struct sockaddr *host_addr)
 				freeifaddrs(ifa);
 				return PROXIMITY_LOCAL;
 			}
+
+			/* If the interface address is the loopback address it will
+			 * have matched above so we can ignore it and the link-local
+			 * address always seems to be a problem so ignore it too when
+			 * trying to work out if the address we have is reachable.
+			 */
+			if (!IN6_IS_ADDR_LINKLOCAL(&if6_addr->sin6_addr) &&
+			    !IN6_IS_ADDR_LOOPBACK(&if6_addr->sin6_addr))
+				at_least_one = 1;
 #endif
 		default:
 			break;
 		}
 		this = this->ifa_next;
+	}
+
+	if (!at_least_one) {
+		freeifaddrs(ifa);
+		return PROXIMITY_UNSUPPORTED;
 	}
 
 	this = ifa;
@@ -352,6 +383,9 @@ unsigned int get_proximity(struct sockaddr *host_addr)
 				break;
 			if6_addr = (struct sockaddr_in6 *) this->ifa_addr;
 			ia6 = &if6_addr->sin6_addr.s6_addr32[0];
+
+			if (IN6_IS_ADDR_LINKLOCAL(&if6_addr->sin6_addr))
+				break;
 
 			/* Is the address within the network of the interface */
 

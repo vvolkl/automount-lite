@@ -91,6 +91,7 @@
 - add ioctlfd open helper.
 - make open files limit configurable.
 - use correct reference for IN6 macro call.
+- dont probe interface that cant send packet.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
