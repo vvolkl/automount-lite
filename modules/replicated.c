@@ -1032,11 +1032,13 @@ try_name:
 	while (this) {
 		if (this->ai_family == AF_INET) {
 			struct sockaddr_in *addr = (struct sockaddr_in *) this->ai_addr;
+
 			if (addr->sin_addr.s_addr != INADDR_LOOPBACK)
 				rr4++;
 		} else if (this->ai_family == AF_INET6) {
 			struct sockaddr_in6 *addr = (struct sockaddr_in6 *) this->ai_addr;
-			if (!IN6_IS_ADDR_LOOPBACK(addr->sin6_addr.s6_addr32))
+
+			if (!IN6_IS_ADDR_LOOPBACK(&addr->sin6_addr))
 				rr6++;
 		}
 		this = this->ai_next;
