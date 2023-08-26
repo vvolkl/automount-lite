@@ -97,6 +97,7 @@
 - fix expire retry looping.
 - allow -null map in indirect maps.
 - fix multi-mount check.
+- fix let OpenLDAP handle SASL binding.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

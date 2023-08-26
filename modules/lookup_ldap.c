@@ -640,7 +640,10 @@ static int do_bind(unsigned logopt, struct ldap_conn *conn,
 		debug(logopt, MODPREFIX "autofs_sasl_bind returned %d", rv);
 #else
 		if (ctxt->sasl_mech && !strncmp(ctxt->sasl_mech, "GSSAPI", 6)) {
-			rv = sasl_do_kinit(logopt, ctxt);
+			if (ctxt->client_cc)
+				rv = sasl_do_kinit_ext_cc(logopt, ctxt);
+			else
+				rv = sasl_do_kinit(logopt, ctxt);
 			if (rv != 0)
 				return 0;
 			sasl_flags = LDAP_SASL_QUIET;

@@ -130,6 +130,7 @@ void autofs_sasl_unbind(struct ldap_conn *conn, struct lookup_context *ctxt);
 void autofs_sasl_dispose(struct ldap_conn *conn, struct lookup_context *ctxt);
 void autofs_sasl_done(void);
 int sasl_do_kinit(unsigned logopt, struct lookup_context *ctxt);
+int sasl_do_kinit_ext_cc(unsigned logopt, struct lookup_context *ctxt);
 #ifdef WITH_LDAP_CYRUS_SASL
 void autofs_ldap_sasl_freedefs(void *defaults);
 void *autofs_ldap_sasl_defaults(LDAP *ld, char *mech, char *realm, char *authcid, char *passwd, char *authzid );
