@@ -787,7 +787,14 @@ static int check_is_multi(const char *mapent)
 		if (not_first_chunk) {
 			if (*p == '"')
 				p++;
-			if (*p == '/' || *p == '-') {
+			/*
+			 * Although an options string here would mean
+			 * we have a multi-mount we can't rely on it
+			 * since it's also valid in a mount location.
+			 */
+			if (*p == '-')
+				p++;
+			if (*p == '/') {
 				multi = 1;
 				break;
 			}
