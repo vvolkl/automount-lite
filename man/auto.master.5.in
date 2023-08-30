@@ -269,13 +269,18 @@ master map entry.
 If "\-null" is given as the map it is used to tell automount(8) to ignore a subsequent
 master map entry with the given path.
 .P
-It can only be used for paths that appear in the master map (or in direct mount maps).
+It can be used for paths that appear in the master map or in direct mount maps (but
+not in direct mount maps themselves) or as a key in an indirect mount map.
+.P
+An indirect mount map key can be nulled. If so the map key is ignored and does not
+result in a mount attempt (essentially the key lookup is abandoned early on).
 .P
 An indirect mount map top level mount point path can be nulled. If so no mounts from
 the nulled mount are performed (essentially it isn't mounted).
 .P
 Direct mount map path entries can be nulled. Since they must be present at startup
-they are (notionally) part of the master map.
+they are (notionally) part of the master map so direct mount paths that use the -null
+map may be used in the master map to ignore subsequent direct mount map entries.
 .P
 A nulled master map entry path will ignore a single subsequent matching entry. Any
 matching entry following that will be treated as it normally would be. An example

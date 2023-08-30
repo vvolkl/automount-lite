@@ -122,6 +122,7 @@ int strmcmp(const char *, const char *, int);
 char *dequote(const char *, int, unsigned int);
 int span_space(const char *, unsigned int);
 char *sanitize_path(const char *, int, unsigned int, unsigned int);
+int starts_with_null_opt(const char *);
 char *merge_options(const char *, const char *);
 int expandamdent(const char *, char *, const struct substvar *);
 int expand_selectors(struct autofs_point *, const char *, char **, struct substvar *);

@@ -95,6 +95,7 @@
 - fix some sss error return cases.
 - fix incorrect matching of cached wildcard key.
 - fix expire retry looping.
+- allow -null map in indirect maps.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

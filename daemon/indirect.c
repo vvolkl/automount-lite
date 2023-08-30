@@ -796,10 +796,20 @@ int handle_packet_missing_indirect(struct autofs_point *ap, autofs_packet_missin
 		return 0;
 	}
 
-	/* Check if we recorded a mount fail for this key anywhere */
 	me = lookup_source_mapent(ap, pkt->name, LKP_DISTINCT);
 	if (me) {
+		/* Check if we recorded a mount fail for this key */
 		if (me->status >= monotonic_time(NULL)) {
+			ops->send_fail(ap->logopt, ap->ioctlfd,
+				       pkt->wait_queue_token, -ENOENT);
+			cache_unlock(me->mc);
+			master_mutex_unlock();
+			pthread_setcancelstate(state, NULL);
+			return 0;
+		}
+
+		/* Ignore nulled indirect map entries */
+		if (starts_with_null_opt(me->mapent)) {
 			ops->send_fail(ap->logopt, ap->ioctlfd,
 				       pkt->wait_queue_token, -ENOENT);
 			cache_unlock(me->mc);

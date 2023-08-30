@@ -912,6 +912,19 @@ char *sanitize_path(const char *path, int origlen, unsigned int type, unsigned i
 	return s_path;
 }
 
+int starts_with_null_opt(const char *str)
+{
+	if (str && strlen(str) >= 5 && *str == '-') {
+		char sep = *(str + 5);
+
+		if (sep == 0 || sep == ' ' || sep == ',') {
+			if (!strncmp(str, "-null", 5))
+				return 1;
+		}
+	}
+	return 0;
+}
+
 static char *hasopt(const char *str, const char *opt)
 {
 	const size_t optlen = strlen(opt);

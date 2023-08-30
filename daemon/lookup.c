@@ -774,6 +774,10 @@ int lookup_ghost(struct autofs_point *ap)
 				goto next;
 			}
 
+			/* Ignore nulled indirect map entries */
+			if (starts_with_null_opt(me->mapent))
+				goto next;
+
 			fullpath = make_browse_path(ap->logopt,
 						    ap->path, me->key, ap->pref);
 			if (!fullpath)
