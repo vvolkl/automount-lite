@@ -99,6 +99,7 @@
 - fix multi-mount check.
 - fix let OpenLDAP handle SASL binding.
 - always recreate credential cache.
+- fix ldap_parse_page_control() check.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().

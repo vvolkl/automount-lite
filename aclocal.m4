@@ -422,7 +422,7 @@ AC_TRY_LINK(
   [ #define LDAP_DEPRECATED 1
     #include <ldap.h> ],
   [ LDAP *ld;
-    ber_int_t ct;
+    ber_int_t *ct;
     struct berval *c;
     int ret;
     LDAPControl **clp;
