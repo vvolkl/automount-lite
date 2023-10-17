@@ -1622,19 +1622,18 @@ static void *cmd_pipe_handler(void *arg)
 
 	while (1) {
 		cmd_pipe_mutex_lock();
-		if (done) {
-			cmd_pipe_mutex_unlock();
+		if (done)
 			break;
-		}
 		cmd_pipe_mutex_unlock();
 
 		errno = 0;
 		if (ppoll(fds, pollfds, NULL, &signalset) == -1) {
 			if (errno == EINTR)
 				continue;
+			cmd_pipe_mutex_lock();
 			estr = strerror_r(errno, buf, MAX_ERR_BUF);
 			logerr("poll failed: %s", estr);
-			return NULL;
+			break;
 		}
 
 		if (fds[0].revents & POLLIN) {
@@ -1643,6 +1642,7 @@ static void *cmd_pipe_handler(void *arg)
 		}
 	}
 	destroy_cmd_pipe_fifo();
+	cmd_pipe_mutex_unlock();
 	return NULL;
 }
 
@@ -1673,8 +1673,11 @@ int start_cmd_pipe_handler(void)
 void finish_cmd_pipe_handler(void)
 {
 	cmd_pipe_mutex_lock();
+	if (cmd_pipe_thid == -1 || done)
+	       goto exit;
 	done = 1;
 	pthread_kill(cmd_pipe_thid, SIGPIPE);
+exit:
 	cmd_pipe_mutex_unlock();
 }
 
