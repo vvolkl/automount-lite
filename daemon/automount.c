@@ -1397,7 +1397,7 @@ static int create_cmd_pipe_fifo(void)
 	if (fd < 0) {
 		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
 		unlink(cmd_pipe_name);
-		fprintf(stderr, "%s: failed to open cwcommand pipe %s: %s",
+		fprintf(stderr, "%s: failed to open command pipe %s: %s",
 			program, cmd_pipe_name, estr);
 		return -1;
 	}

@@ -100,6 +100,7 @@
 - fix let OpenLDAP handle SASL binding.
 - always recreate credential cache.
 - fix ldap_parse_page_control() check.
+- fix typo in create_cmd_pipe_fifo().
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
