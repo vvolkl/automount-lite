@@ -1951,6 +1951,9 @@ unsigned int master_get_logopt(void)
 
 int master_kill(struct master *master)
 {
+	if (!master)
+		return 1;
+
 	if (!master_list_empty(master))
 		return 0;
 
@@ -1959,6 +1962,8 @@ int master_kill(struct master *master)
 
 	cache_release_null_cache(master);
 	free(master);
+
+	master_list = NULL;
 
 	return 1;
 }
