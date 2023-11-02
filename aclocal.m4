@@ -313,9 +313,9 @@ AC_DEFUN([AF_CHECK_LIBHESIOD],
 af_check_hesiod_save_libs="$LIBS"
 LIBS="$LIBS -lhesiod -lresolv"
 
-AC_TRY_LINK(
-  [ #include <hesiod.h> ],
-  [ void *c; hesiod_init(&c); ],
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM([[ #include <hesiod.h> ]],
+  [[ void *c; hesiod_init(&c); ]])],
   [ HAVE_HESIOD=1
     LIBHESIOD="$LIBHESIOD -lhesiod -lresolv"
     AC_MSG_RESULT(yes) ],
@@ -382,14 +382,14 @@ LIBS="$LIBS -lldap"
 af_check_ldap_create_page_control_save_cflags="$CFLAGS"
 CFLAGS="$CFLAGS -Werror=implicit-function-declaration"
 
-AC_TRY_LINK(
-  [ #include <ldap.h> ],
-  [ LDAP *ld;
+AC_LINK_IFELSE(
+  [ AC_LANG_PROGRAM([[ #include <ldap.h> ]],
+  [[ LDAP *ld;
     ber_int_t ps;
     struct berval *c;
     int ic, ret;
     LDAPControl **clp;
-    ret = ldap_create_page_control(ld,ps,c,ic,clp); ],
+    ret = ldap_create_page_control(ld,ps,c,ic,clp); ]])],
   [ af_have_ldap_create_page_control=yes
     AC_MSG_RESULT(yes) ],
   [ AC_MSG_RESULT(no) ])
@@ -418,15 +418,16 @@ LIBS="$LIBS -lldap"
 af_check_ldap_parse_page_control_save_cflags="$CFLAGS"
 CFLAGS="$CFLAGS -Werror=implicit-function-declaration"
 
-AC_TRY_LINK(
-  [ #define LDAP_DEPRECATED 1
-    #include <ldap.h> ],
-  [ LDAP *ld;
-    ber_int_t *ct;
-    struct berval *c;
-    int ret;
-    LDAPControl **clp;
-    ret = ldap_parse_page_control(ld,clp,ct,c); ],
+AC_LINK_IFELSE(
+  [AC_LANG_PROGRAM(
+   [[ #define LDAP_DEPRECATED 1
+      #include <ldap.h> ]],
+   [[ LDAP *ld;
+      ber_int_t *ct;
+      struct berval *c;
+      int ret;
+      LDAPControl **clp;
+      ret = ldap_parse_page_control(ld,clp,ct,c); ]])],
   [ af_have_ldap_parse_page_control=yes
     AC_MSG_RESULT(yes) ],
   [ AC_MSG_RESULT(no) ])

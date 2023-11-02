@@ -5464,7 +5464,7 @@ CFLAGS="$CFLAGS -Werror=implicit-function-declaration"
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
- #include <ldap.h>
+  #include <ldap.h>
 int
 main ()
 {
@@ -5511,16 +5511,16 @@ CFLAGS="$CFLAGS -Werror=implicit-function-declaration"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
  #define LDAP_DEPRECATED 1
-    #include <ldap.h>
+      #include <ldap.h>
 int
 main ()
 {
  LDAP *ld;
-    ber_int_t *ct;
-    struct berval *c;
-    int ret;
-    LDAPControl **clp;
-    ret = ldap_parse_page_control(ld,clp,ct,c);
+      ber_int_t *ct;
+      struct berval *c;
+      int ret;
+      LDAPControl **clp;
+      ret = ldap_parse_page_control(ld,clp,ct,c);
   ;
   return 0;
 }
@@ -7504,5 +7504,5 @@ fi
 #
 # Run make clean since we don't explicitly code the header file dependencies
 #
-ac_config_commands="$ac_config_commands default-1"
+ac_config_commands="$ac_config_commands foo"
 

@@ -437,10 +437,11 @@ fi
 #
 # Write Makefile.conf and include/config.h
 #
-AC_CONFIG_HEADER(include/config.h)
-AC_OUTPUT(Makefile.conf)
+AC_CONFIG_HEADERS(include/config.h)
+AC_CONFIG_FILES(Makefile.conf)
+AC_OUTPUT()
 
 #
 # Run make clean since we don't explicitly code the header file dependencies
 #
-AC_OUTPUT_COMMANDS([make clean])
+AC_CONFIG_COMMANDS(foo, [make clean])
