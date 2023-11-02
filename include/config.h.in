@@ -48,9 +48,6 @@
 /* Define if you have the Linux /proc filesystem. */
 #undef HAVE_LINUX_PROCFS
 
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
-
 /* define if you have MOUNT */
 #undef HAVE_MOUNT
 
@@ -71,6 +68,9 @@
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -144,7 +144,9 @@
 /* define if you have YACC */
 #undef PATH_YACC
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
 /* Define to 1 to use the libtirpc tsd usage workaround */

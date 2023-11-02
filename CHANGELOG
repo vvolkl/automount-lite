@@ -105,6 +105,7 @@
 - be more careful with cmd pipe at exit.
 - rename configure.in to configure.ac.
 - update autoconf macros.
+- update autoconf release.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
