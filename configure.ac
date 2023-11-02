@@ -1,5 +1,5 @@
 #
-# configure.in for the autofs daemon
+# configure.ac for the autofs daemon
 
 AC_PREREQ(2.5)
 

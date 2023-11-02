@@ -6,7 +6,7 @@
 SUBDIRS = lib daemon modules man
 INCDIRS = include
 INCFILES = COPYING COPYRIGHT NEWS README* TODO Makefile Makefile.rules \
-	   Makefile.conf.in .version .autofs-* configure.in aclocal.m4 \
+	   Makefile.conf.in .version .autofs-* configure.ac aclocal.m4 \
 	   configure *.patch autofs.spec
 
 ifeq ($(FEDFS), 1)

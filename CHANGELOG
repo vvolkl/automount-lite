@@ -103,6 +103,7 @@
 - fix typo in create_cmd_pipe_fifo().
 - add null check in master_kill().
 - be more careful with cmd pipe at exit.
+- rename configure.in to configure.ac.
 
 19/10/2021 autofs-5.1.8
 - add xdr_exports().
