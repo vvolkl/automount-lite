@@ -889,7 +889,18 @@ update_offset_entry(struct autofs_point *ap,
 			strcpy(m_mapent, loc);
 	}
 
-	cache_writelock(mc);
+	/*
+	 * If we're starting up or trying to re-connect to an existing
+	 * direct mount we could be iterating through the map entries
+	 * with the readlock held so we can't just take the writelock
+	 * for direct mounts. But at when trying to re-connect to an
+	 * existing mount at startup there won't be any other process
+	 * updating the map entry cache.
+	 */
+	if (ap->state == ST_INIT && ap->flags & MOUNT_FLAG_REMOUNT)
+		cache_readlock(mc);
+	else
+		cache_writelock(mc);
 	ret = cache_update_offset(mc, name, m_key, m_mapent, age);
 
 	me = cache_lookup_distinct(mc, m_key);
@@ -1581,7 +1592,18 @@ dont_expand:
 			free(myoptions);
 		} while (*p == '/' || (*p == '"' && *(p + 1) == '/'));
 
-		cache_writelock(mc);
+		/*
+		 * If we're starting up or trying to re-connect to an existing
+		 * direct mount we could be iterating through the map entries
+		 * with the readlock held so we can't just take the writelock
+		 * for direct mounts. But at when trying to re-connect to an
+		 * existing mount at startup there won't be any other process
+		 * updating the map entry cache.
+		 */
+		if (ap->state == ST_INIT && ap->flags & MOUNT_FLAG_REMOUNT)
+			cache_readlock(mc);
+		else
+			cache_writelock(mc);
 		me = cache_lookup_distinct(mc, name);
 		if (!me) {
 			cache_unlock(mc);

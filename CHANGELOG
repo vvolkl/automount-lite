@@ -16,6 +16,7 @@
 - refactor amd mount options handling.
 - add some unimplemented amd map options.
 - fix get parent multi-mount check in try_remount().
+- fix deadlock in remount.
 
 02/11/2023 autofs-5.1.9
 - fix kernel mount status notification.
