@@ -2865,7 +2865,7 @@ int try_remount(struct autofs_point *ap, struct mapent *me, unsigned int type)
 	}
 
 	me->flags &= ~MOUNT_FLAG_DIR_CREATED;
-	mapent = IS_MM(me) ? MM_PARENT(me) : me;
+	mapent = IS_MM(me) && !IS_MM_ROOT(me) ? MM_PARENT(me) : me;
 	/* Direct or offset mount, key is full path */
 	if (mapent->key[0] == '/') {
 		if (!is_mounted(mapent->key, MNTS_REAL))
