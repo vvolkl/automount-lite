@@ -109,17 +109,17 @@ static int getpass_func(sasl_conn_t *, void *, int, sasl_secret_t **);
 static int getuser_func(void *, int, const char **, unsigned *);
 
 static sasl_callback_t callbacks[] = {
-	{ SASL_CB_USER, &getuser_func, NULL },
-	{ SASL_CB_AUTHNAME, &getuser_func, NULL },
-	{ SASL_CB_PASS, &getpass_func, NULL },
+	{ SASL_CB_USER, (int(*)(void)) &getuser_func, NULL },
+	{ SASL_CB_AUTHNAME, (int(*)(void)) &getuser_func, NULL },
+	{ SASL_CB_PASS, (int(*)(void)) &getpass_func, NULL },
 	{ SASL_CB_LIST_END, NULL, NULL },
 };
 
 static sasl_callback_t debug_callbacks[] = {
-	{ SASL_CB_LOG, &sasl_log_func, NULL },
-	{ SASL_CB_USER, &getuser_func, NULL },
-	{ SASL_CB_AUTHNAME, &getuser_func, NULL },
-	{ SASL_CB_PASS, &getpass_func, NULL },
+	{ SASL_CB_LOG, (int(*)(void)) &sasl_log_func, NULL },
+	{ SASL_CB_USER, (int(*)(void)) &getuser_func, NULL },
+	{ SASL_CB_AUTHNAME, (int(*)(void)) &getuser_func, NULL },
+	{ SASL_CB_PASS, (int(*)(void)) &getpass_func, NULL },
 	{ SASL_CB_LIST_END, NULL, NULL },
 };
 
