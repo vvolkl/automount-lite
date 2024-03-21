@@ -424,7 +424,7 @@ AC_LINK_IFELSE(
       #include <ldap.h> ]],
    [[ LDAP *ld;
       ber_int_t *ct;
-      struct berval *c;
+      struct berval **c;
       int ret;
       LDAPControl **clp;
       ret = ldap_parse_page_control(ld,clp,ct,c); ]])],
