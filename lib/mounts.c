@@ -695,10 +695,11 @@ static int cacl_max_options_len(unsigned int flags)
 	unsigned int kver_minor = get_kver_minor();
 	int max_len;
 
-	/* %d and %u are maximum lenght of 10 and mount type is maximum
-	 * length of 9 (e. ",indirect").
+	/* %d and %u are maximum length of 10 and mount type is maximum
+	 * length of 9 (ie. ",indirect").
 	 * The base temaplate is "fd=%d,pgrp=%u,minproto=5,maxproto=%d"
-	 * plus the length of mount type plus 1 for the NULL.
+	 * plus the length of mount type plus 1 for the NULL (and an
+	 * additional 10 characters for good measure!).
 	 */
 	max_len = 79 + 1;
 
@@ -728,7 +729,7 @@ char *make_options_string(char *path, int pipefd,
 	unsigned int kver_major = get_kver_major();
 	unsigned int kver_minor = get_kver_minor();
 	char *options;
-	int max_len, len, new;
+	int max_len, len;
 
 	max_len = cacl_max_options_len(flags);
 
@@ -751,21 +752,13 @@ char *make_options_string(char *path, int pipefd,
 	if (len < 0)
 		goto error_out;
 
-	if (len >= max_len)
-		goto truncated;
-
 	if (kver_major < 5 || (kver_major == 5 && kver_minor < 4))
 		goto out;
 
 	/* maybe add ",strictexpire" */
 	if (flags & MOUNT_FLAG_STRICTEXPIRE) {
-		new = snprintf(options + len,
-			       max_len, "%s", ",strictexpire");
-		if (new < 0)
-		       goto error_out;
-		len += new;
-		if (len >= max_len)
-			goto truncated;
+		strcat(options, ",strictexpire");
+		len += 13;
 	}
 
 	if (kver_major == 5 && kver_minor < 5)
@@ -773,22 +766,12 @@ char *make_options_string(char *path, int pipefd,
 
 	/* maybe add ",ignore" */
 	if (flags & MOUNT_FLAG_IGNORE) {
-		new = snprintf(options + len,
-			       max_len, "%s", ",ignore");
-		if (new < 0)
-		       goto error_out;
-		len += new;
-		if (len >= max_len)
-			goto truncated;
+		strcat(options, ",ignore");
+		len += 7;
 	}
 out:
 	options[len] = '\0';
 	return options;
-
-truncated:
-	logerr("buffer to small for options - truncated");
-	len = max_len -1;
-	goto out;
 
 error_out:
 	logerr("error constructing mount options string for %s", path);
