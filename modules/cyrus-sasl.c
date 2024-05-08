@@ -676,7 +676,7 @@ sasl_do_kinit(unsigned logopt, struct lookup_context *ctxt)
 	}
 	else {
 		krb5_creds match_creds, out_creds;
-		time_t now = monotonic_time(NULL);
+		time_t now = time(NULL);
 
 		/* even if the cache is in use, we will clear it if it
 		 * contains an expired credential for our principal,
