@@ -1,4 +1,7 @@
 
+- Update configure script.
+- fix ldap_parse_page_control() check.
+- fix crash in make_options_string().
 - Fix incompatible function pointer types in cyrus-sasl module.
 - fix always recreate credential cache.
 
