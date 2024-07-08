@@ -1654,6 +1654,7 @@ static int amd_mount(struct autofs_point *ap, const char *name,
 		     struct parse_context *ctxt)
 {
 	unsigned long fstype = entry->flags & AMD_MOUNT_TYPE_MASK;
+	unsigned long per_mnt_flags = entry->flags & AMD_MOUNT_OPT_MASK;
 	int ret = 1;
 
 	switch (fstype) {
@@ -1725,6 +1726,55 @@ static int amd_mount(struct autofs_point *ap, const char *name,
 		break;
 	}
 
+	if (!ret) {
+		struct ioctl_ops *ops;
+
+		if (!(per_mnt_flags & AMD_MOUNT_OPT_MASK))
+			goto done;
+
+		/* The mount succeeded, make sure there's no path component
+		 * seperator in "name" as it must be the last component of
+		 * the mount point alone for the per-mount options.
+		 */
+		if (strchr(name, '/')) {
+			warn(ap->logopt, "path component seperator not valid here");
+			goto done;
+		}
+
+		ops = get_ioctl_ops();
+
+		/* The default in autofs is to always expire mounts according to
+		 * a timeout set in the autofs mount super block information
+		 * structure. But amd allows for differing expire timeouts on a
+		 * per-mount basis. It also has (context sensitive) options "unmount"
+		 * to say expire this mount and "nounmount" to say don't expire this
+		 * mount. In amd mounts these options are set by default according
+		 * to whether a mount should expire or not, for example a cd mount
+		 * is set "nounmount". Setting defaults like this is not used in the
+		 * autofs amd implementation because there's only one, little used,
+		 * removable file system available.
+		 *
+		 * But the "nounmount" and "utimeout" options can be useful.
+		 */
+		if (per_mnt_flags & AMD_MOUNT_OPT_NOUNMOUNT) {
+			if (entry->utimeout)
+				warn(ap->logopt,
+				"non-zero timeout set, possible conflicting options");
+
+			/* "nounmount" option, don't expire this mount. */
+			if (ops)
+				ops->timeout(ap->logopt, ap->ioctlfd, name, 0);
+		} else if (per_mnt_flags & AMD_MOUNT_OPT_UTIMEOUT) {
+			if (!entry->utimeout)
+				warn(ap->logopt,
+				"zero timeout set, possible conflicting options");
+
+			/* "utimeout" option, expire this mount according to a timeout. */
+			if (ops)
+				ops->timeout(ap->logopt, ap->ioctlfd, name, entry->utimeout);
+		}
+	}
+done:
 	return ret;
 }
 

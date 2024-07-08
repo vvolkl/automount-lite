@@ -1193,6 +1193,8 @@ struct mnt_list *mnts_add_amdmount(struct autofs_point *ap, struct amd_entry *en
 	this->amd_pref = pref;
 	this->amd_type = type;
 	this->amd_opts = opts;
+	this->amd_flags = entry->flags;
+	this->amd_utimeout = entry->utimeout;
 	this->amd_cache_opts = entry->cache_opts;
 	this->flags |= MNTS_AMD_MOUNT;
 	if (list_empty(&this->amdmount))
@@ -1237,6 +1239,8 @@ static void __mnts_remove_amdmount(const char *mp)
 		free(this->amd_opts);
 		this->amd_opts = NULL;
 	}
+	this->amd_flags = AMD_MOUNT_OPT_UNMOUNT;
+	this->amd_utimeout = -1;
 	this->amd_cache_opts = 0;
 	__mnts_put_mount(this);
 }

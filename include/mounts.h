@@ -113,6 +113,8 @@ struct mnt_list {
 	char *amd_pref;
 	char *amd_type;
 	char *amd_opts;
+	unsigned long amd_flags;
+	unsigned int amd_utimeout;
 	unsigned int amd_cache_opts;
 	struct list_head amdmount;
 

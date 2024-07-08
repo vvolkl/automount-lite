@@ -14,6 +14,7 @@
 - seperate amd mount and entry flags.
 - make iocl ops ->timeout() handle per-dentry expire.
 - refactor amd mount options handling.
+- add some unimplemented amd map options.
 
 02/11/2023 autofs-5.1.9
 - fix kernel mount status notification.

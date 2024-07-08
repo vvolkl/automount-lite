@@ -647,8 +647,7 @@ static int match_mnt_option(char *option, char *options)
 {
 	int ret = 0;
 
-	if (!strcmp(option, "fullybrowsable") ||
-	    !strcmp(option, "nounmount")) {
+	if (!strcmp(option, "fullybrowsable")) {
 		sprintf(msg_buf, "option %s is not currently "
 				 "implemented, ignored", option);
 		amd_info(msg_buf);
@@ -660,15 +659,37 @@ static int match_mnt_option(char *option, char *options)
 		sprintf(msg_buf, "option %s is not used by "
 				 "autofs, ignored", option);
 		amd_info(msg_buf);
+	} else if (!strcmp(option, "umount")) {
+		entry.flags &= ~AMD_MOUNT_OPT_NOUNMOUNT;
+		entry.flags |= AMD_MOUNT_OPT_UNMOUNT;
+	} else if (!strcmp(option, "nounmount")) {
+		if (entry.flags & AMD_MOUNT_TYPE_AUTO)
+			prepend_opt(opts, "timeout=0");
+		else {
+			entry.flags &= ~AMD_MOUNT_OPT_UNMOUNT;
+			entry.flags |= AMD_MOUNT_OPT_NOUNMOUNT;
+			entry.utimeout = 0;
+		}
 	} else if (!strncmp(option, "utimeout=", 9)) {
+		/*
+		 * amd type "auto" mounts map to autofs fstype=autofs
+		 * mounts so a distinct autofs mount is present at the
+		 * the root so there's no need for special handling,
+		 * just pass the timeout=<seconds> autofs option.
+		 */
 		if (entry.flags & AMD_MOUNT_TYPE_AUTO)
 			prepend_opt(options, ++option);
 		else {
-			sprintf(msg_buf, "umount timeout can't be "
-					 "used for other than type "
-					 "\"auto\" with autofs, "
-					 "ignored");
-			amd_info(msg_buf);
+			if (strchr(option, '=')) {
+				unsigned long tout;
+				int ret;
+
+				ret = sscanf(option, "utimeout=%lu", &tout);
+				if (ret) {
+					entry.flags |= AMD_MOUNT_OPT_UTIMEOUT;
+					entry.utimeout = tout;
+				}
+			}
 		}
 	} else
 		ret = 1;
@@ -791,6 +812,8 @@ static void local_init_vars(void)
 {
 	memset(&entry, 0, sizeof(entry));
 	entry.cache_opts = AMD_CACHE_OPTION_NONE;
+	entry.flags = AMD_MOUNT_OPT_UNMOUNT;
+	entry.utimeout = -1;
 	memset(opts, 0, sizeof(opts));
 }
 
@@ -900,6 +923,7 @@ static int add_location(void)
 		new->path = entry.path;
 	}
 	new->flags = entry.flags;
+	new->utimeout = entry.utimeout;
 	new->cache_opts = entry.cache_opts;
 	new->entry_flags = entry.entry_flags;
 	new->type = entry.type;

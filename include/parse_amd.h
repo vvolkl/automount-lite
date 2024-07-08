@@ -33,6 +33,11 @@
 #define AMD_MOUNT_TYPE_PROGRAM	0x00004000
 #define AMD_MOUNT_TYPE_MASK	0x0000ffff
 
+#define AMD_MOUNT_OPT_UNMOUNT	0x00010000
+#define AMD_MOUNT_OPT_NOUNMOUNT	0x00020000
+#define AMD_MOUNT_OPT_UTIMEOUT	0x00040000
+#define AMD_MOUNT_OPT_MASK	0x00ff0000
+
 #define AMD_DEFAULTS_MERGE	0x0001
 #define AMD_DEFAULTS_RESET	0x0002
 #define AMD_DEFAULTS_MASK	0x00ff
@@ -49,6 +54,7 @@
 struct amd_entry {
 	char *path;
 	unsigned long flags;
+	unsigned int utimeout;
 	unsigned int cache_opts;
 	unsigned int entry_flags;
 	char *type;
