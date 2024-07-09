@@ -370,7 +370,7 @@ static int do_readmap_mount(struct autofs_point *ap,
 			cache_unlock(vmc);
 			/* Set timeout and calculate the expire run frequency */
 			timeout = get_exp_timeout(ap, map);
-			ops->timeout(ap->logopt, valid->ioctlfd, timeout);
+			ops->timeout(ap->logopt, valid->ioctlfd, NULL, timeout);
 			if (timeout) {
 				runfreq = (timeout + CHECK_RATIO - 1) / CHECK_RATIO;
 				if (ap->exp_runfreq)
@@ -431,7 +431,7 @@ static void *do_readmap(void *arg)
 		struct ioctl_ops *ops = get_ioctl_ops();
 		time_t timeout = get_exp_timeout(ap, ap->entry->maps);
 		ap->exp_runfreq = (timeout + CHECK_RATIO - 1) / CHECK_RATIO;
-		ops->timeout(ap->logopt, ap->ioctlfd, timeout);
+		ops->timeout(ap->logopt, ap->ioctlfd, NULL, timeout);
 		lookup_prune_cache(ap, now);
 		status = lookup_ghost(ap);
 	} else {

@@ -2740,7 +2740,7 @@ static int remount_active_mount(struct autofs_point *ap,
 	/* Re-reading the map, set timeout and return */
 	if (ap->state == ST_READMAP) {
 		debug(ap->logopt, "already mounted, update timeout");
-		ops->timeout(ap->logopt, fd, timeout);
+		ops->timeout(ap->logopt, fd, NULL, timeout);
 		ops->close(ap->logopt, fd);
 		return REMOUNT_READ_MAP;
 	}
@@ -2762,7 +2762,7 @@ static int remount_active_mount(struct autofs_point *ap,
 		ops->close(ap->logopt, fd);
 		return REMOUNT_OPEN_FAIL;
 	}
-	ops->timeout(ap->logopt, fd, timeout);
+	ops->timeout(ap->logopt, fd, NULL, timeout);
 	if (fstat(fd, &st) == -1) {
 		error(ap->logopt,
 		      "failed to stat %s mount %s", str_type, path);

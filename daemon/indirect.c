@@ -136,7 +136,7 @@ static int do_mount_autofs_indirect(struct autofs_point *ap)
 		goto out_umount;
 	}
 
-	ops->timeout(ap->logopt, ap->ioctlfd, timeout);
+	ops->timeout(ap->logopt, ap->ioctlfd, NULL, timeout);
 	notify_mount_result(ap, ap->path, timeout, str_indirect);
 
 	return 0;

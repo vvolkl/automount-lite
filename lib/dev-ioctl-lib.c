@@ -55,7 +55,7 @@ static int dev_ioctl_send_ready(unsigned int, int, unsigned int);
 static int dev_ioctl_send_fail(unsigned int, int, unsigned int, int);
 static int dev_ioctl_setpipefd(unsigned int, int, int);
 static int dev_ioctl_catatonic(unsigned int, int);
-static int dev_ioctl_timeout(unsigned int, int, time_t);
+static int dev_ioctl_timeout(unsigned int, int, const char *, time_t);
 static int dev_ioctl_requester(unsigned int, int, const char *, uid_t *, gid_t *);
 static int dev_ioctl_expire(unsigned int, int, const char *, unsigned int);
 static int dev_ioctl_askumount(unsigned int, int, unsigned int *);
@@ -69,7 +69,7 @@ static int ioctl_close(unsigned int, int);
 static int ioctl_send_ready(unsigned int, int, unsigned int);
 static int ioctl_send_fail(unsigned int, int, unsigned int, int);
 static int ioctl_catatonic(unsigned int, int);
-static int ioctl_timeout(unsigned int, int, time_t);
+static int ioctl_timeout(unsigned int, int, const char *, time_t);
 static int ioctl_expire(unsigned int, int, const char *, unsigned int);
 static int ioctl_askumount(unsigned int, int, unsigned int *);
 
@@ -571,21 +571,41 @@ static int ioctl_catatonic(unsigned int logopt, int ioctlfd)
 }
 
 /* Set the autofs mount timeout */
-static int dev_ioctl_timeout(unsigned int logopt, int ioctlfd, time_t timeout)
+static int dev_ioctl_timeout(unsigned int logopt, int ioctlfd, const char *mp, time_t timeout)
 {
-	struct autofs_dev_ioctl param;
+	if (!mp) {
+		struct autofs_dev_ioctl param;
 
-	init_autofs_dev_ioctl(&param);
-	param.ioctlfd = ioctlfd;
-	param.timeout.timeout = timeout;
+		init_autofs_dev_ioctl(&param);
+		param.ioctlfd = ioctlfd;
+		param.timeout.timeout = timeout;
+		if (ioctl(ctl.devfd, AUTOFS_DEV_IOCTL_TIMEOUT, &param) == -1)
+			return -1;
+	} else {
+		unsigned int kver_major = get_kver_major();
+		unsigned int kver_minor = get_kver_minor();
+		struct autofs_dev_ioctl *param;
 
-	if (ioctl(ctl.devfd, AUTOFS_DEV_IOCTL_TIMEOUT, &param) == -1)
-		return -1;
+		if (kver_major < 5 ||
+		   (kver_major == 5 && kver_minor < 6)) {
+			error(logopt, "per-mount expire timeout not supported by kernel.");
+			return -1;
+		}
 
+		param = alloc_dev_ioctl_path(ioctlfd, mp);
+		if (!param)
+			return -1;
+		param->timeout.timeout = timeout;
+		if (ioctl(ctl.devfd, AUTOFS_DEV_IOCTL_TIMEOUT, param) == -1) {
+			free_dev_ioctl_path(param);
+			return -1;
+		}
+		free_dev_ioctl_path(param);
+	}
 	return 0;
 }
 
-static int ioctl_timeout(unsigned int logopt, int ioctlfd, time_t timeout)
+static int ioctl_timeout(unsigned int logopt, int ioctlfd, const char *mp, time_t timeout)
 {
 	time_t tout = timeout;
 	return ioctl(ioctlfd, AUTOFS_IOC_SETTIMEOUT, &tout);
