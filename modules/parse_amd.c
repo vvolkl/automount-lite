@@ -2029,13 +2029,13 @@ static struct amd_entry *select_default_entry(struct autofs_point *ap,
 
 		p = p->next;
 
-		if (this->flags & AMD_DEFAULTS_MERGE) {
+		if (this->entry_flags & AMD_DEFAULTS_MERGE) {
 			if (entry_default)
 				free_amd_entry(entry_default);
 			list_del_init(&this->list);
 			entry_default = this;
 			continue;
-		} else if (this->flags & AMD_DEFAULTS_RESET) {
+		} else if (this->entry_flags & AMD_DEFAULTS_RESET) {
 			struct amd_entry *new;
 			new = dup_defaults_entry(defaults_entry);
 			if (new) {
@@ -2266,14 +2266,14 @@ int parse_mount(struct autofs_point *ap, struct map_source *map,
 		struct amd_entry *this = list_entry(p, struct amd_entry, list);
 		p = p->next;
 
-		if (this->flags & AMD_DEFAULTS_MERGE) {
+		if (this->entry_flags & AMD_DEFAULTS_MERGE) {
 			free_amd_entry(cur_defaults);
 			list_del_init(&this->list);
 			cur_defaults = this;
 			update_with_defaults(defaults_entry, cur_defaults, sv);
 			debug(ap->logopt, "merged /defaults entry with defaults");
 			continue;
-		} else if (this->flags & AMD_DEFAULTS_RESET) {
+		} else if (this->entry_flags & AMD_DEFAULTS_RESET) {
 			struct amd_entry *nd, *new;
 			struct substvar *nsv = NULL;
 
@@ -2298,7 +2298,7 @@ int parse_mount(struct autofs_point *ap, struct map_source *map,
 		debug(ap->logopt, "expand defaults entry");
 		sv = expand_entry(ap, cur_defaults, flags, sv);
 
-		if (this->flags & AMD_ENTRY_CUT && at_least_one) {
+		if (this->entry_flags & AMD_ENTRY_CUT && at_least_one) {
 			info(ap->logopt, MODPREFIX
 			     "at least one entry tried before cut selector, "
 			     "not continuing");

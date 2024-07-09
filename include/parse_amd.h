@@ -33,12 +33,12 @@
 #define AMD_MOUNT_TYPE_PROGRAM	0x00004000
 #define AMD_MOUNT_TYPE_MASK	0x0000ffff
 
-#define AMD_ENTRY_CUT		0x00010000
-#define AMD_ENTRY_MASK		0x00ff0000
+#define AMD_DEFAULTS_MERGE	0x0001
+#define AMD_DEFAULTS_RESET	0x0002
+#define AMD_DEFAULTS_MASK	0x00ff
 
-#define AMD_DEFAULTS_MERGE	0x01000000
-#define AMD_DEFAULTS_RESET	0x02000000
-#define AMD_DEFAULTS_MASK	0xff000000
+#define AMD_ENTRY_CUT		0x0100
+#define AMD_ENTRY_MASK		0xff00
 
 #define AMD_CACHE_OPTION_NONE	0x0000
 #define AMD_CACHE_OPTION_INC	0x0001
@@ -50,6 +50,7 @@ struct amd_entry {
 	char *path;
 	unsigned long flags;
 	unsigned int cache_opts;
+	unsigned int entry_flags;
 	char *type;
 	char *map_type;
 	char *pref;

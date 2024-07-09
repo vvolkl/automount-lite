@@ -155,7 +155,7 @@ location_selection_list: location
 	}
 	| location_selection_list SPACE CUT SPACE location
 	{
-		entry.flags |= AMD_ENTRY_CUT;
+		entry.entry_flags |= AMD_ENTRY_CUT;
 		if (!add_location()) {
 			amd_msg("failed to allocate new location");
 			YYABORT;
@@ -168,11 +168,11 @@ location: location_entry
 	}
 	| HYPHEN location_entry
 	{
-		entry.flags |= AMD_DEFAULTS_MERGE;
+		entry.entry_flags |= AMD_DEFAULTS_MERGE;
 	}
 	| HYPHEN
 	{
-		entry.flags |= AMD_DEFAULTS_RESET;
+		entry.entry_flags |= AMD_DEFAULTS_RESET;
 	}
 	;
 
@@ -889,6 +889,7 @@ static int add_location(void)
 	}
 	new->flags = entry.flags;
 	new->cache_opts = entry.cache_opts;
+	new->entry_flags = entry.entry_flags;
 	new->type = entry.type;
 	new->map_type = entry.map_type;
 	new->pref = entry.pref;

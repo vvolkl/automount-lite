@@ -11,6 +11,7 @@
 - refactor umount_amd_ext_mount().
 - add flags argument to amd do_program_mount().
 - fix amd cache options not copied.
+- seperate amd mount and entry flags.
 
 02/11/2023 autofs-5.1.9
 - fix kernel mount status notification.
