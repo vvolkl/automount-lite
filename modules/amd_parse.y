@@ -60,6 +60,7 @@ static int match_map_option_fs_type(char *map_option, char *type);
 static int match_map_option_map_type(char *map_option, char *type);
 static int match_map_option_cache_option(char *type);
 static int match_mnt_option_options(char *mnt_option, char *options);
+static int match_mnt_option(char *option, char *options);
 
 static struct amd_entry entry;
 static struct list_head *entries;
@@ -437,40 +438,18 @@ option_assignment: MAP_OPTION OPTION_ASSIGN FS_TYPE
 
 options: OPTION
 	{
-		if (!strcmp($1, "fullybrowsable") ||
-		    !strcmp($1, "nounmount")) {
-			sprintf(msg_buf, "option %s is not currently "
-					 "implemented, ignored", $1);
-			amd_info(msg_buf);
-		} else if (!strncmp($1, "ping=", 5) ||
-			   !strncmp($1, "retry=", 6) ||
-			   !strcmp($1, "public") ||
-			   !strcmp($1, "softlookup") ||
-			   !strcmp($1, "xlatecookie")) {
-			sprintf(msg_buf, "option %s is not used by "
-					 "autofs, ignored", $1);
-			amd_info(msg_buf);
-		} else if (!strncmp($1, "utimeout=", 9)) {
-			if (entry.flags & AMD_MOUNT_TYPE_AUTO) {
-				char *opt = $1;
-				prepend_opt(opts, ++opt);
-			} else {
-				sprintf(msg_buf, "umount timeout can't be "
-						 "used for other than type "
-						 "\"auto\" with autofs, "
-						 "ignored");
-				amd_info(msg_buf);
-			}
-		} else
+		if (match_mnt_option($1, opts))
 			prepend_opt(opts, $1);
 	}
 	| OPTION COMMA options
 	{
-		prepend_opt(opts, $1);
+		if (match_mnt_option($1, opts))
+			prepend_opt(opts, $1);
 	}
 	| OPTION COMMA
 	{
-		prepend_opt(opts, $1);
+		if (match_mnt_option($1, opts))
+			prepend_opt(opts, $1);
 	}
 	;
 
@@ -662,6 +641,39 @@ static int match_mnt_option_options(char *mnt_option, char *options)
 		return 0;
 
 	return 1;
+}
+
+static int match_mnt_option(char *option, char *options)
+{
+	int ret = 0;
+
+	if (!strcmp(option, "fullybrowsable") ||
+	    !strcmp(option, "nounmount")) {
+		sprintf(msg_buf, "option %s is not currently "
+				 "implemented, ignored", option);
+		amd_info(msg_buf);
+	} else if (!strncmp(option, "ping=", 5) ||
+		   !strncmp(option, "retry=", 6) ||
+		   !strcmp(option, "public") ||
+		   !strcmp(option, "softlookup") ||
+		   !strcmp(option, "xlatecookie")) {
+		sprintf(msg_buf, "option %s is not used by "
+				 "autofs, ignored", option);
+		amd_info(msg_buf);
+	} else if (!strncmp(option, "utimeout=", 9)) {
+		if (entry.flags & AMD_MOUNT_TYPE_AUTO)
+			prepend_opt(options, ++option);
+		else {
+			sprintf(msg_buf, "umount timeout can't be "
+					 "used for other than type "
+					 "\"auto\" with autofs, "
+					 "ignored");
+			amd_info(msg_buf);
+		}
+	} else
+		ret = 1;
+
+	return ret;
 }
 
 static void prepend_opt(char *dest, char *opt)
