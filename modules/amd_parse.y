@@ -888,6 +888,7 @@ static int add_location(void)
 		new->path = entry.path;
 	}
 	new->flags = entry.flags;
+	new->cache_opts = entry.cache_opts;
 	new->type = entry.type;
 	new->map_type = entry.map_type;
 	new->pref = entry.pref;
