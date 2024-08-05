@@ -1190,7 +1190,7 @@ static int do_generic_mount(struct autofs_point *ap, const char *name,
 		}
 		/* If we have an external mount add it to the list */
 		if (umount && !ext_mount_add(entry->fs, entry->umount)) {
-			umount_ent(ap, entry->fs);
+			umount_amd_ext_mount(ap, entry->fs);
 			error(ap->logopt, MODPREFIX
 			      "error: could not add external mount %s",
 			      entry->fs);
@@ -1240,7 +1240,7 @@ static int do_nfs_mount(struct autofs_point *ap, const char *name,
 		}
 		/* We might be using an external mount */
 		if (umount && !ext_mount_add(entry->fs, entry->umount)) {
-			umount_ent(ap, entry->fs);
+			umount_amd_ext_mount(ap, entry->fs);
 			error(ap->logopt, MODPREFIX
 			      "error: could not add external mount %s", entry->fs);
 			ret = 1;
@@ -1469,7 +1469,7 @@ static int do_program_mount(struct autofs_point *ap,
 				     "%s: mounted %s", entry->type, entry->fs);
 				goto do_free;
 			}
-			umount_ent(ap, entry->fs);
+			umount_amd_ext_mount(ap, entry->fs);
 		}
 
 		if (!ext_mount_inuse(entry->fs))

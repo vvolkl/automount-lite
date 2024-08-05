@@ -4,6 +4,7 @@
 - fix crash in make_options_string().
 - Fix incompatible function pointer types in cyrus-sasl module.
 - fix always recreate credential cache.
+- fix amd external mount error handling.
 
 02/11/2023 autofs-5.1.9
 - fix kernel mount status notification.
