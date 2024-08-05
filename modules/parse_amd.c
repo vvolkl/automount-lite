@@ -1414,25 +1414,7 @@ out:
 static int do_program_mount(struct autofs_point *ap,
 			    struct amd_entry *entry, const char *name)
 {
-	char *prog, *str;
-	char **argv;
-	int argc = -1;
 	int rv = 1;
-
-	str = strdup(entry->mount);
-	if (!str)
-		goto out;
-
-	prog = NULL;
-	argv = NULL;
-
-	argc = construct_argv(str, &prog, &argv);
-	if (argc == -1) {
-		error(ap->logopt, MODPREFIX
-		      "%s: error creating mount arguments", entry->type);
-		free(str);
-		goto out;
-	}
 
 	/* The am-utils documentation doesn't actually say that the
 	 * mount (and umount, if given) command need to use ${fs} as
@@ -1452,6 +1434,25 @@ static int do_program_mount(struct autofs_point *ap,
 		}
 		rv = 0;
 	} else {
+		char *prog, *str;
+		char **argv;
+		int argc = -1;
+
+		str = strdup(entry->mount);
+		if (!str)
+			goto out;
+
+		prog = NULL;
+		argv = NULL;
+
+		argc = construct_argv(str, &prog, &argv);
+		if (argc == -1) {
+			error(ap->logopt, MODPREFIX
+			      "%s: error creating mount arguments", entry->type);
+			free(str);
+			goto out;
+		}
+
 		rv = mkdir_path(entry->fs, mp_mode);
 		if (rv && errno != EEXIST) {
 			char buf[MAX_ERR_BUF];
@@ -1461,7 +1462,9 @@ static int do_program_mount(struct autofs_point *ap,
 			error(ap->logopt,
 			      MODPREFIX "%s: mkdir_path %s failed: %s",
 			      entry->type, entry->fs, estr);
-			goto do_free;
+			free_argv(argc, (const char **) argv);
+			free(str);
+			goto out;
 		}
 
 		rv = spawnv(ap->logopt, prog, (const char * const *) argv);
@@ -1470,33 +1473,26 @@ static int do_program_mount(struct autofs_point *ap,
 				rv = 0;
 				debug(ap->logopt, MODPREFIX
 				     "%s: mounted %s", entry->type, entry->fs);
-				goto do_free;
+				free_argv(argc, (const char **) argv);
+				free(str);
+				goto done;
 			}
 			umount_amd_ext_mount(ap, entry->fs);
 		}
-
-		if (!ext_mount_inuse(entry->fs))
-			rmdir_path(ap, entry->fs, ap->dev);
 		error(ap->logopt, MODPREFIX
 		   "%s: failed to mount using %s", entry->type, entry->mount);
+		free_argv(argc, (const char **) argv);
+		free(str);
+		goto out;
 	}
-do_free:
-	free_argv(argc, (const char **) argv);
-	free(str);
-
-	if (rv)
-		goto out;
-
+done:
 	rv = do_link_mount(ap, name, entry, 0);
-	if (!rv)
-		goto out;
-
-	if (umount_amd_ext_mount(ap, entry->fs)) {
-		if (!ext_mount_inuse(entry->fs))
-			rmdir_path(ap, entry->fs, ap->dev);
-		debug(ap->logopt, MODPREFIX
-		      "%s: failed to umount external mount at %s",
-		      entry->type, entry->fs);
+	if (rv) {
+		if (umount_amd_ext_mount(ap, entry->fs)) {
+			debug(ap->logopt, MODPREFIX
+			      "%s: failed to cleanup external mount at %s",
+			      entry->type, entry->fs);
+		}
 	}
 out:
 	return rv;
