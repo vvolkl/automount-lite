@@ -199,7 +199,7 @@ int try_remount(struct autofs_point *, struct mapent *, unsigned int);
 void set_indirect_mount_tree_catatonic(struct autofs_point *);
 void set_direct_mount_tree_catatonic(struct autofs_point *, struct mapent *);
 int umount_ent(struct autofs_point *, const char *);
-int umount_amd_ext_mount(struct autofs_point *, const char *);
+int umount_amd_ext_mount(struct autofs_point *, const char *, int remove);
 int clean_stale_multi_triggers(struct autofs_point *, struct mapent *, char *, const char *);
 
 #endif

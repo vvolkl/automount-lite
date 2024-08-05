@@ -1140,7 +1140,7 @@ symlink:
 
 	if (entry->sublink) {
 		/* failed to complete sublink mount */
-		umount_amd_ext_mount(ap, entry->fs);
+		umount_amd_ext_mount(ap, entry->fs, 1);
 	}
 out:
 	return ret;
@@ -1191,7 +1191,7 @@ static int do_generic_mount(struct autofs_point *ap, const char *name,
 		/* If we have an external mount add it to the list */
 		if (!ext_mount_add(entry->fs, entry->umount)) {
 			if (umount)
-				umount_amd_ext_mount(ap, entry->fs);
+				umount_amd_ext_mount(ap, entry->fs, 0);
 			error(ap->logopt, MODPREFIX
 			      "error: could not add external mount %s",
 			      entry->fs);
@@ -1242,7 +1242,7 @@ static int do_nfs_mount(struct autofs_point *ap, const char *name,
 		/* We might be using an external mount */
 		if (!ext_mount_add(entry->fs, entry->umount)) {
 			if (umount)
-				umount_amd_ext_mount(ap, entry->fs);
+				umount_amd_ext_mount(ap, entry->fs, 0);
 			error(ap->logopt, MODPREFIX
 			      "error: could not add external mount %s", entry->fs);
 			ret = 1;
@@ -1477,7 +1477,7 @@ static int do_program_mount(struct autofs_point *ap,
 				free(str);
 				goto done;
 			}
-			umount_amd_ext_mount(ap, entry->fs);
+			umount_amd_ext_mount(ap, entry->fs, 0);
 		}
 		error(ap->logopt, MODPREFIX
 		   "%s: failed to mount using %s", entry->type, entry->mount);
@@ -1488,7 +1488,7 @@ static int do_program_mount(struct autofs_point *ap,
 done:
 	rv = do_link_mount(ap, name, entry, 0);
 	if (rv) {
-		if (umount_amd_ext_mount(ap, entry->fs)) {
+		if (!umount_amd_ext_mount(ap, entry->fs, 1)) {
 			debug(ap->logopt, MODPREFIX
 			      "%s: failed to cleanup external mount at %s",
 			      entry->type, entry->fs);

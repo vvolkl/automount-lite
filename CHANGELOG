@@ -8,6 +8,7 @@
 - fix amd external mount mount handling.
 - don't free ext mount if mounted.
 - refactor amd function do_program_mount().
+- refactor umount_amd_ext_mount().
 
 02/11/2023 autofs-5.1.9
 - fix kernel mount status notification.

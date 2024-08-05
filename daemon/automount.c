@@ -633,7 +633,7 @@ static int umount_subtree_mounts(struct autofs_point *ap, const char *path, unsi
 		/* Check for an external mount and umount if possible */
 		mnt = mnts_find_amdmount(path);
 		if (mnt) {
-			umount_amd_ext_mount(ap, mnt->ext_mp);
+			umount_amd_ext_mount(ap, mnt->ext_mp, 1);
 			mnts_remove_amdmount(path);
 			mnts_put_mount(mnt);
 		}
@@ -699,7 +699,7 @@ int umount_multi(struct autofs_point *ap, const char *path, int incl)
 		/* Check for an external mount and attempt umount if needed */
 		mnt = mnts_find_amdmount(path);
 		if (mnt) {
-			umount_amd_ext_mount(ap, mnt->ext_mp);
+			umount_amd_ext_mount(ap, mnt->ext_mp, 1);
 			mnts_remove_amdmount(path);
 			mnts_put_mount(mnt);
 		}

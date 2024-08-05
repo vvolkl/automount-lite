@@ -3078,37 +3078,62 @@ int umount_ent(struct autofs_point *ap, const char *path)
 	return mounted;
 }
 
-int umount_amd_ext_mount(struct autofs_point *ap, const char *path)
+int umount_amd_ext_mount(struct autofs_point *ap, const char *path, int remove)
 {
 	struct ext_mount *em;
 	char *umount = NULL;
-	char *mp;
+	char *mp = NULL;
 	int rv = 1;
+	int ret;
 
 	pthread_mutex_lock(&ext_mount_hash_mutex);
-
 	em = ext_mount_lookup(path);
 	if (!em) {
 		pthread_mutex_unlock(&ext_mount_hash_mutex);
+		rv = 0;
 		goto out;
 	}
 	mp = strdup(em->mp);
 	if (!mp) {
 		pthread_mutex_unlock(&ext_mount_hash_mutex);
+		rv = 0;
 		goto out;
 	}
 	if (em->umount) {
 		umount = strdup(em->umount);
 		if (!umount) {
 			pthread_mutex_unlock(&ext_mount_hash_mutex);
-			free(mp);
+			rv = 0;
 			goto out;
 		}
 	}
-
+	/* Don't try and umount if there's more than one
+	 * user of the external mount.
+	 */
+	if (em->ref > 1) {
+		pthread_mutex_unlock(&ext_mount_hash_mutex);
+		if (!remove)
+			error(ap->logopt,
+			    "reference count mismatch, called with remove false");
+		else
+			ext_mount_remove(mp);
+		goto out;
+	}
+	/* This shouldn't happen ... */
+	if (!is_mounted(mp, MNTS_REAL)) {
+		pthread_mutex_unlock(&ext_mount_hash_mutex);
+		error(ap->logopt, "failed to umount program mount at %s", mp);
+		if (remove)
+			ext_mount_remove(mp);
+		goto out;
+	}
 	pthread_mutex_unlock(&ext_mount_hash_mutex);
 
-	if (umount) {
+	if (!umount) {
+		ret = umount_ent(ap, mp);
+		if (ret)
+			rv = 0;
+	} else {
 		char *prog;
 		char **argv;
 		int argc = -1;
@@ -3117,41 +3142,30 @@ int umount_amd_ext_mount(struct autofs_point *ap, const char *path)
 		argv = NULL;
 
 		argc = construct_argv(umount, &prog, &argv);
-		if (argc == -1)
-			goto done;
-
-		if (!ext_mount_remove(mp)) {
-			rv =0;
-			goto out_free;
-		}
-
-		rv = spawnv(ap->logopt, prog, (const char * const *) argv);
-		if (rv == -1 || (WIFEXITED(rv) && WEXITSTATUS(rv)))
+		if (argc == -1) {
 			error(ap->logopt,
-			     "failed to umount program mount at %s", mp);
-		else {
+			      "failed to allocate args for umount of %s", mp);
 			rv = 0;
-			debug(ap->logopt, "umounted program mount at %s", mp);
-			rmdir_path(ap, mp, ap->dev);
+			goto out;
 		}
-out_free:
+		ret = spawnv(ap->logopt, prog, (const char * const *) argv);
+		rv = WIFEXITED(ret) && !WEXITSTATUS(ret);
 		free_argv(argc, (const char **) argv);
-
-		goto done;
 	}
 
-	if (ext_mount_remove(mp)) {
-		rv = umount_ent(ap, mp);
-		if (rv)
-			error(ap->logopt,
-			      "failed to umount external mount %s", mp);
-		else
-			debug(ap->logopt, "umounted external mount %s", mp);
+	if (is_mounted(mp, MNTS_REAL))
+		error(ap->logopt,
+		      "failed to umount external mount %s", mp);
+	else {
+		info(ap->logopt, "umounted external mount %s", mp);
+		rmdir_path(ap, mp, ap->dev);
 	}
-done:
+	if (remove)
+		ext_mount_remove(mp);
+out:
 	if (umount)
 		free(umount);
-	free(mp);
-out:
+	if (mp)
+		free(mp);
 	return rv;
 }
