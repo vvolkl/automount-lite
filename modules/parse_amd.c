@@ -1189,8 +1189,9 @@ static int do_generic_mount(struct autofs_point *ap, const char *name,
 			umount = 1;
 		}
 		/* If we have an external mount add it to the list */
-		if (umount && !ext_mount_add(entry->fs, entry->umount)) {
-			umount_amd_ext_mount(ap, entry->fs);
+		if (!ext_mount_add(entry->fs, entry->umount)) {
+			if (umount)
+				umount_amd_ext_mount(ap, entry->fs);
 			error(ap->logopt, MODPREFIX
 			      "error: could not add external mount %s",
 			      entry->fs);
@@ -1239,8 +1240,9 @@ static int do_nfs_mount(struct autofs_point *ap, const char *name,
 			umount = 1;
 		}
 		/* We might be using an external mount */
-		if (umount && !ext_mount_add(entry->fs, entry->umount)) {
-			umount_amd_ext_mount(ap, entry->fs);
+		if (!ext_mount_add(entry->fs, entry->umount)) {
+			if (umount)
+				umount_amd_ext_mount(ap, entry->fs);
 			error(ap->logopt, MODPREFIX
 			      "error: could not add external mount %s", entry->fs);
 			ret = 1;
@@ -1442,12 +1444,13 @@ static int do_program_mount(struct autofs_point *ap,
 	 * before executing the mount command and removing it at
 	 * umount.
 	 */
-	if (ext_mount_inuse(entry->fs)) {
+	if (is_mounted(entry->fs, MNTS_REAL)) {
+		if (!ext_mount_add(entry->fs, entry->umount)) {
+			error(ap->logopt, MODPREFIX
+			      "error: could not add external mount %s", entry->fs);
+			goto out;
+		}
 		rv = 0;
-		/* An external mount with path entry->fs exists
-		 * so ext_mount_add() won't fail.
-		 */
-		ext_mount_add(entry->fs, entry->umount);
 	} else {
 		rv = mkdir_path(entry->fs, mp_mode);
 		if (rv && errno != EEXIST) {
