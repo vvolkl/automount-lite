@@ -889,10 +889,10 @@ int ext_mount_remove(const char *path)
 	if (!em)
 		goto done;
 
-	em->ref--;
 	if (em->ref)
-		goto done;
-	else {
+		em->ref--;
+
+	if (!em->ref && !is_mounted(path, MNTS_REAL)) {
 		hlist_del_init(&em->mount);
 		free(em->mp);
 		if (em->umount)
@@ -914,7 +914,7 @@ int ext_mount_inuse(const char *path)
 	em = ext_mount_lookup(path);
 	if (!em)
 		goto done;
-	ret = em->ref;
+	ret = 1;
 done:
 	ext_mount_hash_mutex_unlock();
 	return ret;
