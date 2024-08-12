@@ -1412,7 +1412,8 @@ out:
 }
 
 static int do_program_mount(struct autofs_point *ap,
-			    struct amd_entry *entry, const char *name)
+			    struct amd_entry *entry, const char *name,
+			    unsigned int flags)
 {
 	int rv = 1;
 
@@ -1486,7 +1487,7 @@ static int do_program_mount(struct autofs_point *ap,
 		goto out;
 	}
 done:
-	rv = do_link_mount(ap, name, entry, 0);
+	rv = do_link_mount(ap, name, entry, flags);
 	if (rv) {
 		if (!umount_amd_ext_mount(ap, entry->fs, 1)) {
 			debug(ap->logopt, MODPREFIX
@@ -1715,7 +1716,7 @@ static int amd_mount(struct autofs_point *ap, const char *name,
 	case AMD_MOUNT_TYPE_PROGRAM:
 		if (!validate_program_options(ap->logopt, entry))
 			return 1;
-		ret = do_program_mount(ap, entry, name);
+		ret = do_program_mount(ap, entry, name, flags);
 		break;
 
 	default:
