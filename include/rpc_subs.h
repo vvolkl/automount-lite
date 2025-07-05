@@ -16,15 +16,18 @@
 #ifndef _RPC_SUBS_H
 #define _RPC_SUBS_H
 
+#ifndef ENABLE_STATIC_BUILD
 #include <rpc/rpc.h>
 #include <rpc/types.h>
 #include <rpc/pmap_prot.h>
 #include <linux/nfs.h>
 #include <linux/nfs2.h>
 #include <linux/nfs3.h>
+#endif
 
 #include "automount.h"
 
+#ifndef ENABLE_STATIC_BUILD
 #define NFS4_VERSION		4
 
 /* rpc helper subs */
@@ -89,6 +92,8 @@ double monotonic_elapsed(struct timespec, struct timespec);
 struct exportinfo *rpc_get_exports(const char *host, long seconds, long micros, unsigned int option);
 void rpc_exports_free(struct exportinfo *exports);
 const char *get_addr_string(struct sockaddr *, char *, socklen_t);
+
+#endif /* !ENABLE_STATIC_BUILD */
 
 #endif
 

@@ -694,6 +694,7 @@ MOUNT
 DMALLOCLIB
 TIRPC_LIBS
 TIRPC_CFLAGS
+ENABLE_STATIC
 flagdir
 fifodir
 mapdir
@@ -762,6 +763,7 @@ with_confdir
 with_mapdir
 with_fifodir
 with_flagdir
+enable_static
 with_libtirpc
 with_dmalloc
 enable_sloppy_mount
@@ -1411,6 +1413,7 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-static               build static library and statically linked automount binary
   --enable-sloppy-mount         enable the use of the -s option to mount
   --enable-no-canon-umount         enable the use of the -c option to umount
   --enable-fedfs                enable inclusion of fedfs binaries mount.fedfs and fedfs-map-nfs4
@@ -2708,6 +2711,7 @@ fi
 
 
 
+if test "x$ENABLE_STATIC" != "x1"; then
 
 
 
@@ -3859,6 +3863,10 @@ else
 printf "%s\n" "yes" >&6; }
 
 fi
+else
+  systemd_LIBS=""
+
+fi
 
 #
 # Location of system config script directory?
@@ -3982,6 +3990,35 @@ fi
 printf %s "checking for autofs flag file directory... " >&6; }
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $flagdir" >&5
 printf "%s\n" "$flagdir" >&6; }
+
+
+#
+# Enable static build
+#
+# Check whether --enable-static was given.
+if test ${enable_static+y}
+then :
+  enableval=$enable_static;
+else $as_nop
+  enableval=no
+fi
+
+if test x$enable_static = xyes -o x$enableval = xyes; then
+	ENABLE_STATIC="1"
+	# Disable optional features for static build to reduce dependencies
+	with_libtirpc=no
+	with_openldap=no
+	with_hesiod=no
+	with_sasl=no
+	enable_fedfs=no
+
+printf "%s\n" "#define ENABLE_STATIC_BUILD 1" >>confdefs.h
+
+	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: Static build enabled - disabling optional features to reduce dependencies" >&5
+printf "%s\n" "$as_me: Static build enabled - disabling optional features to reduce dependencies" >&6;}
+else
+	ENABLE_STATIC=""
+fi
 
 
 #
@@ -4694,6 +4731,7 @@ else
 fi
 
 
+if test "x$ENABLE_STATIC" != "x1"; then
 if test -z "$sssldir"; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for sssd autofs library" >&5
 printf %s "checking for sssd autofs library... " >&6; }
@@ -4713,6 +4751,10 @@ printf "%s\n" "yes" >&6; }
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
   fi
+fi
+else
+HAVE_SSS_AUTOFS=0
+sssldir=""
 fi
 
 

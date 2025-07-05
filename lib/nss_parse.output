@@ -1,0 +1,338 @@
+Grammar
+
+    0 $accept: file $end
+
+    1 $@1: ε
+
+    2 file: $@1 sources NL
+    3     | ε
+
+    4 sources: nss_source
+    5        | nss_source sources
+
+    6 nss_source: SOURCE
+    7           | SOURCE LBRACKET status_exp_list RBRACKET
+    8           | SOURCE LBRACKET status_exp_list SOURCE
+    9           | SOURCE LBRACKET status_exp_list NL
+   10           | SOURCE LBRACKET SOURCE
+   11           | error SOURCE
+
+   12 status_exp_list: status_exp
+   13                | status_exp status_exp_list
+
+   14 status_exp: STATUS EQUAL ACTION
+   15           | BANG STATUS EQUAL ACTION
+   16           | STATUS EQUAL SOURCE
+   17           | STATUS SOURCE
+   18           | BANG STATUS EQUAL SOURCE
+   19           | BANG STATUS SOURCE
+   20           | BANG SOURCE
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    error (256) 11
+    LBRACKET (258) 7 8 9 10
+    RBRACKET (259) 7
+    EQUAL (260) 14 15 16 18
+    BANG (261) 15 18 19 20
+    NL (262) 2 9
+    SOURCE <strval> (263) 6 7 8 9 10 11 16 17 18 19 20
+    STATUS <strval> (264) 14 15 16 17 18 19
+    ACTION <strval> (265) 14 15
+
+
+Nonterminals, with rules where they appear
+
+    $accept (11)
+        on left: 0
+    file (12)
+        on left: 2 3
+        on right: 0
+    $@1 (13)
+        on left: 1
+        on right: 2
+    sources (14)
+        on left: 4 5
+        on right: 2 5
+    nss_source (15)
+        on left: 6 7 8 9 10 11
+        on right: 4 5
+    status_exp_list (16)
+        on left: 12 13
+        on right: 7 8 9 13
+    status_exp (17)
+        on left: 14 15 16 17 18 19 20
+        on right: 12 13
+
+
+State 0
+
+    0 $accept: • file $end
+
+    $end      reduce using rule 3 (file)
+    $default  reduce using rule 1 ($@1)
+
+    file  go to state 1
+    $@1   go to state 2
+
+
+State 1
+
+    0 $accept: file • $end
+
+    $end  shift, and go to state 3
+
+
+State 2
+
+    2 file: $@1 • sources NL
+
+    error   shift, and go to state 4
+    SOURCE  shift, and go to state 5
+
+    sources     go to state 6
+    nss_source  go to state 7
+
+
+State 3
+
+    0 $accept: file $end •
+
+    $default  accept
+
+
+State 4
+
+   11 nss_source: error • SOURCE
+
+    SOURCE  shift, and go to state 8
+
+
+State 5
+
+    6 nss_source: SOURCE •
+    7           | SOURCE • LBRACKET status_exp_list RBRACKET
+    8           | SOURCE • LBRACKET status_exp_list SOURCE
+    9           | SOURCE • LBRACKET status_exp_list NL
+   10           | SOURCE • LBRACKET SOURCE
+
+    LBRACKET  shift, and go to state 9
+
+    $default  reduce using rule 6 (nss_source)
+
+
+State 6
+
+    2 file: $@1 sources • NL
+
+    NL  shift, and go to state 10
+
+
+State 7
+
+    4 sources: nss_source •
+    5        | nss_source • sources
+
+    error   shift, and go to state 4
+    SOURCE  shift, and go to state 5
+
+    NL  reduce using rule 4 (sources)
+
+    sources     go to state 11
+    nss_source  go to state 7
+
+
+State 8
+
+   11 nss_source: error SOURCE •
+
+    $default  reduce using rule 11 (nss_source)
+
+
+State 9
+
+    7 nss_source: SOURCE LBRACKET • status_exp_list RBRACKET
+    8           | SOURCE LBRACKET • status_exp_list SOURCE
+    9           | SOURCE LBRACKET • status_exp_list NL
+   10           | SOURCE LBRACKET • SOURCE
+
+    BANG    shift, and go to state 12
+    SOURCE  shift, and go to state 13
+    STATUS  shift, and go to state 14
+
+    status_exp_list  go to state 15
+    status_exp       go to state 16
+
+
+State 10
+
+    2 file: $@1 sources NL •
+
+    $default  reduce using rule 2 (file)
+
+
+State 11
+
+    5 sources: nss_source sources •
+
+    $default  reduce using rule 5 (sources)
+
+
+State 12
+
+   15 status_exp: BANG • STATUS EQUAL ACTION
+   18           | BANG • STATUS EQUAL SOURCE
+   19           | BANG • STATUS SOURCE
+   20           | BANG • SOURCE
+
+    SOURCE  shift, and go to state 17
+    STATUS  shift, and go to state 18
+
+
+State 13
+
+   10 nss_source: SOURCE LBRACKET SOURCE •
+
+    $default  reduce using rule 10 (nss_source)
+
+
+State 14
+
+   14 status_exp: STATUS • EQUAL ACTION
+   16           | STATUS • EQUAL SOURCE
+   17           | STATUS • SOURCE
+
+    EQUAL   shift, and go to state 19
+    SOURCE  shift, and go to state 20
+
+
+State 15
+
+    7 nss_source: SOURCE LBRACKET status_exp_list • RBRACKET
+    8           | SOURCE LBRACKET status_exp_list • SOURCE
+    9           | SOURCE LBRACKET status_exp_list • NL
+
+    RBRACKET  shift, and go to state 21
+    NL        shift, and go to state 22
+    SOURCE    shift, and go to state 23
+
+
+State 16
+
+   12 status_exp_list: status_exp •
+   13                | status_exp • status_exp_list
+
+    BANG    shift, and go to state 12
+    STATUS  shift, and go to state 14
+
+    $default  reduce using rule 12 (status_exp_list)
+
+    status_exp_list  go to state 24
+    status_exp       go to state 16
+
+
+State 17
+
+   20 status_exp: BANG SOURCE •
+
+    $default  reduce using rule 20 (status_exp)
+
+
+State 18
+
+   15 status_exp: BANG STATUS • EQUAL ACTION
+   18           | BANG STATUS • EQUAL SOURCE
+   19           | BANG STATUS • SOURCE
+
+    EQUAL   shift, and go to state 25
+    SOURCE  shift, and go to state 26
+
+
+State 19
+
+   14 status_exp: STATUS EQUAL • ACTION
+   16           | STATUS EQUAL • SOURCE
+
+    SOURCE  shift, and go to state 27
+    ACTION  shift, and go to state 28
+
+
+State 20
+
+   17 status_exp: STATUS SOURCE •
+
+    $default  reduce using rule 17 (status_exp)
+
+
+State 21
+
+    7 nss_source: SOURCE LBRACKET status_exp_list RBRACKET •
+
+    $default  reduce using rule 7 (nss_source)
+
+
+State 22
+
+    9 nss_source: SOURCE LBRACKET status_exp_list NL •
+
+    $default  reduce using rule 9 (nss_source)
+
+
+State 23
+
+    8 nss_source: SOURCE LBRACKET status_exp_list SOURCE •
+
+    $default  reduce using rule 8 (nss_source)
+
+
+State 24
+
+   13 status_exp_list: status_exp status_exp_list •
+
+    $default  reduce using rule 13 (status_exp_list)
+
+
+State 25
+
+   15 status_exp: BANG STATUS EQUAL • ACTION
+   18           | BANG STATUS EQUAL • SOURCE
+
+    SOURCE  shift, and go to state 29
+    ACTION  shift, and go to state 30
+
+
+State 26
+
+   19 status_exp: BANG STATUS SOURCE •
+
+    $default  reduce using rule 19 (status_exp)
+
+
+State 27
+
+   16 status_exp: STATUS EQUAL SOURCE •
+
+    $default  reduce using rule 16 (status_exp)
+
+
+State 28
+
+   14 status_exp: STATUS EQUAL ACTION •
+
+    $default  reduce using rule 14 (status_exp)
+
+
+State 29
+
+   18 status_exp: BANG STATUS EQUAL SOURCE •
+
+    $default  reduce using rule 18 (status_exp)
+
+
+State 30
+
+   15 status_exp: BANG STATUS EQUAL ACTION •
+
+    $default  reduce using rule 15 (status_exp)

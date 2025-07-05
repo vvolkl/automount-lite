@@ -1,0 +1,1175 @@
+Terminals unused in grammar
+
+    MAP
+    NL
+    SPACE
+
+
+Grammar
+
+    0 $accept: file $end
+
+    1 $@1: ε
+
+    2 file: $@1 line
+
+    3 line: ε
+    4     | PATH mapspec
+    5     | PATH MULTITYPE maplist
+    6     | PATH COLON
+    7     | PATH OPTION
+    8     | PATH NILL
+    9     | PATH OPT_RANDOM
+   10     | PATH OPT_USE_WEIGHT
+   11     | PATH OPT_DEBUG
+   12     | PATH OPT_TIMEOUT
+   13     | PATH OPT_SYMLINK
+   14     | PATH OPT_STRICTEXPIRE
+   15     | PATH OPT_SHARED
+   16     | PATH OPT_SLAVE
+   17     | PATH OPT_PRIVATE
+   18     | PATH OPT_NOBIND
+   19     | PATH OPT_GHOST
+   20     | PATH OPT_NOGHOST
+   21     | PATH OPT_VERBOSE
+   22     | PATH OPT_MODE
+   23     | PATH
+   24     | QUOTE
+   25     | OPTION
+   26     | NILL
+   27     | COMMENT
+
+   28 mapspec: map
+   29        | map options
+
+   30 maplist: map
+   31        | map options
+   32        | maplist DDASH map
+   33        | maplist DDASH map options
+
+   34 map: PATH
+   35    | MAPNAME
+   36    | MAPHOSTS
+   37    | MAPXFN
+   38    | MAPNULL
+   39    | dnattrs
+   40    | MAPTYPE PATH
+   41    | MAPTYPE MAPNAME
+   42    | MAPTYPE dn
+
+   43 dn: DNSERVER dnattrs
+   44   | dnattrs
+   45   | ε
+
+   46 dnattrs: DNATTR EQUAL DNNAME
+   47        | DNATTR EQUAL DNNAME COMMA dnattr
+   48        | DNNAME
+   49        | DNATTR
+
+   50 dnattr: DNATTR EQUAL DNNAME
+   51       | DNATTR EQUAL DNNAME COMMA dnattr
+   52       | DNATTR
+   53       | DNNAME
+
+   54 options: option
+   55        | options COMMA option
+   56        | options option
+   57        | options COMMA COMMA option
+   58        | options EQUAL
+
+   59 option: daemon_option
+   60       | mount_option
+   61       | error
+
+   62 daemon_option: OPT_TIMEOUT NUMBER
+   63              | OPT_NTIMEOUT NUMBER
+   64              | OPT_PTIMEOUT NUMBER
+   65              | OPT_SYMLINK
+   66              | OPT_STRICTEXPIRE
+   67              | OPT_SHARED
+   68              | OPT_SLAVE
+   69              | OPT_PRIVATE
+   70              | OPT_NOBIND
+   71              | OPT_NOGHOST
+   72              | OPT_GHOST
+   73              | OPT_VERBOSE
+   74              | OPT_DEBUG
+   75              | OPT_RANDOM
+   76              | OPT_USE_WEIGHT
+   77              | OPT_MODE OCTALNUMBER
+
+   78 mount_option: OPTION
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    error (256) 61
+    COMMENT (258) 27
+    MAP (259)
+    OPT_TIMEOUT (260) 12 62
+    OPT_NTIMEOUT (261) 63
+    OPT_PTIMEOUT (262) 64
+    OPT_NOBIND (263) 18 70
+    OPT_NOGHOST (264) 20 71
+    OPT_GHOST (265) 19 72
+    OPT_VERBOSE (266) 21 73
+    OPT_DEBUG (267) 11 74
+    OPT_RANDOM (268) 9 75
+    OPT_USE_WEIGHT (269) 10 76
+    OPT_SYMLINK (270) 13 65
+    OPT_MODE (271) 22 77
+    OPT_STRICTEXPIRE (272) 14 66
+    OPT_SHARED (273) 15 67
+    OPT_SLAVE (274) 16 68
+    OPT_PRIVATE (275) 17 69
+    COLON (276) 6
+    COMMA (277) 47 51 55 57
+    NL (278)
+    DDASH (279) 32 33
+    PATH <strtype> (280) 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 34 40
+    QUOTE <strtype> (281) 24
+    NILL <strtype> (282) 8 26
+    SPACE <strtype> (283)
+    EQUAL <strtype> (284) 46 47 50 51 58
+    MULTITYPE <strtype> (285) 5
+    MAPTYPE <strtype> (286) 40 41 42
+    DNSERVER <strtype> (287) 43
+    DNATTR <strtype> (288) 46 47 49 50 51 52
+    DNNAME <strtype> (289) 46 47 48 50 51 53
+    MAPHOSTS <strtype> (290) 36
+    MAPNULL <strtype> (291) 38
+    MAPXFN <strtype> (292) 37
+    MAPNAME <strtype> (293) 35 41
+    NUMBER <longtype> (294) 62 63 64
+    OCTALNUMBER <longtype> (295) 77
+    OPTION <strtype> (296) 7 25 78
+
+
+Nonterminals, with rules where they appear
+
+    $accept (42)
+        on left: 0
+    file (43)
+        on left: 2
+        on right: 0
+    $@1 (44)
+        on left: 1
+        on right: 2
+    line (45)
+        on left: 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27
+        on right: 2
+    mapspec (46)
+        on left: 28 29
+        on right: 4
+    maplist (47)
+        on left: 30 31 32 33
+        on right: 5 32 33
+    map <strtype> (48)
+        on left: 34 35 36 37 38 39 40 41 42
+        on right: 28 29 30 31 32 33
+    dn <strtype> (49)
+        on left: 43 44 45
+        on right: 42
+    dnattrs <strtype> (50)
+        on left: 46 47 48 49
+        on right: 39 43 44
+    dnattr <strtype> (51)
+        on left: 50 51 52 53
+        on right: 47 51
+    options <strtype> (52)
+        on left: 54 55 56 57 58
+        on right: 29 31 33 55 56 57 58
+    option <strtype> (53)
+        on left: 59 60 61
+        on right: 54 55 56 57
+    daemon_option <strtype> (54)
+        on left: 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77
+        on right: 59
+    mount_option <strtype> (55)
+        on left: 78
+        on right: 60
+
+
+State 0
+
+    0 $accept: • file $end
+
+    $default  reduce using rule 1 ($@1)
+
+    file  go to state 1
+    $@1   go to state 2
+
+
+State 1
+
+    0 $accept: file • $end
+
+    $end  shift, and go to state 3
+
+
+State 2
+
+    2 file: $@1 • line
+
+    COMMENT  shift, and go to state 4
+    PATH     shift, and go to state 5
+    QUOTE    shift, and go to state 6
+    NILL     shift, and go to state 7
+    OPTION   shift, and go to state 8
+
+    $default  reduce using rule 3 (line)
+
+    line  go to state 9
+
+
+State 3
+
+    0 $accept: file $end •
+
+    $default  accept
+
+
+State 4
+
+   27 line: COMMENT •
+
+    $default  reduce using rule 27 (line)
+
+
+State 5
+
+    4 line: PATH • mapspec
+    5     | PATH • MULTITYPE maplist
+    6     | PATH • COLON
+    7     | PATH • OPTION
+    8     | PATH • NILL
+    9     | PATH • OPT_RANDOM
+   10     | PATH • OPT_USE_WEIGHT
+   11     | PATH • OPT_DEBUG
+   12     | PATH • OPT_TIMEOUT
+   13     | PATH • OPT_SYMLINK
+   14     | PATH • OPT_STRICTEXPIRE
+   15     | PATH • OPT_SHARED
+   16     | PATH • OPT_SLAVE
+   17     | PATH • OPT_PRIVATE
+   18     | PATH • OPT_NOBIND
+   19     | PATH • OPT_GHOST
+   20     | PATH • OPT_NOGHOST
+   21     | PATH • OPT_VERBOSE
+   22     | PATH • OPT_MODE
+   23     | PATH •
+
+    OPT_TIMEOUT       shift, and go to state 10
+    OPT_NOBIND        shift, and go to state 11
+    OPT_NOGHOST       shift, and go to state 12
+    OPT_GHOST         shift, and go to state 13
+    OPT_VERBOSE       shift, and go to state 14
+    OPT_DEBUG         shift, and go to state 15
+    OPT_RANDOM        shift, and go to state 16
+    OPT_USE_WEIGHT    shift, and go to state 17
+    OPT_SYMLINK       shift, and go to state 18
+    OPT_MODE          shift, and go to state 19
+    OPT_STRICTEXPIRE  shift, and go to state 20
+    OPT_SHARED        shift, and go to state 21
+    OPT_SLAVE         shift, and go to state 22
+    OPT_PRIVATE       shift, and go to state 23
+    COLON             shift, and go to state 24
+    PATH              shift, and go to state 25
+    NILL              shift, and go to state 26
+    MULTITYPE         shift, and go to state 27
+    MAPTYPE           shift, and go to state 28
+    DNATTR            shift, and go to state 29
+    DNNAME            shift, and go to state 30
+    MAPHOSTS          shift, and go to state 31
+    MAPNULL           shift, and go to state 32
+    MAPXFN            shift, and go to state 33
+    MAPNAME           shift, and go to state 34
+    OPTION            shift, and go to state 35
+
+    $default  reduce using rule 23 (line)
+
+    mapspec  go to state 36
+    map      go to state 37
+    dnattrs  go to state 38
+
+
+State 6
+
+   24 line: QUOTE •
+
+    $default  reduce using rule 24 (line)
+
+
+State 7
+
+   26 line: NILL •
+
+    $default  reduce using rule 26 (line)
+
+
+State 8
+
+   25 line: OPTION •
+
+    $default  reduce using rule 25 (line)
+
+
+State 9
+
+    2 file: $@1 line •
+
+    $default  reduce using rule 2 (file)
+
+
+State 10
+
+   12 line: PATH OPT_TIMEOUT •
+
+    $default  reduce using rule 12 (line)
+
+
+State 11
+
+   18 line: PATH OPT_NOBIND •
+
+    $default  reduce using rule 18 (line)
+
+
+State 12
+
+   20 line: PATH OPT_NOGHOST •
+
+    $default  reduce using rule 20 (line)
+
+
+State 13
+
+   19 line: PATH OPT_GHOST •
+
+    $default  reduce using rule 19 (line)
+
+
+State 14
+
+   21 line: PATH OPT_VERBOSE •
+
+    $default  reduce using rule 21 (line)
+
+
+State 15
+
+   11 line: PATH OPT_DEBUG •
+
+    $default  reduce using rule 11 (line)
+
+
+State 16
+
+    9 line: PATH OPT_RANDOM •
+
+    $default  reduce using rule 9 (line)
+
+
+State 17
+
+   10 line: PATH OPT_USE_WEIGHT •
+
+    $default  reduce using rule 10 (line)
+
+
+State 18
+
+   13 line: PATH OPT_SYMLINK •
+
+    $default  reduce using rule 13 (line)
+
+
+State 19
+
+   22 line: PATH OPT_MODE •
+
+    $default  reduce using rule 22 (line)
+
+
+State 20
+
+   14 line: PATH OPT_STRICTEXPIRE •
+
+    $default  reduce using rule 14 (line)
+
+
+State 21
+
+   15 line: PATH OPT_SHARED •
+
+    $default  reduce using rule 15 (line)
+
+
+State 22
+
+   16 line: PATH OPT_SLAVE •
+
+    $default  reduce using rule 16 (line)
+
+
+State 23
+
+   17 line: PATH OPT_PRIVATE •
+
+    $default  reduce using rule 17 (line)
+
+
+State 24
+
+    6 line: PATH COLON •
+
+    $default  reduce using rule 6 (line)
+
+
+State 25
+
+   34 map: PATH •
+
+    $default  reduce using rule 34 (map)
+
+
+State 26
+
+    8 line: PATH NILL •
+
+    $default  reduce using rule 8 (line)
+
+
+State 27
+
+    5 line: PATH MULTITYPE • maplist
+
+    PATH      shift, and go to state 25
+    MAPTYPE   shift, and go to state 28
+    DNATTR    shift, and go to state 29
+    DNNAME    shift, and go to state 30
+    MAPHOSTS  shift, and go to state 31
+    MAPNULL   shift, and go to state 32
+    MAPXFN    shift, and go to state 33
+    MAPNAME   shift, and go to state 34
+
+    maplist  go to state 39
+    map      go to state 40
+    dnattrs  go to state 38
+
+
+State 28
+
+   40 map: MAPTYPE • PATH
+   41    | MAPTYPE • MAPNAME
+   42    | MAPTYPE • dn
+
+    PATH      shift, and go to state 41
+    DNSERVER  shift, and go to state 42
+    DNATTR    shift, and go to state 29
+    DNNAME    shift, and go to state 30
+    MAPNAME   shift, and go to state 43
+
+    $default  reduce using rule 45 (dn)
+
+    dn       go to state 44
+    dnattrs  go to state 45
+
+
+State 29
+
+   46 dnattrs: DNATTR • EQUAL DNNAME
+   47        | DNATTR • EQUAL DNNAME COMMA dnattr
+   49        | DNATTR •
+
+    EQUAL  shift, and go to state 46
+
+    $default  reduce using rule 49 (dnattrs)
+
+
+State 30
+
+   48 dnattrs: DNNAME •
+
+    $default  reduce using rule 48 (dnattrs)
+
+
+State 31
+
+   36 map: MAPHOSTS •
+
+    $default  reduce using rule 36 (map)
+
+
+State 32
+
+   38 map: MAPNULL •
+
+    $default  reduce using rule 38 (map)
+
+
+State 33
+
+   37 map: MAPXFN •
+
+    $default  reduce using rule 37 (map)
+
+
+State 34
+
+   35 map: MAPNAME •
+
+    $default  reduce using rule 35 (map)
+
+
+State 35
+
+    7 line: PATH OPTION •
+
+    $default  reduce using rule 7 (line)
+
+
+State 36
+
+    4 line: PATH mapspec •
+
+    $default  reduce using rule 4 (line)
+
+
+State 37
+
+   28 mapspec: map •
+   29        | map • options
+
+    error             shift, and go to state 47
+    OPT_TIMEOUT       shift, and go to state 48
+    OPT_NTIMEOUT      shift, and go to state 49
+    OPT_PTIMEOUT      shift, and go to state 50
+    OPT_NOBIND        shift, and go to state 51
+    OPT_NOGHOST       shift, and go to state 52
+    OPT_GHOST         shift, and go to state 53
+    OPT_VERBOSE       shift, and go to state 54
+    OPT_DEBUG         shift, and go to state 55
+    OPT_RANDOM        shift, and go to state 56
+    OPT_USE_WEIGHT    shift, and go to state 57
+    OPT_SYMLINK       shift, and go to state 58
+    OPT_MODE          shift, and go to state 59
+    OPT_STRICTEXPIRE  shift, and go to state 60
+    OPT_SHARED        shift, and go to state 61
+    OPT_SLAVE         shift, and go to state 62
+    OPT_PRIVATE       shift, and go to state 63
+    OPTION            shift, and go to state 64
+
+    $end  reduce using rule 28 (mapspec)
+
+    options        go to state 65
+    option         go to state 66
+    daemon_option  go to state 67
+    mount_option   go to state 68
+
+
+State 38
+
+   39 map: dnattrs •
+
+    $default  reduce using rule 39 (map)
+
+
+State 39
+
+    5 line: PATH MULTITYPE maplist •
+   32 maplist: maplist • DDASH map
+   33        | maplist • DDASH map options
+
+    DDASH  shift, and go to state 69
+
+    $default  reduce using rule 5 (line)
+
+
+State 40
+
+   30 maplist: map •
+   31        | map • options
+
+    error             shift, and go to state 47
+    OPT_TIMEOUT       shift, and go to state 48
+    OPT_NTIMEOUT      shift, and go to state 49
+    OPT_PTIMEOUT      shift, and go to state 50
+    OPT_NOBIND        shift, and go to state 51
+    OPT_NOGHOST       shift, and go to state 52
+    OPT_GHOST         shift, and go to state 53
+    OPT_VERBOSE       shift, and go to state 54
+    OPT_DEBUG         shift, and go to state 55
+    OPT_RANDOM        shift, and go to state 56
+    OPT_USE_WEIGHT    shift, and go to state 57
+    OPT_SYMLINK       shift, and go to state 58
+    OPT_MODE          shift, and go to state 59
+    OPT_STRICTEXPIRE  shift, and go to state 60
+    OPT_SHARED        shift, and go to state 61
+    OPT_SLAVE         shift, and go to state 62
+    OPT_PRIVATE       shift, and go to state 63
+    OPTION            shift, and go to state 64
+
+    $end   reduce using rule 30 (maplist)
+    DDASH  reduce using rule 30 (maplist)
+
+    options        go to state 70
+    option         go to state 66
+    daemon_option  go to state 67
+    mount_option   go to state 68
+
+
+State 41
+
+   40 map: MAPTYPE PATH •
+
+    $default  reduce using rule 40 (map)
+
+
+State 42
+
+   43 dn: DNSERVER • dnattrs
+
+    DNATTR  shift, and go to state 29
+    DNNAME  shift, and go to state 30
+
+    dnattrs  go to state 71
+
+
+State 43
+
+   41 map: MAPTYPE MAPNAME •
+
+    $default  reduce using rule 41 (map)
+
+
+State 44
+
+   42 map: MAPTYPE dn •
+
+    $default  reduce using rule 42 (map)
+
+
+State 45
+
+   44 dn: dnattrs •
+
+    $default  reduce using rule 44 (dn)
+
+
+State 46
+
+   46 dnattrs: DNATTR EQUAL • DNNAME
+   47        | DNATTR EQUAL • DNNAME COMMA dnattr
+
+    DNNAME  shift, and go to state 72
+
+
+State 47
+
+   61 option: error •
+
+    $default  reduce using rule 61 (option)
+
+
+State 48
+
+   62 daemon_option: OPT_TIMEOUT • NUMBER
+
+    NUMBER  shift, and go to state 73
+
+
+State 49
+
+   63 daemon_option: OPT_NTIMEOUT • NUMBER
+
+    NUMBER  shift, and go to state 74
+
+
+State 50
+
+   64 daemon_option: OPT_PTIMEOUT • NUMBER
+
+    NUMBER  shift, and go to state 75
+
+
+State 51
+
+   70 daemon_option: OPT_NOBIND •
+
+    $default  reduce using rule 70 (daemon_option)
+
+
+State 52
+
+   71 daemon_option: OPT_NOGHOST •
+
+    $default  reduce using rule 71 (daemon_option)
+
+
+State 53
+
+   72 daemon_option: OPT_GHOST •
+
+    $default  reduce using rule 72 (daemon_option)
+
+
+State 54
+
+   73 daemon_option: OPT_VERBOSE •
+
+    $default  reduce using rule 73 (daemon_option)
+
+
+State 55
+
+   74 daemon_option: OPT_DEBUG •
+
+    $default  reduce using rule 74 (daemon_option)
+
+
+State 56
+
+   75 daemon_option: OPT_RANDOM •
+
+    $default  reduce using rule 75 (daemon_option)
+
+
+State 57
+
+   76 daemon_option: OPT_USE_WEIGHT •
+
+    $default  reduce using rule 76 (daemon_option)
+
+
+State 58
+
+   65 daemon_option: OPT_SYMLINK •
+
+    $default  reduce using rule 65 (daemon_option)
+
+
+State 59
+
+   77 daemon_option: OPT_MODE • OCTALNUMBER
+
+    OCTALNUMBER  shift, and go to state 76
+
+
+State 60
+
+   66 daemon_option: OPT_STRICTEXPIRE •
+
+    $default  reduce using rule 66 (daemon_option)
+
+
+State 61
+
+   67 daemon_option: OPT_SHARED •
+
+    $default  reduce using rule 67 (daemon_option)
+
+
+State 62
+
+   68 daemon_option: OPT_SLAVE •
+
+    $default  reduce using rule 68 (daemon_option)
+
+
+State 63
+
+   69 daemon_option: OPT_PRIVATE •
+
+    $default  reduce using rule 69 (daemon_option)
+
+
+State 64
+
+   78 mount_option: OPTION •
+
+    $default  reduce using rule 78 (mount_option)
+
+
+State 65
+
+   29 mapspec: map options •
+   55 options: options • COMMA option
+   56        | options • option
+   57        | options • COMMA COMMA option
+   58        | options • EQUAL
+
+    error             shift, and go to state 47
+    OPT_TIMEOUT       shift, and go to state 48
+    OPT_NTIMEOUT      shift, and go to state 49
+    OPT_PTIMEOUT      shift, and go to state 50
+    OPT_NOBIND        shift, and go to state 51
+    OPT_NOGHOST       shift, and go to state 52
+    OPT_GHOST         shift, and go to state 53
+    OPT_VERBOSE       shift, and go to state 54
+    OPT_DEBUG         shift, and go to state 55
+    OPT_RANDOM        shift, and go to state 56
+    OPT_USE_WEIGHT    shift, and go to state 57
+    OPT_SYMLINK       shift, and go to state 58
+    OPT_MODE          shift, and go to state 59
+    OPT_STRICTEXPIRE  shift, and go to state 60
+    OPT_SHARED        shift, and go to state 61
+    OPT_SLAVE         shift, and go to state 62
+    OPT_PRIVATE       shift, and go to state 63
+    COMMA             shift, and go to state 77
+    EQUAL             shift, and go to state 78
+    OPTION            shift, and go to state 64
+
+    $end  reduce using rule 29 (mapspec)
+
+    option         go to state 79
+    daemon_option  go to state 67
+    mount_option   go to state 68
+
+
+State 66
+
+   54 options: option •
+
+    $default  reduce using rule 54 (options)
+
+
+State 67
+
+   59 option: daemon_option •
+
+    $default  reduce using rule 59 (option)
+
+
+State 68
+
+   60 option: mount_option •
+
+    $default  reduce using rule 60 (option)
+
+
+State 69
+
+   32 maplist: maplist DDASH • map
+   33        | maplist DDASH • map options
+
+    PATH      shift, and go to state 25
+    MAPTYPE   shift, and go to state 28
+    DNATTR    shift, and go to state 29
+    DNNAME    shift, and go to state 30
+    MAPHOSTS  shift, and go to state 31
+    MAPNULL   shift, and go to state 32
+    MAPXFN    shift, and go to state 33
+    MAPNAME   shift, and go to state 34
+
+    map      go to state 80
+    dnattrs  go to state 38
+
+
+State 70
+
+   31 maplist: map options •
+   55 options: options • COMMA option
+   56        | options • option
+   57        | options • COMMA COMMA option
+   58        | options • EQUAL
+
+    error             shift, and go to state 47
+    OPT_TIMEOUT       shift, and go to state 48
+    OPT_NTIMEOUT      shift, and go to state 49
+    OPT_PTIMEOUT      shift, and go to state 50
+    OPT_NOBIND        shift, and go to state 51
+    OPT_NOGHOST       shift, and go to state 52
+    OPT_GHOST         shift, and go to state 53
+    OPT_VERBOSE       shift, and go to state 54
+    OPT_DEBUG         shift, and go to state 55
+    OPT_RANDOM        shift, and go to state 56
+    OPT_USE_WEIGHT    shift, and go to state 57
+    OPT_SYMLINK       shift, and go to state 58
+    OPT_MODE          shift, and go to state 59
+    OPT_STRICTEXPIRE  shift, and go to state 60
+    OPT_SHARED        shift, and go to state 61
+    OPT_SLAVE         shift, and go to state 62
+    OPT_PRIVATE       shift, and go to state 63
+    COMMA             shift, and go to state 77
+    EQUAL             shift, and go to state 78
+    OPTION            shift, and go to state 64
+
+    $end   reduce using rule 31 (maplist)
+    DDASH  reduce using rule 31 (maplist)
+
+    option         go to state 79
+    daemon_option  go to state 67
+    mount_option   go to state 68
+
+
+State 71
+
+   43 dn: DNSERVER dnattrs •
+
+    $default  reduce using rule 43 (dn)
+
+
+State 72
+
+   46 dnattrs: DNATTR EQUAL DNNAME •
+   47        | DNATTR EQUAL DNNAME • COMMA dnattr
+
+    COMMA  shift, and go to state 81
+
+    $default  reduce using rule 46 (dnattrs)
+
+
+State 73
+
+   62 daemon_option: OPT_TIMEOUT NUMBER •
+
+    $default  reduce using rule 62 (daemon_option)
+
+
+State 74
+
+   63 daemon_option: OPT_NTIMEOUT NUMBER •
+
+    $default  reduce using rule 63 (daemon_option)
+
+
+State 75
+
+   64 daemon_option: OPT_PTIMEOUT NUMBER •
+
+    $default  reduce using rule 64 (daemon_option)
+
+
+State 76
+
+   77 daemon_option: OPT_MODE OCTALNUMBER •
+
+    $default  reduce using rule 77 (daemon_option)
+
+
+State 77
+
+   55 options: options COMMA • option
+   57        | options COMMA • COMMA option
+
+    error             shift, and go to state 47
+    OPT_TIMEOUT       shift, and go to state 48
+    OPT_NTIMEOUT      shift, and go to state 49
+    OPT_PTIMEOUT      shift, and go to state 50
+    OPT_NOBIND        shift, and go to state 51
+    OPT_NOGHOST       shift, and go to state 52
+    OPT_GHOST         shift, and go to state 53
+    OPT_VERBOSE       shift, and go to state 54
+    OPT_DEBUG         shift, and go to state 55
+    OPT_RANDOM        shift, and go to state 56
+    OPT_USE_WEIGHT    shift, and go to state 57
+    OPT_SYMLINK       shift, and go to state 58
+    OPT_MODE          shift, and go to state 59
+    OPT_STRICTEXPIRE  shift, and go to state 60
+    OPT_SHARED        shift, and go to state 61
+    OPT_SLAVE         shift, and go to state 62
+    OPT_PRIVATE       shift, and go to state 63
+    COMMA             shift, and go to state 82
+    OPTION            shift, and go to state 64
+
+    option         go to state 83
+    daemon_option  go to state 67
+    mount_option   go to state 68
+
+
+State 78
+
+   58 options: options EQUAL •
+
+    $default  reduce using rule 58 (options)
+
+
+State 79
+
+   56 options: options option •
+
+    $default  reduce using rule 56 (options)
+
+
+State 80
+
+   32 maplist: maplist DDASH map •
+   33        | maplist DDASH map • options
+
+    error             shift, and go to state 47
+    OPT_TIMEOUT       shift, and go to state 48
+    OPT_NTIMEOUT      shift, and go to state 49
+    OPT_PTIMEOUT      shift, and go to state 50
+    OPT_NOBIND        shift, and go to state 51
+    OPT_NOGHOST       shift, and go to state 52
+    OPT_GHOST         shift, and go to state 53
+    OPT_VERBOSE       shift, and go to state 54
+    OPT_DEBUG         shift, and go to state 55
+    OPT_RANDOM        shift, and go to state 56
+    OPT_USE_WEIGHT    shift, and go to state 57
+    OPT_SYMLINK       shift, and go to state 58
+    OPT_MODE          shift, and go to state 59
+    OPT_STRICTEXPIRE  shift, and go to state 60
+    OPT_SHARED        shift, and go to state 61
+    OPT_SLAVE         shift, and go to state 62
+    OPT_PRIVATE       shift, and go to state 63
+    OPTION            shift, and go to state 64
+
+    $end   reduce using rule 32 (maplist)
+    DDASH  reduce using rule 32 (maplist)
+
+    options        go to state 84
+    option         go to state 66
+    daemon_option  go to state 67
+    mount_option   go to state 68
+
+
+State 81
+
+   47 dnattrs: DNATTR EQUAL DNNAME COMMA • dnattr
+
+    DNATTR  shift, and go to state 85
+    DNNAME  shift, and go to state 86
+
+    dnattr  go to state 87
+
+
+State 82
+
+   57 options: options COMMA COMMA • option
+
+    error             shift, and go to state 47
+    OPT_TIMEOUT       shift, and go to state 48
+    OPT_NTIMEOUT      shift, and go to state 49
+    OPT_PTIMEOUT      shift, and go to state 50
+    OPT_NOBIND        shift, and go to state 51
+    OPT_NOGHOST       shift, and go to state 52
+    OPT_GHOST         shift, and go to state 53
+    OPT_VERBOSE       shift, and go to state 54
+    OPT_DEBUG         shift, and go to state 55
+    OPT_RANDOM        shift, and go to state 56
+    OPT_USE_WEIGHT    shift, and go to state 57
+    OPT_SYMLINK       shift, and go to state 58
+    OPT_MODE          shift, and go to state 59
+    OPT_STRICTEXPIRE  shift, and go to state 60
+    OPT_SHARED        shift, and go to state 61
+    OPT_SLAVE         shift, and go to state 62
+    OPT_PRIVATE       shift, and go to state 63
+    OPTION            shift, and go to state 64
+
+    option         go to state 88
+    daemon_option  go to state 67
+    mount_option   go to state 68
+
+
+State 83
+
+   55 options: options COMMA option •
+
+    $default  reduce using rule 55 (options)
+
+
+State 84
+
+   33 maplist: maplist DDASH map options •
+   55 options: options • COMMA option
+   56        | options • option
+   57        | options • COMMA COMMA option
+   58        | options • EQUAL
+
+    error             shift, and go to state 47
+    OPT_TIMEOUT       shift, and go to state 48
+    OPT_NTIMEOUT      shift, and go to state 49
+    OPT_PTIMEOUT      shift, and go to state 50
+    OPT_NOBIND        shift, and go to state 51
+    OPT_NOGHOST       shift, and go to state 52
+    OPT_GHOST         shift, and go to state 53
+    OPT_VERBOSE       shift, and go to state 54
+    OPT_DEBUG         shift, and go to state 55
+    OPT_RANDOM        shift, and go to state 56
+    OPT_USE_WEIGHT    shift, and go to state 57
+    OPT_SYMLINK       shift, and go to state 58
+    OPT_MODE          shift, and go to state 59
+    OPT_STRICTEXPIRE  shift, and go to state 60
+    OPT_SHARED        shift, and go to state 61
+    OPT_SLAVE         shift, and go to state 62
+    OPT_PRIVATE       shift, and go to state 63
+    COMMA             shift, and go to state 77
+    EQUAL             shift, and go to state 78
+    OPTION            shift, and go to state 64
+
+    $end   reduce using rule 33 (maplist)
+    DDASH  reduce using rule 33 (maplist)
+
+    option         go to state 79
+    daemon_option  go to state 67
+    mount_option   go to state 68
+
+
+State 85
+
+   50 dnattr: DNATTR • EQUAL DNNAME
+   51       | DNATTR • EQUAL DNNAME COMMA dnattr
+   52       | DNATTR •
+
+    EQUAL  shift, and go to state 89
+
+    $default  reduce using rule 52 (dnattr)
+
+
+State 86
+
+   53 dnattr: DNNAME •
+
+    $default  reduce using rule 53 (dnattr)
+
+
+State 87
+
+   47 dnattrs: DNATTR EQUAL DNNAME COMMA dnattr •
+
+    $default  reduce using rule 47 (dnattrs)
+
+
+State 88
+
+   57 options: options COMMA COMMA option •
+
+    $default  reduce using rule 57 (options)
+
+
+State 89
+
+   50 dnattr: DNATTR EQUAL • DNNAME
+   51       | DNATTR EQUAL • DNNAME COMMA dnattr
+
+    DNNAME  shift, and go to state 90
+
+
+State 90
+
+   50 dnattr: DNATTR EQUAL DNNAME •
+   51       | DNATTR EQUAL DNNAME • COMMA dnattr
+
+    COMMA  shift, and go to state 91
+
+    $default  reduce using rule 50 (dnattr)
+
+
+State 91
+
+   51 dnattr: DNATTR EQUAL DNNAME COMMA • dnattr
+
+    DNATTR  shift, and go to state 85
+    DNNAME  shift, and go to state 86
+
+    dnattr  go to state 92
+
+
+State 92
+
+   51 dnattr: DNATTR EQUAL DNNAME COMMA dnattr •
+
+    $default  reduce using rule 51 (dnattr)

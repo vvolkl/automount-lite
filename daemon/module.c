@@ -13,22 +13,53 @@
  * ----------------------------------------------------------------------- */
 
 #include <stdio.h>
+#ifndef ENABLE_STATIC_BUILD
 #include <dlfcn.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include "automount.h"
 #include "nsswitch.h"
+
+#ifdef ENABLE_STATIC_BUILD
+/* Static module declarations for minimal build */
+extern int lookup_file_init(const char *mapfmt, int argc, const char *const *argv, void **context);
+extern int lookup_file_reinit(const char *mapfmt, int argc, const char *const *argv, void **context);
+extern int lookup_file_read_master(struct master *master, time_t age, void *context);
+extern int lookup_file_read_map(struct autofs_point *ap, struct map_source *source, time_t age, void *context);
+extern int lookup_file_mount(struct autofs_point *ap, struct map_source *source, const char *name, int name_len, void *context);
+extern int lookup_file_done(void *context);
+
+extern int lookup_program_init(const char *mapfmt, int argc, const char *const *argv, void **context);
+extern int lookup_program_reinit(const char *mapfmt, int argc, const char *const *argv, void **context);
+extern int lookup_program_read_master(struct master *master, time_t age, void *context);
+extern int lookup_program_read_map(struct autofs_point *ap, struct map_source *source, time_t age, void *context);
+extern int lookup_program_mount(struct autofs_point *ap, struct map_source *source, const char *name, int name_len, void *context);
+extern int lookup_program_done(void *context);
+
+extern int parse_sun_init(int argc, const char *const *argv, void **context);
+extern int parse_sun_reinit(int argc, const char *const *argv, void **context);
+extern int parse_sun_mount(struct autofs_point *ap, struct map_source *source, const char *name, int name_len, const char *mapent, void *context);
+extern int parse_sun_done(void *context);
+
+extern int mount_generic_init(void **context);
+extern int mount_generic_reinit(void **context);
+extern int mount_generic_mount(struct autofs_point *ap, const char *root, const char *name, int name_len, const char *what, const char *fstype, const char *options, void *context);
+extern int mount_generic_done(void *context);
+#endif
 
 int open_lookup(const char *name, const char *err_prefix, const char *mapfmt,
 		int argc, const char *const *argv, struct lookup_mod **lookup)
 {
 	struct lookup_mod *mod;
 	char buf[MAX_ERR_BUF];
+#ifndef ENABLE_STATIC_BUILD
 	char fnbuf[PATH_MAX];
 	size_t size;
-	char *type;
 	void *dh;
 	int *ver;
+#endif
+	char *type;
 
 	*lookup = NULL;
 
@@ -50,7 +81,63 @@ int open_lookup(const char *name, const char *err_prefix, const char *mapfmt,
 		}
 		return NSS_STATUS_UNKNOWN;
 	}
+	mod->type = type;
 
+#ifdef ENABLE_STATIC_BUILD
+	/* Static module implementation - support file and program lookup statically */
+	if (strcmp(name, "file") == 0) {
+		mod->lookup_init = lookup_file_init;
+		mod->lookup_reinit = lookup_file_reinit;
+		mod->lookup_read_master = lookup_file_read_master;
+		mod->lookup_read_map = lookup_file_read_map;
+		mod->lookup_mount = lookup_file_mount;
+		mod->lookup_done = lookup_file_done;
+		mod->dlhandle = NULL;
+
+		if (mod->lookup_init(mapfmt, argc, argv, &mod->context)) {
+			free(mod);
+			free(type);
+			return NSS_STATUS_UNKNOWN;
+		}
+		*lookup = mod;
+		return NSS_STATUS_SUCCESS;
+	}
+
+	if (strcmp(name, "program") == 0) {
+		mod->lookup_init = lookup_program_init;
+		mod->lookup_reinit = lookup_program_reinit;
+		mod->lookup_read_master = lookup_program_read_master;
+		mod->lookup_read_map = lookup_program_read_map;
+		mod->lookup_mount = lookup_program_mount;
+		mod->lookup_done = lookup_program_done;
+		mod->dlhandle = NULL;
+
+		if (mod->lookup_init(mapfmt, argc, argv, &mod->context)) {
+			free(mod);
+			free(type);
+			return NSS_STATUS_UNKNOWN;
+		}
+		*lookup = mod;
+		return NSS_STATUS_SUCCESS;
+	}
+	/* For static builds, exclude modules that require external dependencies */
+	if (strcmp(name, "yp") == 0 || strcmp(name, "nis") == 0 ||
+	    strcmp(name, "nisplus") == 0 || strcmp(name, "ldap") == 0 ||
+	    strcmp(name, "ldaps") == 0 || strcmp(name, "sss") == 0 ||
+	    strcmp(name, "hesiod") == 0 || strcmp(name, "hosts") == 0) {
+		if (err_prefix)
+			logerr("%slookup module %s not supported in static build (requires external dependencies)", err_prefix, name);
+		free(mod);
+		free(type);
+		return NSS_STATUS_UNKNOWN;
+	}
+	/* For other modules (userhome, multi, dir), return error since no .so files exist in static build */
+	if (err_prefix)
+		logerr("%slookup module %s not available in static build", err_prefix, name);
+	free(mod);
+	free(type);
+	return NSS_STATUS_UNKNOWN;
+#else
 	size = snprintf(fnbuf, sizeof(fnbuf),
 			"%s/lookup_%s.so", AUTOFS_LIB_DIR, name);
 	if (size >= sizeof(fnbuf)) {
@@ -109,6 +196,7 @@ int open_lookup(const char *name, const char *err_prefix, const char *mapfmt,
 	*lookup = mod;
 
 	return NSS_STATUS_SUCCESS;
+#endif
 }
 
 int reinit_lookup(struct lookup_mod *mod, const char *name,
@@ -127,7 +215,9 @@ int reinit_lookup(struct lookup_mod *mod, const char *name,
 int close_lookup(struct lookup_mod *mod)
 {
 	int rv = mod->lookup_done(mod->context);
+#ifndef ENABLE_STATIC_BUILD
 	dlclose(mod->dlhandle);
+#endif
 	free(mod->type);
 	free(mod);
 	return rv;
@@ -138,11 +228,12 @@ struct parse_mod *open_parse(const char *name, const char *err_prefix,
 {
 	struct parse_mod *mod;
 	char buf[MAX_ERR_BUF];
+#ifndef ENABLE_STATIC_BUILD
 	char fnbuf[PATH_MAX];
 	size_t size;
 	void *dh;
 	int *ver;
-
+#endif
 
 	mod = malloc(sizeof(struct parse_mod));
 	if (!mod) {
@@ -153,6 +244,30 @@ struct parse_mod *open_parse(const char *name, const char *err_prefix,
 		return NULL;
 	}
 
+#ifdef ENABLE_STATIC_BUILD
+	/* Static module implementation - only support sun parser statically */
+	if (strcmp(name, "sun") == 0) {
+		mod->parse_init = parse_sun_init;
+		mod->parse_reinit = parse_sun_reinit;
+		mod->parse_mount = parse_sun_mount;
+		mod->parse_done = parse_sun_done;
+		mod->dlhandle = NULL;
+
+		if (mod->parse_init(argc, argv, &mod->context)) {
+			free(mod);
+			return NULL;
+		}
+		return mod;
+	}
+	/* For static builds, exclude modules that require external dependencies */
+	if (strcmp(name, "hesiod") == 0) {
+		if (err_prefix)
+			logerr("%sparse module %s not supported in static build (requires external dependencies)", err_prefix, name);
+		free(mod);
+		return NULL;
+	}
+	/* Allow dynamic loading for other modules (amd) */
+#else
 	size = snprintf(fnbuf, sizeof(fnbuf),
 			"%s/parse_%s.so", AUTOFS_LIB_DIR, name);
 	if (size >= sizeof(fnbuf)) {
@@ -201,6 +316,7 @@ struct parse_mod *open_parse(const char *name, const char *err_prefix,
 	}
 	mod->dlhandle = dh;
 	return mod;
+#endif
 }
 
 int reinit_parse(struct parse_mod *mod, const char *name,
@@ -218,7 +334,9 @@ int reinit_parse(struct parse_mod *mod, const char *name,
 int close_parse(struct parse_mod *mod)
 {
 	int rv = mod->parse_done(mod->context);
+#ifndef ENABLE_STATIC_BUILD
 	dlclose(mod->dlhandle);
+#endif
 	free(mod);
 	return rv;
 }
@@ -227,11 +345,12 @@ struct mount_mod *open_mount(const char *name, const char *err_prefix)
 {
 	struct mount_mod *mod;
 	char buf[MAX_ERR_BUF];
+#ifndef ENABLE_STATIC_BUILD
 	char fnbuf[PATH_MAX];
 	size_t size;
 	void *dh;
 	int *ver;
-
+#endif
 
 	mod = malloc(sizeof(struct mount_mod));
 	if (!mod) {
@@ -242,6 +361,42 @@ struct mount_mod *open_mount(const char *name, const char *err_prefix)
 		return NULL;
 	}
 
+#ifdef ENABLE_STATIC_BUILD
+	/* Static module implementation - support generic mounts statically */
+	if (strcmp(name, "bind") == 0 || strcmp(name, "generic") == 0) {
+		mod->mount_init = mount_generic_init;
+		mod->mount_reinit = mount_generic_reinit;
+		mod->mount_mount = mount_generic_mount;
+		mod->mount_done = mount_generic_done;
+		mod->dlhandle = NULL;
+
+		if (mod->mount_init(&mod->context)) {
+			free(mod);
+			return NULL;
+		}
+		return mod;
+	}
+	/* For static builds, exclude modules that require external dependencies */
+	if (strcmp(name, "nfs") == 0 || strcmp(name, "nfs4") == 0) {
+		if (err_prefix)
+			logerr("%smount module %s not supported in static build (requires external dependencies)", err_prefix, name);
+		free(mod);
+		return NULL;
+	}
+	/* For other filesystem types (cvmfs, autofs, afs, ext2, changer), fall back to generic */
+	debug(LOGOPT_NONE, "static build: using generic mount for filesystem type %s", name);
+	mod->mount_init = mount_generic_init;
+	mod->mount_reinit = mount_generic_reinit;
+	mod->mount_mount = mount_generic_mount;
+	mod->mount_done = mount_generic_done;
+	mod->dlhandle = NULL;
+
+	if (mod->mount_init(&mod->context)) {
+		free(mod);
+		return NULL;
+	}
+	return mod;
+#else
 	size = snprintf(fnbuf, sizeof(fnbuf),
 			"%s/mount_%s.so", AUTOFS_LIB_DIR, name);
 	if (size >= sizeof(fnbuf)) {
@@ -290,6 +445,7 @@ struct mount_mod *open_mount(const char *name, const char *err_prefix)
 	}
 	mod->dlhandle = dh;
 	return mod;
+#endif
 }
 
 int reinit_mount(struct mount_mod *mod, const char *name, const char *err_prefix)
@@ -306,7 +462,9 @@ int reinit_mount(struct mount_mod *mod, const char *name, const char *err_prefix
 int close_mount(struct mount_mod *mod)
 {
 	int rv = mod->mount_done(mod->context);
+#ifndef ENABLE_STATIC_BUILD
 	dlclose(mod->dlhandle);
+#endif
 	free(mod);
 	return rv;
 }

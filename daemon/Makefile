@@ -11,20 +11,34 @@ OBJS = automount.o indirect.o direct.o spawn.o module.o mount.o \
 	master.o master_tok.o master_parse.tab.o lookup.o state.o \
 	flag.o
 
+ifeq ($(STATIC), 1)
+OBJS += ../modules/lookup_file.o ../modules/lookup_program.o ../modules/parse_sun.o ../modules/mount_generic.o
+endif
+
 YACCSRC = master_tok.c master_parse.tab.c master_parse.tab.h
 
 version := $(shell cat ../.version)
 
+ifeq ($(STATIC), 1)
+CFLAGS += $(DAEMON_CFLAGS) -D_GNU_SOURCE -I../include -DENABLE_STATIC_BUILD
+LDFLAGS +=
+LIBS += -lpthread
+else
 CFLAGS += -rdynamic $(DAEMON_CFLAGS) -D_GNU_SOURCE -I../include
-CFLAGS += -DAUTOFS_LIB_DIR=\"$(autofslibdir)\" 
+LDFLAGS += -rdynamic
+LIBS += -ldl -lpthread
+endif
+
+CFLAGS += -DAUTOFS_LIB_DIR=\"$(autofslibdir)\"
 CFLAGS += -DAUTOFS_MAP_DIR=\"$(autofsmapdir)\"
 CFLAGS += -DAUTOFS_CONF_DIR=\"$(autofsconfdir)\"
 CFLAGS += -DAUTOFS_FIFO_DIR=\"$(autofsfifodir)\"
 CFLAGS += -DAUTOFS_FLAG_DIR=\"$(autofsflagdir)\"
 CFLAGS += -DVERSION_STRING=\"$(version)\"
-LDFLAGS += -rdynamic
-LIBS += -ldl -lpthread
 
+ifeq ($(STATIC), 1)
+# For static build, disable systemd and LDAP to reduce dependencies
+else
 ifeq ($(SYSTEMD), 1)
     CFLAGS += -DWITH_SYSTEMD
     LIBS += $(LIBSYSTEMD)
@@ -34,12 +48,19 @@ ifeq ($(LDAP), 1)
     CFLAGS += $(XML_CFLAGS)
     LIBS += $(XML_LIBS)
 endif
+endif
 
 all: automount
 
+ifeq ($(STATIC), 1)
+automount: $(OBJS) ../lib/libautofs.a
+	$(CC) $(DAEMON_LDFLAGS) -o automount $(OBJS) $(LDFLAGS) $(LIBS) ../lib/libautofs.a
+	$(STRIP) automount
+else
 automount: $(OBJS) $(AUTOFS_LIB)
 	$(CC) $(DAEMON_LDFLAGS) -o automount $(OBJS) $(LDFLAGS) $(LIBS) $(AUTOFS_LIB_LINK)
 	$(STRIP) automount
+endif
 
 master_tok.c: master_tok.l
 	$(LEX) -o$@ -Pmaster_ $?

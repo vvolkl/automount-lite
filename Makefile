@@ -8,19 +8,13 @@ include Makefile.rules
 .PHONY: daemon all clean samples install install_samples
 .PHONY: mrproper distclean backup
 
-all:	daemon samples
+all:	daemon 
+
+SUBDIRS=$(shell echo "lib daemon")
 
 daemon:
 	set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i all; done 
 
-kernel:
-	set -e; if [ -d kernel ]; then $(MAKE) -C kernel all; fi
-
-samples:
-	set -e; if [ -d samples ]; then $(MAKE) -C samples all; fi
-
-fedfs:
-	set -e; if [ -d fedfs ]; then $(MAKE) -C fedfs all; fi
 
 clean:
 	for i in $(SUBDIRS) samples; do \
@@ -29,11 +23,6 @@ clean:
 install:
 	set -e; for i in $(SUBDIRS); do $(MAKE) -C $$i install; done 	
 
-install_kernel:
-	set -e; if [ -d kernel ]; then $(MAKE) -C kernel install; fi
-
-install_samples:
-	set -e; if [ -d samples ]; then $(MAKE) -C samples install; fi
 
 mrproper distclean: clean
 	find . -noleaf \( -name '*~' -o -name '#*' -o -name '*.orig' -o -name '*.rej' -o -name '*.old' \) -print0 | xargs -0 rm -f

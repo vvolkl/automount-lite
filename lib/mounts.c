@@ -83,12 +83,14 @@ static struct tree_node *tree_host_new(void *ptr);
 static int tree_host_cmp(struct tree_node *n, void *ptr);
 static void tree_host_free(struct tree_node *n);
 
+#ifndef ENABLE_STATIC_BUILD
 static struct tree_ops host_ops = {
 	.new = tree_host_new,
 	.cmp = tree_host_cmp,
 	.free = tree_host_free,
 };
 static struct tree_ops *tree_host_ops = &host_ops;
+#endif
 
 static struct tree_node *tree_mapent_new(void *ptr);
 static int tree_mapent_cmp(struct tree_node *n, void *ptr);
@@ -1537,6 +1539,7 @@ void mnts_put_expire_list(struct list_head *mnts)
 	mnts_hash_mutex_unlock();
 }
 
+#ifndef ENABLE_STATIC_BUILD
 struct tree_node *tree_host_root(struct exportinfo *exp)
 {
 	return tree_root(tree_host_ops, exp);
@@ -1580,6 +1583,7 @@ struct tree_node *tree_host_add_node(struct tree_node *root, struct exportinfo *
 {
 	return tree_add_node(root, exp);
 }
+#endif /* !ENABLE_STATIC_BUILD */
 
 struct tree_node *tree_mapent_root(struct mapent *me)
 {

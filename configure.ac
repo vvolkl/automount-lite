@@ -57,11 +57,16 @@ PKG_PROG_PKG_CONFIG
 AF_WITH_SYSTEMD()
 AC_SUBST(systemddir)
 AC_SUBST(WITH_SYSTEMD)
+if test "x$ENABLE_STATIC" != "x1"; then
 PKG_CHECK_MODULES([systemd],[libsystemd],,
 [
   AC_CHECK_LIB(systemd, sm_notify, systemd_LIBS="-lsystemd")
   AC_SUBST(systemd_LIBS)
 ])
+else
+  systemd_LIBS=""
+  AC_SUBST(systemd_LIBS)
+fi
 
 #
 # Location of system config script directory?
@@ -132,6 +137,27 @@ AC_MSG_RESULT([$flagdir])
 AC_SUBST(flagdir)
 
 #
+# Enable static build
+#
+AC_ARG_ENABLE(static,
+[  --enable-static               build static library and statically linked automount binary],,
+	enableval=no)
+if test x$enable_static = xyes -o x$enableval = xyes; then
+	ENABLE_STATIC="1"
+	# Disable optional features for static build to reduce dependencies
+	with_libtirpc=no
+	with_openldap=no
+	with_hesiod=no
+	with_sasl=no
+	enable_fedfs=no
+	AC_DEFINE(ENABLE_STATIC_BUILD, 1, [Enable static build with minimal dependencies])
+	AC_MSG_NOTICE([Static build enabled - disabling optional features to reduce dependencies])
+else
+	ENABLE_STATIC=""
+fi
+AC_SUBST(ENABLE_STATIC)
+
+#
 # Use libtirpc
 #
 AC_ARG_WITH([libtirpc], AS_HELP_STRING([--with-libtirpc], [use libtirpc if available]))
@@ -165,7 +191,12 @@ AF_CHECK_PROG(LEX, flex lex, , $searchpath)
 AF_CHECK_PROG(YACC, bison, , $searchpath)
 AF_CHECK_PROG(RANLIB, ranlib, , $searchpath)
 
+if test "x$ENABLE_STATIC" != "x1"; then
 AF_CHECK_SSS_LIB(SSS_AUTOFS, libsss_autofs.so)
+else
+HAVE_SSS_AUTOFS=0
+sssldir=""
+fi
 AC_SUBST(HAVE_SSS_AUTOFS)
 AC_SUBST(sssldir)
 

@@ -17,8 +17,13 @@ endif
 INSTALLROOT = $(DESTDIR)
 
 # autofs utility library
+ifeq ($(STATIC), 1)
+AUTOFS_LIB      = ../lib/libautofs.a
+AUTOFS_LIB_LINK = ../lib/libautofs.a
+else
 AUTOFS_LIB      = ../lib/libautofs.so
 AUTOFS_LIB_LINK = -L../lib -lautofs
+endif
 
 # Compilers, linkers and flags
 # The STRIP defined here *must not* remove any dynamic-loading symbols
@@ -45,6 +50,7 @@ CC        ?= gcc
 CXX       ?= g++
 CXXFLAGS  ?= $(CFLAGS)
 LD        ?= ld
+AR        ?= ar
 SOLDFLAGS = -shared
 
 CFLAGS += -D_REENTRANT -D_FILE_OFFSET_BITS=64
@@ -71,6 +77,12 @@ LIBS += $(LIBCLOCK_GETTIME)
 .c.s:
 	$(CC) $(CFLAGS) -S $<
 
+ifeq ($(STATIC), 1)
+# For static builds, don't build .so modules
+.c.so:
+	@echo "Skipping module $*.so for static build"
+else
 .c.so:
 	$(CC) $(SOLDFLAGS) $(CFLAGS) -o $*.so $< $(LDFLAGS) $(LIBS) $(AUTOFS_LIB_LINK)
 	$(STRIP) $*.so
+endif

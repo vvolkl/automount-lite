@@ -18,6 +18,8 @@
 #ifndef PARSE_SUBS_H
 #define PARSE_SUBS_H
 
+#include <sys/socket.h>
+
 #define PROXIMITY_ERROR		0x0000
 #define PROXIMITY_LOCAL         0x0001
 #define PROXIMITY_SUBNET        0x0002
