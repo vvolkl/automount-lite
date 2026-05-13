@@ -193,6 +193,7 @@ void free_selector(struct selector *selector)
 	return;
 }
 
+#ifdef WITH_LIBTIRPC
 static unsigned int ipv6_mask_cmp(uint32_t *host, uint32_t *iface, uint32_t *mask)
 {
 	unsigned int ret = 1;
@@ -206,28 +207,38 @@ static unsigned int ipv6_mask_cmp(uint32_t *host, uint32_t *iface, uint32_t *mas
 	}
 	return ret;
 }
+#endif
 
 unsigned int get_proximity(struct sockaddr *host_addr)
 {
 	struct ifaddrs *ifa = NULL;
 	struct ifaddrs *this;
 	struct sockaddr_in *addr, *msk_addr, *if_addr;
+#ifdef WITH_LIBTIRPC
 	struct sockaddr_in6 *addr6, *msk6_addr, *if6_addr;
+#endif
 	struct in_addr *hst_addr;
+#ifdef WITH_LIBTIRPC
 	struct in6_addr *hst6_addr;
+#endif
 	int addr_len;
 	char buf[MAX_ERR_BUF];
-	uint32_t mask, ha, ia, *mask6, *ha6, *ia6;
+	uint32_t mask, ha, ia;
+#ifdef WITH_LIBTIRPC
+	uint32_t *mask6, *ha6, *ia6;
+#endif
 	int ret, at_least_one;
 
 	addr = NULL;
-	addr6 = NULL;
 	hst_addr = NULL;
+	ha = 0;
+#ifdef WITH_LIBTIRPC
+	addr6 = NULL;
 	hst6_addr = NULL;
 	mask6 = NULL;
 	ha6 = NULL;
 	ia6 = NULL;
-	ha = 0;
+#endif
 	at_least_one = 0;
 
 	switch (host_addr->sa_family) {

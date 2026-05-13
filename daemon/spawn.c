@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <dirent.h>
 #include <grp.h>
 #include <time.h>
@@ -99,7 +100,7 @@ int open_fd(const char *path, int flags)
 
 		open_mutex_unlock();
 		estr = strerror_r(errno, buf, sizeof(buf));
-		logerr("failed to open file: %s", estr);
+		logerr("failed to open file %s: %s", path, estr);
 		return -1;
 	}
 	check_cloexec(fd);
@@ -123,7 +124,7 @@ int open_fd_mode(const char *path, int flags, int mode)
 
 		open_mutex_unlock();
 		estr = strerror_r(errno, buf, sizeof(buf));
-		logerr("failed to open file: %s", estr);
+		logerr("failed to open file %s: %s", path, estr);
 		return -1;
 	}
 	check_cloexec(fd);
@@ -207,8 +208,10 @@ FILE *open_fopen_r(const char *path)
 		char *estr;
 
 		open_mutex_unlock();
+		if (errno == ENOENT)
+			return NULL;
 		estr = strerror_r(errno, buf, sizeof(buf));
-		logerr("failed to open file: %s", estr);
+		logerr("failed to open file %s: %s", path, estr);
 		return NULL;
 	}
 	check_cloexec(fileno(f));

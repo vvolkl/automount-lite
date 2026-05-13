@@ -22,7 +22,11 @@
 #ifndef DEFAULTS_H
 #define DEFAULTS_H
 
+#ifdef MASTER_MAP_NAME
+#define DEFAULT_MASTER_MAP_NAME	MASTER_MAP_NAME
+#else
 #define DEFAULT_MASTER_MAP_NAME	"auto.master"
+#endif
 
 #define DEFAULT_OPEN_FILE_LIMIT		"20480"
 #define DEFAULT_TIMEOUT			"600"

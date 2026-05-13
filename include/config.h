@@ -1,177 +1,178 @@
+/* include/config.h.  Generated from config.h.in by configure.  */
 /* include/config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* leave this alone */
-#undef ENABLE_EXT_ENV
+#define ENABLE_EXT_ENV 1
 
 /* Enable forced shutdown on USR1 signal */
-#undef ENABLE_FORCED_SHUTDOWN
+/* #undef ENABLE_FORCED_SHUTDOWN */
 
 /* Enable exit, ignoring busy mounts */
-#undef ENABLE_IGNORE_BUSY_MOUNTS
+/* #undef ENABLE_IGNORE_BUSY_MOUNTS */
 
 /* Enable limit stack use of getgrgid_r() */
-#undef ENABLE_LIMIT_GETGRGID_SIZE
+/* #undef ENABLE_LIMIT_GETGRGID_SIZE */
 
 /* Disable use of locking when spawning mount command */
-#undef ENABLE_MOUNT_LOCKING
+#define ENABLE_MOUNT_LOCKING 1
 
 /* Enable static build with minimal dependencies */
-#undef ENABLE_STATIC_BUILD
+#define ENABLE_STATIC_BUILD 1
 
 /* define if you have E2FSCK */
-#undef HAVE_E2FSCK
+#define HAVE_E2FSCK 1
 
 /* define if you have E3FSCK */
-#undef HAVE_E3FSCK
+#define HAVE_E3FSCK 1
 
 /* define if you have E4FSCK */
-#undef HAVE_E4FSCK
+#define HAVE_E4FSCK 1
 
 /* Define to 1 if you have the `getrpcbyname' function. */
-#undef HAVE_GETRPCBYNAME
+/* #undef HAVE_GETRPCBYNAME */
 
 /* Define to 1 if you have the `getservbyname' function. */
-#undef HAVE_GETSERVBYNAME
+/* #undef HAVE_GETSERVBYNAME */
 
 /* Define to 1 if you have the `innetgr' function. */
-#undef HAVE_INNETGR
+#define HAVE_INNETGR 1
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#undef HAVE_INTTYPES_H
+#define HAVE_INTTYPES_H 1
 
 /* Define to 1 if you have the `krb5_principal_get_realm' function. */
-#undef HAVE_KRB5_PRINCIPAL_GET_REALM
+/* #undef HAVE_KRB5_PRINCIPAL_GET_REALM */
 
 /* Define to 1 if you have the `ldap_create_page_control' function. */
-#undef HAVE_LDAP_CREATE_PAGE_CONTROL
+/* #undef HAVE_LDAP_CREATE_PAGE_CONTROL */
 
 /* Define to 1 if you have the `ldap_parse_page_control' function. */
-#undef HAVE_LDAP_PARSE_PAGE_CONTROL
+/* #undef HAVE_LDAP_PARSE_PAGE_CONTROL */
 
 /* Define if you have the Linux /proc filesystem. */
-#undef HAVE_LINUX_PROCFS
+#define HAVE_LINUX_PROCFS 1
 
 /* define if you have MOUNT */
-#undef HAVE_MOUNT
+#define HAVE_MOUNT 1
 
 /* define if you have MOUNT_NFS */
-#undef HAVE_MOUNT_NFS
+#define HAVE_MOUNT_NFS 1
 
 /* Define if using NIS+ */
-#undef HAVE_NISPLUS
+#define HAVE_NISPLUS 1
 
 /* define if the umount command supports the -c option */
-#undef HAVE_NO_CANON_UMOUNT
+#define HAVE_NO_CANON_UMOUNT 1
 
 /* Define to 1 if you have the `pipe2' function. */
-#undef HAVE_PIPE2
+#define HAVE_PIPE2 1
 
 /* define if the mount command supports the -s option */
-#undef HAVE_SLOPPY_MOUNT
+#define HAVE_SLOPPY_MOUNT 1
 
 /* Define to 1 if you have the <stdint.h> header file. */
-#undef HAVE_STDINT_H
+#define HAVE_STDINT_H 1
 
 /* Define to 1 if you have the <stdio.h> header file. */
-#undef HAVE_STDIO_H
+#define HAVE_STDIO_H 1
 
 /* Define to 1 if you have the <stdlib.h> header file. */
-#undef HAVE_STDLIB_H
+#define HAVE_STDLIB_H 1
 
 /* Define to 1 if you have the <strings.h> header file. */
-#undef HAVE_STRINGS_H
+#define HAVE_STRINGS_H 1
 
 /* Define to 1 if you have the <string.h> header file. */
-#undef HAVE_STRING_H
+#define HAVE_STRING_H 1
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
-#undef HAVE_SYS_STAT_H
+#define HAVE_SYS_STAT_H 1
 
 /* Define to 1 if you have the <sys/types.h> header file. */
-#undef HAVE_SYS_TYPES_H
+#define HAVE_SYS_TYPES_H 1
 
 /* define if you have UMOUNT */
-#undef HAVE_UMOUNT
+#define HAVE_UMOUNT 1
 
 /* Define to 1 if you have the <unistd.h> header file. */
-#undef HAVE_UNISTD_H
+#define HAVE_UNISTD_H 1
 
 /* Define if using YellowPages */
-#undef HAVE_YPCLNT
+#define HAVE_YPCLNT 1
 
 /* Use libxml2 tsd usage workaround */
-#undef LIBXML2_WORKAROUND
+#define LIBXML2_WORKAROUND 1
 
 /* Define to the address where bug reports for this package should be sent. */
-#undef PACKAGE_BUGREPORT
+#define PACKAGE_BUGREPORT ""
 
 /* Define to the full name of this package. */
-#undef PACKAGE_NAME
+#define PACKAGE_NAME ""
 
 /* Define to the full name and version of this package. */
-#undef PACKAGE_STRING
+#define PACKAGE_STRING ""
 
 /* Define to the one symbol short name of this package. */
-#undef PACKAGE_TARNAME
+#define PACKAGE_TARNAME ""
 
 /* Define to the home page for this package. */
-#undef PACKAGE_URL
+#define PACKAGE_URL ""
 
 /* Define to the version of this package. */
-#undef PACKAGE_VERSION
+#define PACKAGE_VERSION ""
 
 /* define if you have E2FSCK */
-#undef PATH_E2FSCK
+#define PATH_E2FSCK "/usr/sbin/fsck.ext2"
 
 /* define if you have E3FSCK */
-#undef PATH_E3FSCK
+#define PATH_E3FSCK "/usr/sbin/fsck.ext3"
 
 /* define if you have E4FSCK */
-#undef PATH_E4FSCK
+#define PATH_E4FSCK "/usr/sbin/fsck.ext4"
 
 /* define if you have LEX */
-#undef PATH_LEX
+#define PATH_LEX "/usr/bin/flex"
 
 /* define if you have MOUNT */
-#undef PATH_MOUNT
+#define PATH_MOUNT "/usr/bin/mount"
 
 /* define if you have MOUNT_NFS */
-#undef PATH_MOUNT_NFS
+#define PATH_MOUNT_NFS "/usr/sbin/mount.nfs"
 
 /* define if you have RANLIB */
-#undef PATH_RANLIB
+#define PATH_RANLIB "/usr/bin/ranlib"
 
 /* define if you have UMOUNT */
-#undef PATH_UMOUNT
+#define PATH_UMOUNT "/usr/bin/umount"
 
 /* define if you have YACC */
-#undef PATH_YACC
+#define PATH_YACC "/usr/bin/bison"
 
 /* Define to 1 if all of the C90 standard headers exist (not just the ones
    required in a freestanding environment). This macro is provided for
    backward compatibility; new code need not use it. */
-#undef STDC_HEADERS
+#define STDC_HEADERS 1
 
 /* Define to 1 to use the libtirpc tsd usage workaround */
-#undef TIRPC_WORKAROUND
+/* #undef TIRPC_WORKAROUND */
 
 /* Define if your C library does not provide versionsort */
-#undef WITHOUT_VERSIONSORT
+/* #undef WITHOUT_VERSIONSORT */
 
 /* Define if using the dmalloc debugging malloc package */
-#undef WITH_DMALLOC
+/* #undef WITH_DMALLOC */
 
 /* Define if using Hesiod as a source of automount maps */
-#undef WITH_HESIOD
+/* #undef WITH_HESIOD */
 
 /* Define if using LDAP as a source of automount maps */
-#undef WITH_LDAP
+/* #undef WITH_LDAP */
 
 /* Define if OpenLDAP was built with Cyrus SASL */
-#undef WITH_LDAP_CYRUS_SASL
+/* #undef WITH_LDAP_CYRUS_SASL */
 
 /* Define to 1 if you have the libtirpc library installed */
-#undef WITH_LIBTIRPC
+/* #undef WITH_LIBTIRPC */
 
 /* Define if using SASL authentication with the LDAP module */
-#undef WITH_SASL
+/* #undef WITH_SASL */

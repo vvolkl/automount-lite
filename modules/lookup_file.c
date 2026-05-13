@@ -32,6 +32,14 @@
 
 #define MODPREFIX "lookup(file): "
 
+#ifdef ENABLE_STATIC_BUILD
+/* Forward declarations for static parse modules */
+extern int parse_sun_init(int argc, const char *const *argv, void **context);
+extern int parse_sun_reinit(int argc, const char *const *argv, void **context);
+extern int parse_sun_mount(struct autofs_point *ap, struct map_source *source, const char *name, int name_len, const char *mapent, void *context);
+extern int parse_sun_done(void *context);
+#endif
+
 #define MAX_INCLUDE_DEPTH	16
 
 typedef enum {
@@ -49,7 +57,9 @@ struct lookup_context {
 	struct parse_mod *parse;
 };
 
+#ifndef ENABLE_STATIC_BUILD
 int lookup_version = AUTOFS_LOOKUP_VERSION;	/* Required by protocol */
+#endif
 
 static int do_init(const char *mapfmt,
 		   int argc, const char *const *argv,
@@ -90,15 +100,54 @@ static int do_init(const char *mapfmt,
 	ctxt->opts_argc = argc;
 
 	if (reinit) {
+#ifdef ENABLE_STATIC_BUILD
+		/* For static builds, we only support sun parser */
+		if (strcmp(mapfmt, "sun") == 0) {
+			ret = parse_sun_reinit(argc, argv, &ctxt->parse->context);
+			if (ret)
+				logmsg(MODPREFIX "failed to reinit parse context");
+		} else {
+			logmsg(MODPREFIX "parse format %s not supported in static build", mapfmt);
+			ret = 1;
+		}
+#else
 		ret = reinit_parse(ctxt->parse, mapfmt, MODPREFIX, argc, argv);
 		if (ret)
 			logmsg(MODPREFIX "failed to reinit parse context");
+#endif
 	} else {
+#ifdef ENABLE_STATIC_BUILD
+		/* For static builds, create a static parse module */
+		if (strcmp(mapfmt, "sun") == 0) {
+			ctxt->parse = malloc(sizeof(struct parse_mod));
+			if (ctxt->parse) {
+				ctxt->parse->parse_init = parse_sun_init;
+				ctxt->parse->parse_reinit = parse_sun_reinit;
+				ctxt->parse->parse_mount = parse_sun_mount;
+				ctxt->parse->parse_done = parse_sun_done;
+				ctxt->parse->dlhandle = NULL;
+
+				if (parse_sun_init(argc, argv, &ctxt->parse->context)) {
+					free(ctxt->parse);
+					ctxt->parse = NULL;
+					logmsg(MODPREFIX "failed to init parse context");
+					ret = 1;
+				}
+			} else {
+				logmsg(MODPREFIX "failed to allocate parse context");
+				ret = 1;
+			}
+		} else {
+			logmsg(MODPREFIX "parse format %s not supported in static build", mapfmt);
+			ret = 1;
+		}
+#else
 		ctxt->parse = open_parse(mapfmt, MODPREFIX, argc, argv);
 		if (!ctxt->parse) {
 			logmsg(MODPREFIX "failed to open parse context");
 			ret = 1;
 		}
+#endif
 	}
 
 	if (ret)
@@ -107,7 +156,7 @@ static int do_init(const char *mapfmt,
 	return ret;
 }
 
-int lookup_init(const char *mapfmt,
+int lookup_file_init(const char *mapfmt,
 		int argc, const char *const *argv,
 		void **context)
 {
@@ -134,7 +183,7 @@ int lookup_init(const char *mapfmt,
 	return 0;
 }
 
-int lookup_reinit(const char *mapfmt,
+int lookup_file_reinit(const char *mapfmt,
 		  int argc, const char *const *argv, void **context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) *context;
@@ -438,7 +487,7 @@ static int check_master_self_include(struct master *master, struct lookup_contex
 	return 0;
 }
 
-int lookup_read_master(struct master *master, time_t age, void *context)
+int lookup_file_read_master(struct master *master, time_t age, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
 	unsigned int timeout = master->default_timeout;
@@ -689,7 +738,7 @@ prepare_plus_include(struct autofs_point *ap,
 	return new;
 }
 
-int lookup_read_map(struct autofs_point *ap, struct map_source *map, time_t age, void *context)
+int lookup_file_read_map(struct autofs_point *ap, struct map_source *map, time_t age, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
 	struct map_source *source = map;
@@ -1122,7 +1171,7 @@ static int map_update_needed(struct autofs_point *ap,
 	return ret;
 }
 
-int lookup_mount(struct autofs_point *ap, struct map_source *map, const char *name, int name_len, void *context)
+int lookup_file_mount(struct autofs_point *ap, struct map_source *map, const char *name, int name_len, void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
 	struct map_source *source = map;
@@ -1285,7 +1334,7 @@ do_cache_lookup:
 	return NSS_STATUS_SUCCESS;
 }
 
-int lookup_done(void *context)
+int lookup_file_done(void *context)
 {
 	struct lookup_context *ctxt = (struct lookup_context *) context;
 	int rv = close_parse(ctxt->parse);

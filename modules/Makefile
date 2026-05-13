@@ -5,6 +5,21 @@
 -include ../Makefile.conf
 include ../Makefile.rules
 
+ifeq ($(STATIC), 1)
+# Minimal static build for CVMFS use case:
+# - lookup_file: reads master map and CVMFS map files
+# - lookup_program: supports executable maps (e.g. cvmfs mount helper)
+# - parse_sun: parses Sun-style map format
+# - mount_generic: mounts CVMFS (and all other) filesystem types
+SRCS :=	lookup_file.c lookup_program.c \
+	parse_sun.c \
+	mount_generic.c
+
+MODS :=	lookup_file.so lookup_program.so \
+	parse_sun.so \
+	mount_generic.so
+else
+# Full build with all modules
 SRCS :=	lookup_file.c lookup_program.c  lookup_userhome.c \
 	lookup_multi.c lookup_hosts.c lookup_dir.c \
 	parse_sun.c parse_amd.c \
@@ -16,6 +31,7 @@ MODS :=	lookup_file.so lookup_program.so lookup_userhome.so \
 	parse_sun.so parse_amd.so \
 	mount_generic.so mount_nfs.so mount_afs.so mount_autofs.so \
 	mount_changer.so mount_bind.so
+endif
 
 YACCSRC = amd_tok.c amd_parse.tab.c amd_parse.tab.h
 
@@ -62,11 +78,22 @@ ifeq ($(SSSD), 1)
   MODS += lookup_sss.so
 endif
 
+ifeq ($(STATIC), 1)
+CFLAGS += -I../include -I../lib -fPIE -D_GNU_SOURCE -DENABLE_STATIC_BUILD
+CFLAGS += -DSSS_LIB_DIR=\"$(ssslibdir)\"
+else
 CFLAGS += -I../include -I../lib -fPIC -D_GNU_SOURCE
+endif
 CFLAGS += -DAUTOFS_LIB_DIR=\"$(autofslibdir)\"
 CFLAGS += -DAUTOFS_MAP_DIR=\"$(autofsmapdir)\"
 
+ifeq ($(STATIC), 1)
+# For static builds, build object files instead of shared libraries
+OBJS := $(SRCS:.c=.o)
+all: $(OBJS)
+else
 all: $(MODS)
+endif
 
 clean:
 	rm -f *.o *.s *.so *~ *.output $(YACCSRC)
@@ -74,6 +101,9 @@ clean:
 # mount_smbfs.so is an obsolete module which must be removed
 install: all
 	install -d -m 755 $(INSTALLROOT)$(autofslibdir)
+ifeq ($(STATIC), 1)
+	@echo "Static build - no modules to install"
+else
 	install -c $(MODS) -m 755 $(INSTALLROOT)$(autofslibdir)
 	-rm -f $(INSTALLROOT)$(autofslibdir)/mount_smbfs.so
 	ln -fs lookup_file.so $(INSTALLROOT)$(autofslibdir)/lookup_files.so
@@ -84,6 +114,7 @@ ifeq ($(LDAP), 1)
 	ln -fs lookup_ldap.so $(INSTALLROOT)$(autofslibdir)/lookup_ldaps.so
 endif
 	ln -fs mount_nfs.so $(INSTALLROOT)$(autofslibdir)/mount_nfs4.so
+endif
 ifeq ($(EXT2FS), 1)
  ifeq ($(EXT3FS), 1)
 	ln -fs mount_ext2.so $(INSTALLROOT)$(autofslibdir)/mount_ext3.so

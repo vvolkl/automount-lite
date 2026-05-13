@@ -1344,6 +1344,20 @@ static int master_do_mount(struct master_mapent *entry)
 
 	ap = entry->ap;
 
+#ifdef ENABLE_STATIC_BUILD
+	/* Skip master map entries that use lookup modules not available
+	 * in the static build (e.g. hosts for /net). Silently return
+	 * success so the entry is dropped without error messages.
+	 */
+	if (entry->maps && entry->maps->type &&
+	    !strcmp(entry->maps->type, "hosts")) {
+		info(ap->logopt,
+		     "skipping %s: hosts map not available in static build",
+		     entry->path);
+		return 0;
+	}
+#endif
+
 	if (handle_mounts_startup_cond_init(&suc)) {
 		crit(ap->logopt,
 		     "failed to init startup cond for mount %s", entry->path);

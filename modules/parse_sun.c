@@ -37,7 +37,9 @@
 
 #define MODPREFIX "parse(sun): "
 
+#ifndef ENABLE_STATIC_BUILD
 int parse_version = AUTOFS_PARSE_VERSION;	/* Required by protocol */
+#endif
 
 static struct mount_mod *mount_nfs = NULL;
 static int init_ctr = 0;
@@ -404,7 +406,7 @@ options_done:
 	return 0;
 }
 
-int parse_init(int argc, const char *const *argv, void **context)
+int parse_sun_init(int argc, const char *const *argv, void **context)
 {
 	struct parse_context *ctxt;
 	char buf[MAX_ERR_BUF];
@@ -427,8 +429,10 @@ int parse_init(int argc, const char *const *argv, void **context)
 		return 1;
 	}
 
+        #ifndef ENABLE_STATIC_BUILD
 	/* We only need this once.  NFS mounts are so common that we cache
 	   this module. */
+
 	parse_instance_mutex_lock();
 	if (mount_nfs)
 		init_ctr++;
@@ -442,13 +446,14 @@ int parse_init(int argc, const char *const *argv, void **context)
 		}
 	}
 	parse_instance_mutex_unlock();
+        #endif
 
 	*context = (void *) ctxt;
 
 	return 0;
 }
 
-int parse_reinit(int argc, const char *const *argv, void **context)
+int parse_sun_reinit(int argc, const char *const *argv, void **context)
 {
 	struct parse_context *ctxt = (struct parse_context *) *context;
 	struct parse_context *new;
@@ -1328,7 +1333,7 @@ static void cleanup_offset_entries(struct autofs_point *ap,
  * level nexting point. Finally to mount non multi-mounts and to mount a
  * lower level multi-mount nesting point and its offsets.
  */
-int parse_mount(struct autofs_point *ap, struct map_source *map,
+int parse_sun_mount(struct autofs_point *ap, struct map_source *map,
 		const char *name, int name_len, const char *mapent,
 		void *context)
 {
@@ -1777,7 +1782,7 @@ dont_expand:
 	return rv;
 }
 
-int parse_done(void *context)
+int parse_sun_done(void *context)
 {
 	int rv = 0;
 	struct parse_context *ctxt = (struct parse_context *) context;

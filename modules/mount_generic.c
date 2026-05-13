@@ -26,19 +26,21 @@
 
 #define MODPREFIX "mount(generic): "
 
+#ifndef ENABLE_STATIC_BUILD
 int mount_version = AUTOFS_MOUNT_VERSION;	/* Required by protocol */
+#endif
 
-int mount_init(void **context)
+int mount_generic_init(void **context)
 {
 	return 0;
 }
 
-int mount_reinit(void **context)
+int mount_generic_reinit(void **context)
 {
 	return 0;
 }
 
-int mount_mount(struct autofs_point *ap, const char *root, const char *name, int name_len,
+int mount_generic_mount(struct autofs_point *ap, const char *root, const char *name, int name_len,
 		const char *what, const char *fstype, const char *options,
 		void *context)
 {
@@ -105,7 +107,7 @@ int mount_mount(struct autofs_point *ap, const char *root, const char *name, int
 	}
 }
 
-int mount_done(void *context)
+int mount_generic_done(void *context)
 {
 	return 0;
 }
