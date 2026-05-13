@@ -1998,7 +1998,9 @@ static void show_build_info(void)
 {
 	int count = 0;
 
-	printf("\nLinux automount version %s\n", version);
+	printf("\nautomount-cvmfs version %s\n", version);
+	printf("Custom, statically-linked automount build\n");
+	printf("intended for use inside CVMFS service containers.\n");
 
 	printf("\nDirectories:\n");
 	printf("\tconfig dir:\t%s\n", confdir);

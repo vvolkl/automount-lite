@@ -53,16 +53,16 @@ ifeq ($(LDAP), 1)
 endif
 endif
 
-all: automount
+all: automount-cvmfs
 
 ifeq ($(STATIC), 1)
-automount: $(OBJS) ../lib/libautofs.a
-	$(CC) $(DAEMON_LDFLAGS) -o automount $(OBJS) $(LDFLAGS) $(LIBS) ../lib/libautofs.a
-	$(STRIP) automount
+automount-cvmfs: $(OBJS) ../lib/libautofs.a
+	$(CC) $(DAEMON_LDFLAGS) -o automount-cvmfs $(OBJS) $(LDFLAGS) $(LIBS) ../lib/libautofs.a
+	$(STRIP) automount-cvmfs
 else
-automount: $(OBJS) $(AUTOFS_LIB)
-	$(CC) $(DAEMON_LDFLAGS) -o automount $(OBJS) $(LDFLAGS) $(LIBS) $(AUTOFS_LIB_LINK)
-	$(STRIP) automount
+automount-cvmfs: $(OBJS) $(AUTOFS_LIB)
+	$(CC) $(DAEMON_LDFLAGS) -o automount-cvmfs $(OBJS) $(LDFLAGS) $(LIBS) $(AUTOFS_LIB_LINK)
+	$(STRIP) automount-cvmfs
 endif
 
 master_tok.c: master_tok.l
@@ -76,10 +76,10 @@ master_tok.o: master_tok.c master_parse.tab.h
 master_parse.tab.o: master_parse.tab.c master_parse.tab.h
 
 clean:
-	rm -f *.o *.s *~ automount
+	rm -f *.o *.s *~ automount-cvmfs
 
 install: all
 	install -d -m 755 $(INSTALLROOT)$(sbindir)
-	install -c automount -m 755 $(INSTALLROOT)$(sbindir)
+	install -c automount-cvmfs -m 755 $(INSTALLROOT)$(sbindir)
 
 
