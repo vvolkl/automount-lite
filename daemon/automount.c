@@ -991,6 +991,23 @@ static void become_daemon(unsigned int flags)
 				program);
 			exit(1);
 		}
+		/* The kernel autofs uses the daemon's process group as a
+		 * recursion-prevention filter: accesses from processes in
+		 * the same pgrp are suppressed (so the daemon's own stats
+		 * during lookup processing don't fire automounts). In the
+		 * default daemon branch below this is handled by setsid()
+		 * after the fork. Foreground mode skips that fork, so the
+		 * daemon inherits its launching shell's pgrp -- any access
+		 * from that shell or its children then never reaches the
+		 * daemon. Put ourselves in our own pgrp; setpgid() is the
+		 * right primitive here because it keeps the controlling
+		 * terminal attached (unlike setsid()). EPERM means we are
+		 * already a process-group leader, which is fine. */
+		if (setpgid(0, 0) == -1 && errno != EPERM) {
+			char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+			fprintf(stderr, "%s: setpgid: %s\n", program, estr);
+			exit(1);
+		}
 		log_to_stderr();
 	} else if (flags & DAEMON_FLAGS_SYSTEMD_SERVICE) {
 		if ((flags & DAEMON_FLAGS_CHECK_DAEMON) && !aquire_flag_file()) {
