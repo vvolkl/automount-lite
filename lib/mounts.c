@@ -2462,7 +2462,17 @@ void set_tsd_user_vars(unsigned int logopt, uid_t uid, gid_t gid)
 
 	status = getpwuid_r(uid, ppw, pw_tmp, tmplen, pppw);
 	if (status || !ppw) {
-		error(logopt, "failed to get passwd info from getpwuid_r");
+		/* The function comment above is explicit that this lookup
+		 * is best-effort, so demote the failure to debug. Two cases
+		 * collapse here: getpwuid_r returning 0 with *result=NULL
+		 * (user not found) and a non-zero status (glibc nss_files
+		 * returns an error rather than not-found when /etc/passwd
+		 * is missing entirely, which is the common minimal-container
+		 * case). The map-macro substitutions that use tsv->user etc.
+		 * just won't expand, which is fine when the maps don't
+		 * reference them. */
+		debug(logopt, "no passwd entry for uid %u, skipping user-var setup",
+		      (unsigned) uid);
 		free(pw_tmp);
 		goto free_tsv;
 	}
