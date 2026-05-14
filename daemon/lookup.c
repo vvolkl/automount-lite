@@ -171,8 +171,12 @@ int lookup_nss_read_master(struct master *master, time_t age)
 	 * removes the runtime dependency on /etc/auto.master,
 	 * /etc/nsswitch.conf, and the `dir` lookup module (excluded
 	 * from static builds), which matters for minimal container
-	 * images. */
-	const char *entry = "/cvmfs file:/etc/auto.cvmfs";
+	 * images.
+	 *
+	 * No type prefix on the map path: autofs detects program maps
+	 * from the +x bit, and /etc/auto.cvmfs (-> auto.cvmfs) is the
+	 * executable map shipped with cvmfs. */
+	const char *entry = "/cvmfs /etc/auto.cvmfs";
 
 	debug(master->logopt,
 	      "synthesising hardcoded master entry: %s", entry);
