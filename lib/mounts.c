@@ -140,6 +140,15 @@ unsigned int query_kproto_ver(void)
 	int pipefd[2], ioctlfd, len;
 	struct stat st;
 
+	/* The probe-mount below needs a writable mountpoint under /tmp.
+	 * Minimal container images (e.g. cvmfs/service:scratch + busybox)
+	 * ship without /tmp, which makes mkdtemp() fail with ENOENT and
+	 * leaves the caller with the misleading "test mount forbidden /
+	 * kernel protocol version" error. Create /tmp on demand so the
+	 * daemon works in such environments. */
+	if (mkdir("/tmp", 01777) == -1 && errno != EEXIST)
+		return 0;
+
 	t_dir = mkdtemp(dir);
 	if (!t_dir)
 		return 0;
