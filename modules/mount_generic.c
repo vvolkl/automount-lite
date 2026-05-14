@@ -26,6 +26,9 @@
 
 #define MODPREFIX "mount(generic): "
 
+#define CVMFS2_BIN          "/usr/bin/cvmfs2"
+#define CVMFS2_DEFAULT_OPTS "fsname=cvmfs2,system_mount,allow_other,grab_mountpoint"
+
 #ifndef ENABLE_STATIC_BUILD
 int mount_version = AUTOFS_MOUNT_VERSION;	/* Required by protocol */
 #endif
@@ -76,7 +79,25 @@ int mount_generic_mount(struct autofs_point *ap, const char *root, const char *n
 	if (!status)
 		existed = 0;
 
-	if (options && options[0]) {
+	/* automount-cvmfs short-circuit: instead of going through
+	 * mount(8) -> /sbin/mount.cvmfs (which needs /etc/passwd for the
+	 * cvmfs user, a writable /var/log/cvmfs.log, and busybox's mount
+	 * to recognise the helper), invoke cvmfs2 directly with the same
+	 * options the cvmfs service container's entrypoint uses. This
+	 * leaves the mount chain as kernel autofs -> daemon -> cvmfs2,
+	 * with no /etc/passwd or mount-helper plumbing required. */
+	if (!strcmp(fstype, "cvmfs")) {
+		const char *cvmfs_opts = (options && options[0])
+			? options : CVMFS2_DEFAULT_OPTS;
+
+		mountlog(ap->logopt,
+			 MODPREFIX "calling cvmfs2 -o %s %s %s",
+			 cvmfs_opts, what, fullpath);
+
+		err = spawnl(ap->logopt, CVMFS2_BIN,
+			     CVMFS2_BIN, "-o", cvmfs_opts,
+			     what, fullpath, (char *) NULL);
+	} else if (options && options[0]) {
 		mountlog(ap->logopt,
 			 MODPREFIX "calling mount -t %s -o %s %s %s",
 			 fstype, options, what, fullpath);
