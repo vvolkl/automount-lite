@@ -163,156 +163,27 @@ static int read_master_map(struct master *master, char *type, time_t age)
 
 int lookup_nss_read_master(struct master *master, time_t age)
 {
-	unsigned int logopt = master->logopt;
-	struct list_head nsslist;
-	struct list_head *head, *p;
-	int result = NSS_STATUS_UNKNOWN;
+	/* automount-cvmfs is a single-purpose fork of autofs: it only
+	 * ever services /cvmfs via the indirect map at /etc/auto.cvmfs.
+	 * Skip the usual autofs discovery dance (auto.master via
+	 * nsswitch, +include / +dir master fragments, source fallback)
+	 * and synthesise the one master entry we care about. This
+	 * removes the runtime dependency on /etc/auto.master,
+	 * /etc/nsswitch.conf, and the `dir` lookup module (excluded
+	 * from static builds), which matters for minimal container
+	 * images. */
+	const char *entry = "/cvmfs file:/etc/auto.cvmfs";
 
-	/* If it starts with a '/' it has to be a file or LDAP map */
-	if (*master->name == '/') {
-		if (*(master->name + 1) == '/') {
-			info(logopt, "reading ldap master %s", master->name);
-			result = do_read_master(master, "ldap", age);
-		} else {
-			debug(logopt, "reading master file %s", master->name);
-			result = do_read_master(master, "file", age);
-		}
+	debug(master->logopt,
+	      "synthesising hardcoded master entry: %s", entry);
 
-		if (result == NSS_STATUS_UNAVAIL)
-			master->read_fail = 1;
-
-		return result;
-	} else {
-		char *name = master->name;
-		char *tmp;
-
-		/* Old style name specification will remain I think. */
-		tmp = strchr(name, ':');
-		if (tmp) {
-			char source[10];
-
-			memset(source, 0, 10);
-			if ((!strncmp(name, "file", 4) &&
-				 (name[4] == ',' || name[4] == ':')) ||
-			    (!strncmp(name, "yp", 2) &&
-				 (name[2] == ',' || name[2] == ':')) ||
-			    (!strncmp(name, "nis", 3) &&
-				 (name[3] == ',' || name[3] == ':')) ||
-			    (!strncmp(name, "nisplus", 7) &&
-				 (name[7] == ',' || name[7] == ':')) ||
-			    (!strncmp(name, "ldap", 4) &&
-				 (name[4] == ',' || name[4] == ':')) ||
-			    (!strncmp(name, "ldaps", 5) &&
-				 (name[5] == ',' || name[5] == ':')) ||
-			    (!strncmp(name, "sss", 3) ||
-				 (name[3] == ',' || name[3] == ':')) ||
-			    (!strncmp(name, "dir", 3) &&
-				 (name[3] == ',' || name[3] == ':'))) {
-				strncpy(source, name, tmp - name);
-
-				/*
-				 * If it's an ldap map leave the source in the
-				 * name so the lookup module can work out if
-				 * ldaps has been requested.
-				 */
-				if (strncmp(name, "ldap", 4)) {
-					master->name = tmp + 1;
-					info(logopt, "reading %s master %s",
-					      source, master->name);
-				} else {
-					master->name = name;
-					debug(logopt, "reading master %s %s",
-					      source, tmp + 1);
-				}
-
-				result = do_read_master(master, source, age);
-				master->name = name;
-
-				if (result == NSS_STATUS_UNAVAIL)
-					master->read_fail = 1;
-
-				return result;
-			}
-		}
-	}
-
-	INIT_LIST_HEAD(&nsslist);
-
-	result = nsswitch_parse(&nsslist);
-	if (result) {
-		if (!list_empty(&nsslist))
-			free_sources(&nsslist);
-		error(logopt, "can't to read name service switch config.");
+	if (!master_parse_entry(entry, master->default_timeout,
+				master->default_logging, age)) {
+		master->read_fail = 1;
 		return NSS_STATUS_UNAVAIL;
 	}
 
-	/* First one gets it */
-	result = NSS_STATUS_SUCCESS;
-	head = &nsslist;
-	list_for_each(p, head) {
-		struct nss_source *this;
-		int status;
-
-		this = list_entry(p, struct nss_source, list);
-
-		if (strncmp(this->source, "files", 5) &&
-		    strncmp(this->source, "nis", 3) &&
-		    strncmp(this->source, "nisplus", 7) &&
-		    strncmp(this->source, "ldap", 4) &&
-		    strncmp(this->source, "sss", 3))
-			continue;
-
-		info(logopt,
-		      "reading %s master %s", this->source, master->name);
-
-		result = read_master_map(master, this->source, age);
-
-		/*
-		 * If the name of the master map hasn't been explicitly
-		 * configured and we're not reading an included master map
-		 * then we're using auto.master as the default. Many setups
-		 * also use auto_master as the default master map so we
-		 * check for this map when auto.master isn't found.
-		 */
-		if (result != NSS_STATUS_SUCCESS &&
-		    !master->depth && !defaults_master_set()) {
-			char *tmp = strchr(master->name, '.');
-			if (tmp) {
-				debug(logopt,
-				      "%s not found, replacing '.' with '_'",
-				       master->name);
-				*tmp = '_';
-				result = read_master_map(master, this->source, age);
-				if (result != NSS_STATUS_SUCCESS)
-					*tmp = '.';
-			}
-		}
-
-		/* We've been instructed to move onto the next source */
-		if (result == NSS_STATUS_TRYAGAIN) {
-			result = NSS_STATUS_SUCCESS;
-			continue;
-		}
-
-		if (result == NSS_STATUS_UNKNOWN ||
-		    result == NSS_STATUS_NOTFOUND) {
-			debug(logopt, "no map - continuing to next source");
-			result = NSS_STATUS_SUCCESS;
-			continue;
-		}
-
-		if (result == NSS_STATUS_UNAVAIL)
-			master->read_fail = 1;
-
-		status = check_nss_result(this, result);
-		if (status >= 0)
-			break;
-	}
-
-	if (!list_empty(&nsslist))
-		free_sources(&nsslist);
-
-	return result;
+	return NSS_STATUS_SUCCESS;
 }
 
 static int do_read_map(struct autofs_point *ap, struct map_source *map, time_t age)
