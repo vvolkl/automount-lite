@@ -120,7 +120,13 @@ void init_ioctl_ctl(void)
 	if (ctl.ops)
 		return;
 
-	devfd = open_fd(CONTROL_DEVICE, O_RDONLY);
+	/* Probe for the autofs miscdev interface. This is feature
+	 * detection: if /dev/autofs is absent we transparently fall
+	 * back to per-mount ioctls, which is fully functional. Use a
+	 * direct open() rather than open_fd() so the absence doesn't
+	 * produce an unconditional error log on minimal systems
+	 * (notably container images that ship a curated /dev). */
+	devfd = open(CONTROL_DEVICE, O_RDONLY | O_CLOEXEC);
 	if (devfd == -1)
 		ctl.ops = &ioctl_ops;
 	else {
