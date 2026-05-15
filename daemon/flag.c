@@ -150,6 +150,12 @@ int aquire_flag_file(void)
 	char linkf[PATH_MAX];
 	size_t len;
 
+	/* Minimal container images (e.g. cvmfs/service:scratch) ship without
+	 * AUTOFS_FLAG_DIR (resolved to /run at autoconf time on EL9). Create
+	 * it on demand so callers don't have to pre-populate it in the image. */
+	if (mkdir(AUTOFS_FLAG_DIR, 0755) == -1 && errno != EEXIST)
+		return 0;
+
 	len = snprintf(linkf, sizeof(linkf), "%s.%d", FLAG_FILE, getpid());
 	if (len >= sizeof(linkf))
 		/* Didn't acquire it */

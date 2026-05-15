@@ -90,8 +90,6 @@ char *autofs_strerror_r(int errnum, char *buf, size_t buflen);  /* GNU */
 #define HOST_ENT_BUF_SIZE	2048
 
 #define CHECK_RATIO	4			/* exp_runfreq = exp_timeout/CHECK_RATIO */
-#define AUTOFS_LOCK	"/var/lock/autofs"	/* To serialize access to mount */
-#define MOUNTED_LOCK	_PATH_MOUNTED "~"	/* mounts' lock file */
 #define MTAB_NOTUPDATED 0x1000			/* mtab succeded but not updated */
 #define NOT_MOUNTED     0x0100			/* path notmounted */
 #define MNT_FORCE_FAIL	-1

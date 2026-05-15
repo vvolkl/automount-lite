@@ -1394,6 +1394,16 @@ static int create_cmd_pipe_fifo(void)
 	if (cmd_pipe_fifo != -1)
 		return 0;
 
+	/* Minimal container images (e.g. cvmfs/service:scratch) ship without
+	 * AUTOFS_FIFO_DIR (resolved to /run at autoconf time on EL9). Create
+	 * it on demand so callers don't have to pre-populate it in the image. */
+	if (mkdir(AUTOFS_FIFO_DIR, 0755) == -1 && errno != EEXIST) {
+		char *estr = strerror_r(errno, buf, MAX_ERR_BUF);
+		fprintf(stderr, "%s: mkdir %s failed: %s",
+			program, AUTOFS_FIFO_DIR, estr);
+		return -1;
+	}
+
 	ret = unlink(cmd_pipe_name);
 	if (ret != 0 && errno != ENOENT) {
 		fprintf(stderr,
