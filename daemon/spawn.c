@@ -544,7 +544,7 @@ done:
 				while (errp && (p = memchr(sp, '\n', errp))) {
 					*p++ = '\0';
 					if (sp[0])	/* Don't output empty lines */
-						debug(logopt, ">> %s", sp);
+						info(logopt, ">> %s", sp);
 					errp -= (p - sp);
 					sp = p;
 				}
@@ -569,7 +569,7 @@ done:
 		if (errp > 0) {
 			/* End of file without \n */
 			errbuf[errp] = '\0';
-			debug(logopt, ">> %s", errbuf);
+			info(logopt, ">> %s", errbuf);
 		}
 
 		if (waitpid(f, &ret, 0) != f)
